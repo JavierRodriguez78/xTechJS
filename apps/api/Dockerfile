@@ -10,7 +10,7 @@ RUN pnpm install --frozen-lockfile --ignore-scripts
 
 COPY apps/api apps/api
 RUN pnpm --filter @xtechjs/api build
-RUN pnpm --filter @xtechjs/api deploy --prod /opt/api
+RUN pnpm --filter @xtechjs/api deploy --legacy --prod /opt/api
 
 FROM node:22-alpine AS runtime
 
