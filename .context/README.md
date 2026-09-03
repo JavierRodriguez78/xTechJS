@@ -13,6 +13,7 @@ Este paquete contiene el contexto técnico y funcional completo del proyecto **x
 - `06-extensibilidad/extensibilidad.md` — Requisitos de extensibilidad transversal
 - `07-entregables/entregables.md` — Qué se espera que genere ChatGPT
 - `08-estado-implementacion/estado.md` — Estado real, decisiones y trabajo pendiente
+- `05-infraestructura/infraestructura.md` — Incluye los comandos operativos del Makefile
 
 ## Uso recomendado
 

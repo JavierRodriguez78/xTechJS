@@ -21,4 +21,4 @@ COPY --from=build /opt/api ./
 
 EXPOSE 3000
 USER node
-CMD ["node", "dist/main.js"]
+CMD ["sh", "-c", "node dist/shared/infrastructure/persistence/data-source.js && node dist/main.js"]
