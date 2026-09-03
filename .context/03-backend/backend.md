@@ -1,0 +1,30 @@
+# Requisitos técnicos — Backend — xTechJS
+
+- **Lenguaje:** TypeScript al 100%.
+- **Framework base:** [xtaskjs](https://github.com/xtaskjs/xtask) — framework Node.js progresivo, y se debe usar de forma extensiva todo su ecosistema de paquetes del workspace, entre ellos:
+  - `@xtaskjs/core` (DI, kernel, ciclo de vida, bootstrap)
+  - `@xtaskjs/common` (decoradores y utilidades compartidas)
+  - `@xtaskjs/config` (configuración y validación de entorno)
+  - `@xtaskjs/value-objects` (value objects, propios de una arquitectura DDD/hexagonal)
+  - `@xtaskjs/validation` (validación de requests)
+  - `@xtaskjs/express-http` o `@xtaskjs/fastify-http` (adaptador HTTP, a decidir según recomendación de rendimiento/madurez)
+  - `@xtaskjs/typeorm` (integración con PostgreSQL vía TypeORM)
+  - `@xtaskjs/security` (JWT/JWE, guards, autenticación y autorización por rol)
+  - `@xtaskjs/cache` (integración con Redis)
+  - `@xtaskjs/cqrs` (buses de comandos/queries, handlers, repositorios y proyecciones)
+  - `@xtaskjs/socket-io` (gateway para el chat en tiempo real y notificaciones de estado)
+  - `@xtaskjs/mailer` (notificaciones por email a clientes)
+  - `@xtaskjs/scheduler` (tareas programadas: alertas de stock mínimo, recordatorios, cierres de caja)
+  - `@xtaskjs/throttler` (rate limiting)
+  - `@xtaskjs/testing` (testing runtime y utilidades de test)
+  - (Opcional/futuro) `@xtaskjs/queues`, `@xtaskjs/event-source`, `@xtaskjs/internationalization`, `@xtaskjs/bots`, `@xtaskjs/mcp` para extensiones futuras (colas para procesado asíncrono de notificaciones, event sourcing para el histórico de reparaciones, i18n multi-idioma, bots de WhatsApp/Telegram para avisos a clientes).
+- **Base de datos:** PostgreSQL.
+- **Caché:** Redis, vía `@xtaskjs/cache`.
+- **Arquitectura:**
+  - **Arquitectura hexagonal** (puertos y adaptadores): dominio desacoplado de infraestructura (HTTP, persistencia, cache, mensajería).
+  - **CQRS** con `@xtaskjs/cqrs`: separación clara de comandos (escritura, ej. `CreateRepairOrderCommand`) y queries (lectura, ej. `GetRepairOrdersByClientQuery`), con sus respectivos handlers y modelos de lectura/proyección cuando aporte valor (p. ej. dashboards, histórico de cliente).
+  - **Código limpio**: separación por capas (dominio, aplicación, infraestructura), inyección de dependencias vía el contenedor DI de `@xtaskjs/core`, principios SOLID.
+  - **Modularidad por dominio (bounded contexts)**: módulos independientes y desacoplados para `clientes`, `reparaciones`/`equipos`, `almacen`, `tpv`, `chat`, `usuarios`/`auth`, de forma que añadir nuevas funcionalidades (nuevos tipos de dispositivo, nuevos flujos, nuevos canales de notificación) no requiera tocar el resto de módulos.
+- **Autenticación/autorización:** JWT vía `@xtaskjs/security`, con guards por rol (admin/técnico/cliente) y soporte para la funcionalidad de suplantación de usuario por parte del admin (con auditoría).
+- **Tiempo real:** WebSockets vía `@xtaskjs/socket-io` para chat y actualizaciones de estado de reparación en vivo.
+- **Testing:** cobertura de dominio y casos de uso con `@xtaskjs/testing`.

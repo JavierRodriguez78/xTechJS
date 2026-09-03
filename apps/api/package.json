@@ -1,0 +1,28 @@
+{
+  "name": "@xtechjs/api",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx watch src/main.ts",
+    "start": "node dist/main.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@xtaskjs/common": "^1.0.49",
+    "@xtaskjs/config": "^1.0.5",
+    "@xtaskjs/core": "^1.0.49",
+    "@xtaskjs/cqrs": "^1.1.26",
+    "@xtaskjs/fastify-http": "^1.0.48",
+    "@xtaskjs/security": "^1.0.34",
+    "@xtaskjs/validation": "^1.0.7",
+    "@xtaskjs/value-objects": "^1.0.27",
+    "fastify": "^5.6.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "tsx": "^4.20.6",
+    "typescript": "^5.8.3"
+  }
+}

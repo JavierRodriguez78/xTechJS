@@ -1,0 +1,11 @@
+{
+  "name": "xtechjs",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@11.5.0",
+  "scripts": {
+    "build": "pnpm --recursive run build",
+    "dev": "pnpm --parallel --filter @xtechjs/api --filter @xtechjs/web run dev",
+    "typecheck": "pnpm --recursive run typecheck"
+  }
+}
