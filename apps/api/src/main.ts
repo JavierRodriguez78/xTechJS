@@ -6,6 +6,12 @@ import { ListCustomers } from "./customers/application/list-customers.js";
 import { UpdateCustomer } from "./customers/application/update-customer.js";
 import { registerCustomerRoutes } from "./customers/infrastructure/http/customer-routes.js";
 import { PostgresCustomerRepository } from "./customers/infrastructure/persistence/postgres-customer-repository.js";
+import { ChangeRepairStatus } from "./repairs/application/change-repair-status.js";
+import { CreateRepairOrder } from "./repairs/application/create-repair-order.js";
+import { GetRepairStatusHistory } from "./repairs/application/get-repair-status-history.js";
+import { ListRepairOrders } from "./repairs/application/list-repair-orders.js";
+import { registerRepairRoutes } from "./repairs/infrastructure/http/repair-routes.js";
+import { PostgresRepairOrderRepository } from "./repairs/infrastructure/persistence/postgres-repair-order-repository.js";
 import { loadConfig } from "./shared/infrastructure/config/app-config.js";
 import { appDataSource } from "./shared/infrastructure/persistence/data-source.js";
 import { AuthenticationService } from "./users/application/authentication-service.js";
@@ -24,6 +30,11 @@ const createCustomer = new CreateCustomer(customerRepository);
 const listCustomers = new ListCustomers(customerRepository);
 const getCustomer = new GetCustomer(customerRepository);
 const updateCustomer = new UpdateCustomer(customerRepository);
+const repairRepository = new PostgresRepairOrderRepository(appDataSource);
+const createRepair = new CreateRepairOrder(repairRepository);
+const listRepairs = new ListRepairOrders(repairRepository);
+const changeRepairStatus = new ChangeRepairStatus(repairRepository);
+const getRepairStatusHistory = new GetRepairStatusHistory(repairRepository);
 
 await app.register(jwt, { secret: config.get("JWT_SECRET"), sign: { expiresIn: config.get("JWT_EXPIRES_IN") } });
 
@@ -35,6 +46,7 @@ app.get("/health", async () => ({
 
 registerAuthRoutes(app, authenticationService, appDataSource);
 registerCustomerRoutes(app, createCustomer, listCustomers, getCustomer, updateCustomer);
+registerRepairRoutes(app, createRepair, listRepairs, changeRepairStatus, getRepairStatusHistory);
 
 app.get("/api/users", { preHandler: requirePermission(PERMISSIONS.usersManage) }, async () => listUsers.execute());
 

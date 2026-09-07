@@ -33,6 +33,11 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   PostgreSQL, casos de uso para alta, listado, ficha y edicion. Expone rutas
   `GET`/`POST /api/customers` y `GET`/`PUT /api/customers/:id` protegidas por
   permisos. La consola Vue permite consultar, crear y editar clientes con JWT.
+- Modulo inicial de reparaciones: ordenes vinculadas a cliente con equipo, averia y
+  accesorios; persistencia TypeORM y migracion para `repair_orders` y su linea de
+  tiempo `repair_status_events`. Expone `GET`/`POST /api/repairs`, cambio de estado
+  por `PATCH /api/repairs/:id/status` e historial por `GET /api/repairs/:id/history`.
+  La consola interna permite crear, listar y actualizar ordenes de taller.
 - Dependencias xTaskJS declaradas para `core`, `common`, `config`, `cqrs`,
   `fastify-http`, `security`, `validation` y `value-objects`. `config` ya se usa
   desde la API; las demas se integraran al implementar sus capacidades.
@@ -49,10 +54,10 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 
 - `pnpm install --ignore-scripts` completado correctamente.
 - `pnpm typecheck` completado correctamente para API y frontend.
-- `pnpm --filter @xtechjs/api test`: 8 pruebas RBAC, autenticacion y CRM superadas,
-  0 fallos tras incorporar el acceso interno.
+- `make test`: 10 pruebas de RBAC, autenticacion, CRM y reparaciones superadas,
+  0 fallos tras incorporar el primer vertical de taller.
 - `pnpm --filter @xtechjs/api build` y `pnpm --filter @xtechjs/web build` completados
-  correctamente tras incorporar el login persistente del portal interno.
+  correctamente tras incorporar el primer vertical de reparaciones.
 - `GET http://127.0.0.1:3000/health` respondio correctamente durante desarrollo local.
 - No se pudo ejecutar `docker compose config` ni construir contenedores porque Docker
   CLI no esta disponible en la distribucion WSL actual. Se requiere habilitar la
@@ -81,8 +86,9 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 
 - CRM: historial de interacciones/reparaciones y registro de notificaciones. Alta,
   listado, ficha, edicion y etiquetado inicial ya existen.
-- Reparaciones: ordenes, equipos, diagnostico, estados, presupuesto, timeline,
-  adjuntos, consumo de materiales y aprobacion de cliente.
+- Reparaciones: diagnostico, presupuesto, adjuntos, consumo de materiales, asignacion
+  de tecnico y aprobacion de cliente. Ordenes, equipo basico, estados y timeline ya
+  existen.
 - Almacen: catalogo, stock, movimientos, alertas y proveedores.
 - TPV: cobros, facturas/tickets, cierre de caja y reportes.
 - Chat y notificaciones en tiempo real.
@@ -115,20 +121,21 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 ## Siguiente fase recomendada
 
 1. Aplicar DI y el ciclo de vida de xTaskJS al modulo de usuarios.
-2. Completar CRM con historial de interacciones/reparaciones, o iniciar el modulo de
-  reparaciones que consume clientes.
+2. Ampliar reparaciones con diagnostico, asignacion de tecnico y presupuesto, o
+  completar el historial CRM usando las ordenes existentes.
 3. Ejecutar y validar la pila Docker completa antes de incorporar servicios que
    dependan de ella.
 
 ## Punto de reanudacion
 
 El siguiente trabajo debe comenzar en la aplicacion del kernel/DI de xTaskJS, en la
-historial CRM del cliente o en el modulo de reparaciones. El portal interno solo es
+historial CRM del cliente o en la ampliacion de reparaciones. El portal interno solo es
 accesible tras `POST /api/auth/staff/login` para admin/tecnico. El CRM ya expone
 `GET`/`POST /api/customers` y `GET`/`PUT /api/customers/:id`; alta y edicion exigen
 `customers:manage`, mientras las consultas requieren `customers:read`. La consola
 muestra Clientes desde su navegacion y usa el access token obtenido con login.
-PostgreSQL contiene `users`, `audit_logs` y `customers` tras ejecutar migraciones.
+PostgreSQL contiene `users`, `audit_logs`, `customers`, `repair_orders` y
+`repair_status_events` tras ejecutar migraciones.
 
 ## Criterio de actualizacion
 

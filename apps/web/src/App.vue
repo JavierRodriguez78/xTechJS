@@ -3,8 +3,9 @@ import { ref } from "vue";
 import StaffLogin from "./features/auth/StaffLogin.vue";
 import { signOut, staffSession } from "./features/auth/session";
 import CustomerManagement from "./features/customers/CustomerManagement.vue";
+import RepairManagement from "./features/repairs/RepairManagement.vue";
 
-const activeView = ref<"dashboard" | "customers">("dashboard");
+const activeView = ref<"dashboard" | "customers" | "repairs">("dashboard");
 
 const repairSummary = [
   { label: "En diagnostico", value: 12, tone: "amber" },
@@ -26,7 +27,7 @@ const recentRepairs = [
       <a class="brand" href="#">xTech<span>JS</span></a>
       <nav aria-label="Navegacion principal">
         <a :class="{ active: activeView === 'dashboard' }" href="#panel" @click.prevent="activeView = 'dashboard'">Panel</a>
-        <a href="#">Reparaciones</a>
+        <a :class="{ active: activeView === 'repairs' }" href="#reparaciones" @click.prevent="activeView = 'repairs'">Reparaciones</a>
         <a :class="{ active: activeView === 'customers' }" href="#clientes" @click.prevent="activeView = 'customers'">Clientes</a>
         <a href="#">Almacen</a>
         <a href="#">TPV</a>
@@ -40,6 +41,7 @@ const recentRepairs = [
     </aside>
 
     <CustomerManagement v-if="activeView === 'customers'" class="content" :access-token="staffSession.accessToken" />
+    <RepairManagement v-else-if="activeView === 'repairs'" class="content" :access-token="staffSession.accessToken" />
     <section v-else class="content">
       <header>
         <div>
