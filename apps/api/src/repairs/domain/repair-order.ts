@@ -9,9 +9,16 @@ export interface RepairOrder {
   serialNumber: string | null;
   reportedIssue: string;
   deliveredAccessories: string | null;
+  technicianId: string | null;
+  diagnosis: string | null;
   status: RepairStatus;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface UpdateRepairTechnicalInput {
+  technicianId?: string;
+  diagnosis?: string;
 }
 
 export interface RepairStatusEvent {

@@ -10,7 +10,7 @@ export class PostgresRepairOrderRepository implements RepairOrderRepository {
 
   async create(input: NewRepairOrderRecord): Promise<RepairOrder> {
     return this.dataSource.transaction(async (manager) => {
-      const repair = await manager.getRepository(RepairOrderEntitySchema).save({ ...input, serialNumber: input.serialNumber || null, deliveredAccessories: input.deliveredAccessories || null, status: "received" });
+      const repair = await manager.getRepository(RepairOrderEntitySchema).save({ ...input, serialNumber: input.serialNumber || null, deliveredAccessories: input.deliveredAccessories || null, technicianId: null, diagnosis: null, status: "received" });
       await manager.getRepository(RepairStatusEventEntitySchema).save({ id: randomUUID(), repairOrderId: repair.id, status: "received", note: "Orden recibida" });
       return repair;
     });
@@ -37,5 +37,11 @@ export class PostgresRepairOrderRepository implements RepairOrderRepository {
 
   findStatusHistory(repairOrderId: string): Promise<readonly RepairStatusEvent[]> {
     return this.dataSource.getRepository(RepairStatusEventEntitySchema).find({ where: { repairOrderId }, order: { createdAt: "ASC" } });
+  }
+
+  async updateTechnical(id: string, input: { technicianId?: string; diagnosis?: string }): Promise<RepairOrder | undefined> {
+    const repository = this.dataSource.getRepository(RepairOrderEntitySchema);
+    const repair = await repository.preload({ id, ...input });
+    return repair ? repository.save(repair) : undefined;
   }
 }

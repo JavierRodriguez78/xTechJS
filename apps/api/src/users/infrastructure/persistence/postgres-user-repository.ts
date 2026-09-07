@@ -14,6 +14,10 @@ export class PostgresUserRepository implements UserRepository {
     return this.dataSource.getRepository(UserEntitySchema).findOneBy({ id }).then((user) => user ?? undefined);
   }
 
+  findActiveByRole(role: User["role"]): Promise<readonly User[]> {
+    return this.dataSource.getRepository(UserEntitySchema).find({ where: { role, active: true }, order: { displayName: "ASC" } });
+  }
+
   findByEmail(email: string): Promise<UserCredentials | undefined> {
     return this.dataSource
       .getRepository(UserEntitySchema)

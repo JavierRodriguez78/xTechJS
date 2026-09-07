@@ -16,6 +16,10 @@ class TestUserRepository implements UserRepository {
     return this.users.find((user) => user.id === id);
   }
 
+  async findActiveByRole(): Promise<readonly User[]> {
+    return [];
+  }
+
   async findByEmail(email: string): Promise<UserCredentials | undefined> {
     return this.users.find((user) => user.email === email);
   }

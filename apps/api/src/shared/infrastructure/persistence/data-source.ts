@@ -3,7 +3,10 @@ import { loadConfig } from "../config/app-config.js";
 import { InitialCustomersMigration } from "../../../customers/infrastructure/persistence/migrations/1735948800000-initial-customers.js";
 import { CustomerEntitySchema } from "../../../customers/infrastructure/persistence/customer-entity.js";
 import { InitialRepairOrdersMigration } from "../../../repairs/infrastructure/persistence/migrations/1736121600000-initial-repair-orders.js";
+import { AddRepairTechnicalDetailsMigration } from "../../../repairs/infrastructure/persistence/migrations/1736208000000-add-repair-technical-details.js";
+import { InitialRepairQuotesMigration } from "../../../repairs/infrastructure/persistence/migrations/1736294400000-initial-repair-quotes.js";
 import { RepairOrderEntitySchema, RepairStatusEventEntitySchema } from "../../../repairs/infrastructure/persistence/repair-order-entity.js";
+import { RepairQuoteEntitySchema } from "../../../repairs/infrastructure/persistence/repair-quote-entity.js";
 import { AddUserPasswordHashMigration } from "../../../users/infrastructure/persistence/migrations/1736035200000-add-user-password-hash.js";
 import { InitialUsersMigration } from "../../../users/infrastructure/persistence/migrations/1735862400000-initial-users.js";
 import { UserEntitySchema } from "../../../users/infrastructure/persistence/user-entity.js";
@@ -17,8 +20,8 @@ export const appDataSource = new DataSource({
   database: config.get("POSTGRES_DB"),
   username: config.get("POSTGRES_USER"),
   password: config.get("POSTGRES_PASSWORD"),
-  entities: [UserEntitySchema, CustomerEntitySchema, RepairOrderEntitySchema, RepairStatusEventEntitySchema],
-  migrations: [InitialUsersMigration, InitialCustomersMigration, AddUserPasswordHashMigration, InitialRepairOrdersMigration],
+  entities: [UserEntitySchema, CustomerEntitySchema, RepairOrderEntitySchema, RepairStatusEventEntitySchema, RepairQuoteEntitySchema],
+  migrations: [InitialUsersMigration, InitialCustomersMigration, AddUserPasswordHashMigration, InitialRepairOrdersMigration, AddRepairTechnicalDetailsMigration, InitialRepairQuotesMigration],
   synchronize: false
 });
 

@@ -16,6 +16,10 @@ export class InMemoryUserRepository implements UserRepository {
     return users.find((user) => user.id === id);
   }
 
+  async findActiveByRole(role: User["role"]): Promise<readonly User[]> {
+    return users.filter((user) => user.role === role && user.active);
+  }
+
   async findByEmail(email: string): Promise<UserCredentials | undefined> {
     return users.find((user) => user.email === email);
   }

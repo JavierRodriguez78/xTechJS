@@ -38,6 +38,16 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   tiempo `repair_status_events`. Expone `GET`/`POST /api/repairs`, cambio de estado
   por `PATCH /api/repairs/:id/status` e historial por `GET /api/repairs/:id/history`.
   La consola interna permite crear, listar y actualizar ordenes de taller.
+- Reparaciones incorpora asignacion a tecnicos activos y diagnostico tecnico, con
+  migracion incremental y ruta `PATCH /api/repairs/:id/technical`. La consola carga
+  tecnicos autorizados desde `GET /api/technicians` y permite guardar ambos datos.
+- Reparaciones incorpora un presupuesto vigente por orden, con lineas, cantidades e
+  importes en centimos, total calculado en servidor y migracion `repair_quotes`.
+  Las rutas internas son `GET`/`PUT /api/repairs/:id/quote` y
+  `POST /api/repairs/:id/quote/approve`. Enviar desde diagnostico mueve la orden a
+  `quoted`; aprobar un presupuesto enviado la mueve a `approved` y deja evento en
+  el historial. La consola permite editar lineas, guardar borrador, enviar y
+  registrar la aprobacion interna.
 - Dependencias xTaskJS declaradas para `core`, `common`, `config`, `cqrs`,
   `fastify-http`, `security`, `validation` y `value-objects`. `config` ya se usa
   desde la API; las demas se integraran al implementar sus capacidades.
@@ -54,10 +64,10 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 
 - `pnpm install --ignore-scripts` completado correctamente.
 - `pnpm typecheck` completado correctamente para API y frontend.
-- `make test`: 10 pruebas de RBAC, autenticacion, CRM y reparaciones superadas,
-  0 fallos tras incorporar el primer vertical de taller.
+- `pnpm --filter @xtechjs/api test`: 12 pruebas de RBAC, autenticacion, CRM y
+  reparaciones superadas, 0 fallos, incluido el calculo del total de presupuesto.
 - `pnpm --filter @xtechjs/api build` y `pnpm --filter @xtechjs/web build` completados
-  correctamente tras incorporar el primer vertical de reparaciones.
+  correctamente tras incorporar presupuestos de reparacion.
 - `GET http://127.0.0.1:3000/health` respondio correctamente durante desarrollo local.
 - No se pudo ejecutar `docker compose config` ni construir contenedores porque Docker
   CLI no esta disponible en la distribucion WSL actual. Se requiere habilitar la
@@ -86,9 +96,9 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 
 - CRM: historial de interacciones/reparaciones y registro de notificaciones. Alta,
   listado, ficha, edicion y etiquetado inicial ya existen.
-- Reparaciones: diagnostico, presupuesto, adjuntos, consumo de materiales, asignacion
-  de tecnico y aprobacion de cliente. Ordenes, equipo basico, estados y timeline ya
-  existen.
+- Reparaciones: adjuntos, consumo de materiales y aprobacion desde el portal de
+  cliente. Ordenes, equipo basico, estados, timeline, diagnostico, asignacion y
+  presupuesto interno ya existen.
 - Almacen: catalogo, stock, movimientos, alertas y proveedores.
 - TPV: cobros, facturas/tickets, cierre de caja y reportes.
 - Chat y notificaciones en tiempo real.
@@ -121,21 +131,22 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 ## Siguiente fase recomendada
 
 1. Aplicar DI y el ciclo de vida de xTaskJS al modulo de usuarios.
-2. Ampliar reparaciones con diagnostico, asignacion de tecnico y presupuesto, o
-  completar el historial CRM usando las ordenes existentes.
+2. Completar la aprobacion de presupuestos desde el portal de cliente, o el historial
+  CRM usando las ordenes existentes.
 3. Ejecutar y validar la pila Docker completa antes de incorporar servicios que
    dependan de ella.
 
 ## Punto de reanudacion
 
-El siguiente trabajo debe comenzar en la aplicacion del kernel/DI de xTaskJS, en la
-historial CRM del cliente o en la ampliacion de reparaciones. El portal interno solo es
+El siguiente trabajo debe comenzar en la aplicacion del kernel/DI de xTaskJS, en el
+historial CRM del cliente o en la aprobacion de presupuestos por cliente. El portal interno solo es
 accesible tras `POST /api/auth/staff/login` para admin/tecnico. El CRM ya expone
 `GET`/`POST /api/customers` y `GET`/`PUT /api/customers/:id`; alta y edicion exigen
 `customers:manage`, mientras las consultas requieren `customers:read`. La consola
 muestra Clientes desde su navegacion y usa el access token obtenido con login.
-PostgreSQL contiene `users`, `audit_logs`, `customers`, `repair_orders` y
-`repair_status_events` tras ejecutar migraciones.
+PostgreSQL contiene `users`, `audit_logs`, `customers`, `repair_orders`,
+`repair_status_events` y `repair_quotes` tras ejecutar migraciones. La orden incluye
+`technician_id` y `diagnosis` tras la migracion incremental de detalles tecnicos.
 
 ## Criterio de actualizacion
 

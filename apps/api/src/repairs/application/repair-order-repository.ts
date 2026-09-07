@@ -1,4 +1,4 @@
-import type { CreateRepairOrderInput, RepairOrder, RepairStatusEvent } from "../domain/repair-order.js";
+import type { CreateRepairOrderInput, RepairOrder, RepairStatusEvent, UpdateRepairTechnicalInput } from "../domain/repair-order.js";
 import type { RepairStatus } from "../domain/repair-status.js";
 
 export interface NewRepairOrderRecord extends CreateRepairOrderInput {
@@ -11,4 +11,5 @@ export interface RepairOrderRepository {
   findById(id: string): Promise<RepairOrder | undefined>;
   changeStatus(id: string, status: RepairStatus, note?: string): Promise<RepairOrder | undefined>;
   findStatusHistory(id: string): Promise<readonly RepairStatusEvent[]>;
+  updateTechnical(id: string, input: UpdateRepairTechnicalInput): Promise<RepairOrder | undefined>;
 }
