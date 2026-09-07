@@ -1,10 +1,12 @@
 import { compare, hash } from "bcryptjs";
 import { randomUUID } from "node:crypto";
+import { Qualifier, Service } from "@xtaskjs/core";
 import type { User, UserCredentials } from "../domain/user.js";
 import type { UserRepository } from "./user-repository.js";
 
+@Service()
 export class AuthenticationService {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(@Qualifier("userRepository") private readonly userRepository: UserRepository) {}
 
   async bootstrapAdmin(input: { email: string; displayName: string; password: string }): Promise<User> {
     if (await this.userRepository.count()) {

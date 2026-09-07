@@ -11,10 +11,19 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 - API inicial TypeScript con Fastify y endpoint `GET /health`.
 - Configuracion de API validada al arranque con Zod y `ConfigService` de
   `@xtaskjs/config` para los puertos y conexiones de PostgreSQL/Redis.
+- La API arranca mediante `CreateApplication` de xTaskJS con el adaptador Fastify.
+  El ciclo de vida de `@xtaskjs/typeorm` administra el datasource `default`, ejecuta
+  las migraciones al iniciar el servidor y cierra la conexion al detenerse. El script
+  de migraciones conserva su `DataSource` explicito para ejecutarse fuera de la API.
 - Tipos de dominio iniciales: roles `admin`, `technician`, `customer` y estados de
   reparacion configurables por codigo.
 - Modulo inicial de usuarios con entidad, puerto de repositorio, caso de uso de
   consulta, adaptador PostgreSQL y endpoint `GET /api/users`.
+- Piloto de DI y CQRS aplicado a usuarios: `PostgresUserRepository` y los servicios
+  de usuarios estan registrados como componentes xTaskJS; `BootstrapAdmin` y
+  `AuthenticateUser` se despachan por `CommandBus`, mientras listado de usuarios y
+  tecnicos se resuelve por `QueryBus`. Las rutas Fastify y sus contratos HTTP se
+  conservan durante esta migracion progresiva.
 - Conexion PostgreSQL mediante TypeORM: `DataSource`, entidad `users`, repositorio
   TypeORM y migracion inicial. El contenedor de API ejecuta las migraciones antes de
   arrancar; en local se puede usar `pnpm --filter @xtechjs/api migration:run` tras
@@ -57,6 +66,10 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   y `redis`, con healthchecks y volumenes persistentes para datos.
 - Imagen de API Node y una imagen de frontend Nginx con proxy interno de `/api` a
   `api:3000`, preservando el prefijo `/api` necesario para las rutas Fastify.
+- La imagen de API genera un manifiesto xTaskJS precompilado desde `dist` al preparar
+  el runtime, omite fuentes TypeScript y ejecuta como usuario `node` con permiso para
+  su cache de manifiesto. Esto permite descubrir componentes DI/CQRS sin que Node
+  intente ejecutar `.ts` en produccion.
 - `Makefile` raiz para instalar dependencias, desarrollo local, Docker, shells de
   contenedores, migraciones, pruebas, typecheck y compilacion.
 
@@ -65,13 +78,13 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 - `pnpm install --ignore-scripts` completado correctamente.
 - `pnpm typecheck` completado correctamente para API y frontend.
 - `pnpm --filter @xtechjs/api test`: 12 pruebas de RBAC, autenticacion, CRM y
-  reparaciones superadas, 0 fallos, incluido el calculo del total de presupuesto.
+  reparaciones superadas, 0 fallos, incluido el calculo del total de presupuesto y
+  tras incorporar el piloto de DI/CQRS de usuarios.
 - `pnpm --filter @xtechjs/api build` y `pnpm --filter @xtechjs/web build` completados
   correctamente tras incorporar presupuestos de reparacion.
 - `GET http://127.0.0.1:3000/health` respondio correctamente durante desarrollo local.
-- No se pudo ejecutar `docker compose config` ni construir contenedores porque Docker
-  CLI no esta disponible en la distribucion WSL actual. Se requiere habilitar la
-  integracion WSL de Docker Desktop o instalar Docker CLI antes de validar la pila.
+- `make rebuild` construyo y arranco correctamente los servicios `postgres`, `redis`,
+  `api` y `web`; `GET http://127.0.0.1:3000/health` respondio desde la pila Docker.
 - El Dockerfile de API utiliza `pnpm deploy --legacy --prod /opt/api`, correccion
   necesaria para pnpm 10+ sin `inject-workspace-packages`. Falta confirmar el build
   de esa capa con Docker disponible.
@@ -82,11 +95,13 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 
 - Diseñar los bounded contexts y la estructura hexagonal definitiva para usuarios,
   clientes, reparaciones, almacen, TPV y chat.
-- Configurar el kernel, DI, modulos y adaptador HTTP de xTaskJS; sustituir el arranque
-  Fastify directo por la integracion de `@xtaskjs/fastify-http`.
+- Extender el patron de DI/CQRS validado en usuarios a CRM y reparaciones. Estos
+  modulos conservan por ahora casos de uso y composicion manual sobre el datasource
+  administrado por xTaskJS.
 - Modelar agregados, value objects, puertos y repositorios.
 - Completar los repositorios y migraciones de los demas bounded contexts con TypeORM.
-- Implementar CQRS: comandos, queries, handlers y proyecciones.
+- Completar CQRS: comandos, queries, handlers y proyecciones para CRM, reparaciones
+  y los bounded contexts pendientes.
 - Integrar la seguridad declarativa de `@xtaskjs/security` cuando se incorpore el
   kernel xTaskJS. JWT, RBAC HTTP, auditoria e impersonacion iniciales ya existen.
 - Cache Redis, rate limiting, correo, scheduler, Socket.IO y adjuntos.
@@ -114,9 +129,6 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 - Carga y reproduccion segura de fotos y videos.
 
 ### Infraestructura
-
-- Validar `docker compose config`, `docker compose build` y el arranque completo
-  cuando Docker este disponible.
 - Ejecutar la migracion inicial contra PostgreSQL y comprobar `GET /api/users` con
   la base de datos levantada. Actualmente no hay datos semilla, por lo que devolvera
   una lista vacia hasta crear usuarios.
@@ -130,7 +142,7 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 
 ## Siguiente fase recomendada
 
-1. Aplicar DI y el ciclo de vida de xTaskJS al modulo de usuarios.
+1. Extender DI/CQRS y sus proyecciones desde usuarios a CRM y reparaciones.
 2. Completar la aprobacion de presupuestos desde el portal de cliente, o el historial
   CRM usando las ordenes existentes.
 3. Ejecutar y validar la pila Docker completa antes de incorporar servicios que
@@ -138,8 +150,9 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 
 ## Punto de reanudacion
 
-El siguiente trabajo debe comenzar en la aplicacion del kernel/DI de xTaskJS, en el
-historial CRM del cliente o en la aprobacion de presupuestos por cliente. El portal interno solo es
+El siguiente trabajo debe comenzar migrando CRM o reparaciones al patron DI/CQRS ya
+aplicado a usuarios, en el historial CRM del cliente o en la aprobacion de
+presupuestos por cliente. El portal interno solo es
 accesible tras `POST /api/auth/staff/login` para admin/tecnico. El CRM ya expone
 `GET`/`POST /api/customers` y `GET`/`PUT /api/customers/:id`; alta y edicion exigen
 `customers:manage`, mientras las consultas requieren `customers:read`. La consola

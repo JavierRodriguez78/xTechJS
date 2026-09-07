@@ -18,6 +18,9 @@ ENV NODE_ENV=production
 WORKDIR /app
 
 COPY --from=build /opt/api ./
+RUN node scripts/prebuild-xtask-manifest.mjs
+RUN rm -rf /app/src
+RUN chown -R node:node /app
 
 EXPOSE 3000
 USER node

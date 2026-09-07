@@ -1,4 +1,5 @@
 import { DataSource } from "typeorm";
+import { registerTypeOrmDataSource, type XTaskTypeOrmDataSourceOptions } from "@xtaskjs/typeorm";
 import { loadConfig } from "../config/app-config.js";
 import { InitialCustomersMigration } from "../../../customers/infrastructure/persistence/migrations/1735948800000-initial-customers.js";
 import { CustomerEntitySchema } from "../../../customers/infrastructure/persistence/customer-entity.js";
@@ -13,7 +14,8 @@ import { UserEntitySchema } from "../../../users/infrastructure/persistence/user
 
 const config = loadConfig();
 
-export const appDataSource = new DataSource({
+const dataSourceOptions: XTaskTypeOrmDataSourceOptions = {
+  name: "default",
   type: "postgres",
   host: config.get("POSTGRES_HOST"),
   port: config.get("POSTGRES_PORT"),
@@ -22,8 +24,14 @@ export const appDataSource = new DataSource({
   password: config.get("POSTGRES_PASSWORD"),
   entities: [UserEntitySchema, CustomerEntitySchema, RepairOrderEntitySchema, RepairStatusEventEntitySchema, RepairQuoteEntitySchema],
   migrations: [InitialUsersMigration, InitialCustomersMigration, AddUserPasswordHashMigration, InitialRepairOrdersMigration, AddRepairTechnicalDetailsMigration, InitialRepairQuotesMigration],
-  synchronize: false
-});
+  synchronize: false,
+  initializeOnServerStart: true,
+  runMigrationsOnServerStart: true
+};
+
+registerTypeOrmDataSource(dataSourceOptions);
+
+export const appDataSource = new DataSource(dataSourceOptions);
 
 async function runMigrations(): Promise<void> {
   await appDataSource.initialize();

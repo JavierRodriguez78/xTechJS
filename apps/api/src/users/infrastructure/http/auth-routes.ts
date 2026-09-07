@@ -1,7 +1,9 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import type { DataSource } from "typeorm";
+import type { CommandBus } from "@xtaskjs/cqrs";
 import { isStaffRole, type UserRole } from "../../../shared/domain/user-role.js";
 import type { AuthenticationService } from "../../application/authentication-service.js";
+import { AuthenticateUserCommand, BootstrapAdminCommand } from "../../application/cqrs/user-messages.js";
 import { hasPermission, PERMISSIONS, type Permission } from "../../domain/permission.js";
 import type { User } from "../../domain/user.js";
 import { recordImpersonation } from "../persistence/audit-log.js";
@@ -35,7 +37,8 @@ function toPublicUser(user: User): User {
 export function registerAuthRoutes(
   app: FastifyInstance,
   authenticationService: AuthenticationService,
-  dataSource: DataSource
+  dataSource: DataSource,
+  commandBus: CommandBus
 ): void {
   app.post("/api/auth/bootstrap", async (request, reply) => {
     const input = request.body as { email: string; displayName: string; password: string };
@@ -43,7 +46,7 @@ export function registerAuthRoutes(
       return reply.code(400).send({ message: "Email, display name and a password of at least 12 characters are required" });
     }
     try {
-      return reply.code(201).send(toPublicUser(await authenticationService.bootstrapAdmin(input)));
+      return reply.code(201).send(toPublicUser(await commandBus.execute(new BootstrapAdminCommand(input))));
     } catch (error) {
       return reply.code(409).send({ message: (error as Error).message });
     }
@@ -51,7 +54,7 @@ export function registerAuthRoutes(
 
   app.post("/api/auth/login", async (request, reply) => {
     const input = request.body as { email: string; password: string };
-    const user = await authenticationService.authenticate(input?.email ?? "", input?.password ?? "");
+    const user = await commandBus.execute(new AuthenticateUserCommand(input?.email ?? "", input?.password ?? ""));
     if (!user) {
       return reply.code(401).send({ message: "Invalid credentials" });
     }
@@ -61,7 +64,7 @@ export function registerAuthRoutes(
 
   app.post("/api/auth/staff/login", async (request, reply) => {
     const input = request.body as { email: string; password: string };
-    const user = await authenticationService.authenticate(input?.email ?? "", input?.password ?? "");
+    const user = await commandBus.execute(new AuthenticateUserCommand(input?.email ?? "", input?.password ?? ""));
     if (!user || !isStaffRole(user.role)) {
       return reply.code(401).send({ message: "Invalid staff credentials" });
     }

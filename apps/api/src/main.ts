@@ -1,5 +1,11 @@
 import jwt from "@fastify/jwt";
 import Fastify from "fastify";
+import { CreateApplication } from "@xtaskjs/core";
+import { CommandBus, getCommandBusToken, getQueryBusToken, QueryBus } from "@xtaskjs/cqrs";
+import { FastifyAdapter } from "@xtaskjs/fastify-http";
+import { getTypeOrmLifecycleManager } from "@xtaskjs/typeorm";
+import "./shared/infrastructure/cqrs/cqrs-configuration.js";
+import "./users/application/cqrs/user-handlers.js";
 import { CreateCustomer } from "./customers/application/create-customer.js";
 import { GetCustomer } from "./customers/application/get-customer.js";
 import { ListCustomers } from "./customers/application/list-customers.js";
@@ -18,37 +24,39 @@ import { registerRepairRoutes } from "./repairs/infrastructure/http/repair-route
 import { PostgresRepairOrderRepository } from "./repairs/infrastructure/persistence/postgres-repair-order-repository.js";
 import { PostgresRepairQuoteRepository } from "./repairs/infrastructure/persistence/postgres-repair-quote-repository.js";
 import { loadConfig } from "./shared/infrastructure/config/app-config.js";
-import { appDataSource } from "./shared/infrastructure/persistence/data-source.js";
+import "./shared/infrastructure/persistence/data-source.js";
 import { AuthenticationService } from "./users/application/authentication-service.js";
-import { ListTechnicians } from "./users/application/list-technicians.js";
-import { ListUsers } from "./users/application/list-users.js";
+import { ListTechniciansQuery, ListUsersQuery } from "./users/application/cqrs/user-messages.js";
 import { PERMISSIONS } from "./users/domain/permission.js";
 import { registerAuthRoutes, requirePermission } from "./users/infrastructure/http/auth-routes.js";
 import { PostgresUserRepository } from "./users/infrastructure/persistence/postgres-user-repository.js";
 
 const app = Fastify({ logger: true });
 const config = loadConfig();
-const userRepository = new PostgresUserRepository(appDataSource);
-const listUsers = new ListUsers(userRepository);
-const authenticationService = new AuthenticationService(userRepository);
-const customerRepository = new PostgresCustomerRepository(appDataSource);
+
+await app.register(jwt, { secret: config.get("JWT_SECRET"), sign: { expiresIn: config.get("JWT_EXPIRES_IN") } });
+const xtaskApplication = await CreateApplication({ adapter: new FastifyAdapter(app), container: { resolutionStrategy: "eager" }, prebuiltManifest: { enabled: true } });
+const container = await xtaskApplication.getKernel().getContainer();
+const dataSource = getTypeOrmLifecycleManager().getDataSource("default");
+const userRepository = container.get(PostgresUserRepository);
+const authenticationService = container.get(AuthenticationService);
+const commandBus = container.getByName<CommandBus>(getCommandBusToken());
+const queryBus = container.getByName<QueryBus>(getQueryBusToken());
+const customerRepository = new PostgresCustomerRepository(dataSource);
 const createCustomer = new CreateCustomer(customerRepository);
 const listCustomers = new ListCustomers(customerRepository);
 const getCustomer = new GetCustomer(customerRepository);
 const updateCustomer = new UpdateCustomer(customerRepository);
-const repairRepository = new PostgresRepairOrderRepository(appDataSource);
+const repairRepository = new PostgresRepairOrderRepository(dataSource);
 const createRepair = new CreateRepairOrder(repairRepository);
 const listRepairs = new ListRepairOrders(repairRepository);
 const changeRepairStatus = new ChangeRepairStatus(repairRepository);
 const getRepairStatusHistory = new GetRepairStatusHistory(repairRepository);
-const quoteRepository = new PostgresRepairQuoteRepository(appDataSource);
+const quoteRepository = new PostgresRepairQuoteRepository(dataSource);
 const getRepairQuote = new GetRepairQuote(quoteRepository);
 const saveRepairQuote = new SaveRepairQuote(quoteRepository, repairRepository, changeRepairStatus);
 const approveRepairQuote = new ApproveRepairQuote(quoteRepository, changeRepairStatus);
 const updateRepairTechnical = new UpdateRepairTechnical(repairRepository, userRepository);
-const listTechnicians = new ListTechnicians(userRepository);
-
-await app.register(jwt, { secret: config.get("JWT_SECRET"), sign: { expiresIn: config.get("JWT_EXPIRES_IN") } });
 
 app.get("/health", async () => ({
   status: "ok",
@@ -56,18 +64,17 @@ app.get("/health", async () => ({
   timestamp: new Date().toISOString()
 }));
 
-registerAuthRoutes(app, authenticationService, appDataSource);
+registerAuthRoutes(app, authenticationService, dataSource, commandBus);
 registerCustomerRoutes(app, createCustomer, listCustomers, getCustomer, updateCustomer);
 registerRepairRoutes(app, createRepair, listRepairs, changeRepairStatus, getRepairStatusHistory, updateRepairTechnical, getRepairQuote, saveRepairQuote, approveRepairQuote);
 
-app.get("/api/users", { preHandler: requirePermission(PERMISSIONS.usersManage) }, async () => listUsers.execute());
-app.get("/api/technicians", { preHandler: requirePermission(PERMISSIONS.repairsManage) }, async () => listTechnicians.execute());
+app.get("/api/users", { preHandler: requirePermission(PERMISSIONS.usersManage) }, async () => queryBus.execute(new ListUsersQuery()));
+app.get("/api/technicians", { preHandler: requirePermission(PERMISSIONS.repairsManage) }, async () => queryBus.execute(new ListTechniciansQuery()));
 
 const port = config.get("API_PORT");
 
 try {
-  await appDataSource.initialize();
-  await app.listen({ port, host: "0.0.0.0" });
+  await xtaskApplication.listen({ port, host: "0.0.0.0" });
 } catch (error) {
   app.log.error(error);
   process.exit(1);
