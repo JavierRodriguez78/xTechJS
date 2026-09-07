@@ -24,6 +24,7 @@ export class InitialUsersMigration implements MigrationInterface {
   }
 
   async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query('DROP TABLE "audit_logs"');
     await queryRunner.query('DROP TABLE "users"');
   }
 }

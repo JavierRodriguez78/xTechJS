@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import { ref } from "vue";
+import CustomerManagement from "./features/customers/CustomerManagement.vue";
+
+const activeView = ref<"dashboard" | "customers">("dashboard");
+
 const repairSummary = [
   { label: "En diagnostico", value: 12, tone: "amber" },
   { label: "En reparacion", value: 8, tone: "blue" },
@@ -17,9 +22,9 @@ const recentRepairs = [
     <aside class="sidebar">
       <a class="brand" href="#">xTech<span>JS</span></a>
       <nav aria-label="Navegacion principal">
-        <a class="active" href="#">Panel</a>
+        <a :class="{ active: activeView === 'dashboard' }" href="#panel" @click.prevent="activeView = 'dashboard'">Panel</a>
         <a href="#">Reparaciones</a>
-        <a href="#">Clientes</a>
+        <a :class="{ active: activeView === 'customers' }" href="#clientes" @click.prevent="activeView = 'customers'">Clientes</a>
         <a href="#">Almacen</a>
         <a href="#">TPV</a>
         <a href="#">Mensajes</a>
@@ -30,7 +35,8 @@ const recentRepairs = [
       </div>
     </aside>
 
-    <section class="content">
+    <CustomerManagement v-if="activeView === 'customers'" class="content" />
+    <section v-else class="content">
       <header>
         <div>
           <p class="eyebrow">Operacion diaria</p>

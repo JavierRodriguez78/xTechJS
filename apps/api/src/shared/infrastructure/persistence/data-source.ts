@@ -1,5 +1,7 @@
 import { DataSource } from "typeorm";
 import { loadConfig } from "../config/app-config.js";
+import { InitialCustomersMigration } from "../../../customers/infrastructure/persistence/migrations/1735948800000-initial-customers.js";
+import { CustomerEntitySchema } from "../../../customers/infrastructure/persistence/customer-entity.js";
 import { InitialUsersMigration } from "../../../users/infrastructure/persistence/migrations/1735862400000-initial-users.js";
 import { UserEntitySchema } from "../../../users/infrastructure/persistence/user-entity.js";
 
@@ -12,8 +14,8 @@ export const appDataSource = new DataSource({
   database: config.get("POSTGRES_DB"),
   username: config.get("POSTGRES_USER"),
   password: config.get("POSTGRES_PASSWORD"),
-  entities: [UserEntitySchema],
-  migrations: [InitialUsersMigration],
+  entities: [UserEntitySchema, CustomerEntitySchema],
+  migrations: [InitialUsersMigration, InitialCustomersMigration],
   synchronize: false
 });
 

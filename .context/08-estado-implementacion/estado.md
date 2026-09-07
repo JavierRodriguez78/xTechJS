@@ -1,6 +1,6 @@
 # Estado de implementacion - xTechJS
 
-**Actualizado:** 2026-09-04
+**Actualizado:** 2026-09-07
 
 Este documento complementa la especificacion funcional. Describe exclusivamente lo que
 existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase.
@@ -24,6 +24,10 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   login JWT, guards HTTP por permiso y suplantacion de tecnico/cliente con auditoria
   en `audit_logs`. La autenticacion se implementa con `@fastify/jwt`; la integracion
   declarativa de `@xtaskjs/security` sigue pendiente junto al kernel de xTaskJS.
+- Primer vertical CRM de clientes: entidad TypeORM, migracion, puerto y repositorio
+  PostgreSQL, casos de uso para alta, listado, ficha y edicion. Expone rutas
+  `GET`/`POST /api/customers` y `GET`/`PUT /api/customers/:id` protegidas por
+  permisos. La consola Vue permite consultar, crear y editar clientes con JWT.
 - Dependencias xTaskJS declaradas para `core`, `common`, `config`, `cqrs`,
   `fastify-http`, `security`, `validation` y `value-objects`. `config` ya se usa
   desde la API; las demas se integraran al implementar sus capacidades.
@@ -40,9 +44,10 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 
 - `pnpm install --ignore-scripts` completado correctamente.
 - `pnpm typecheck` completado correctamente para API y frontend.
-- `pnpm --filter @xtechjs/api test`: 5 pruebas RBAC y autenticacion superadas, 0 fallos.
-- `pnpm --filter @xtechjs/api build` completado correctamente despues de integrar
-  la persistencia de usuarios con TypeORM.
+- `pnpm --filter @xtechjs/api test`: 6 pruebas RBAC, autenticacion y CRM superadas,
+  0 fallos despues del ajuste final del contrato de persistencia.
+- `pnpm --filter @xtechjs/api build` y `pnpm --filter @xtechjs/web build` completados
+  correctamente despues de incorporar el vertical CRM.
 - `GET http://127.0.0.1:3000/health` respondio correctamente durante desarrollo local.
 - No se pudo ejecutar `docker compose config` ni construir contenedores porque Docker
   CLI no esta disponible en la distribucion WSL actual. Se requiere habilitar la
@@ -69,7 +74,8 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 
 ### Funcionalidad
 
-- CRM: clientes, etiquetas, historial y notificaciones.
+- CRM: historial de interacciones/reparaciones y registro de notificaciones. Alta,
+  listado, ficha, edicion y etiquetado inicial ya existen.
 - Reparaciones: ordenes, equipos, diagnostico, estados, presupuesto, timeline,
   adjuntos, consumo de materiales y aprobacion de cliente.
 - Almacen: catalogo, stock, movimientos, alertas y proveedores.
@@ -103,19 +109,19 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 ## Siguiente fase recomendada
 
 1. Aplicar DI y el ciclo de vida de xTaskJS al modulo de usuarios.
-2. Implementar el primer vertical funcional: alta y consulta de clientes protegidas
-  por permisos, con su pantalla administrativa en Vue.
+2. Completar CRM con historial de interacciones/reparaciones, o iniciar el modulo de
+  reparaciones que consume clientes.
 3. Ejecutar y validar la pila Docker completa antes de incorporar servicios que
    dependan de ella.
 
 ## Punto de reanudacion
 
-El siguiente trabajo debe comenzar en la aplicacion del kernel/DI de xTaskJS al modulo
-de usuarios o en el vertical de clientes. Usuarios dispone de contraseñas, JWT y
-guards HTTP: `POST /api/auth/bootstrap`, `POST /api/auth/login` y
-`POST /api/auth/impersonate/:userId`; `GET /api/users` requiere permiso de gestion de
-usuarios. PostgreSQL contiene `users` y `audit_logs` tras la migracion inicial. No hay
-datos semilla: el primer administrador debe crearse con el endpoint bootstrap.
+El siguiente trabajo debe comenzar en la aplicacion del kernel/DI de xTaskJS, en la
+historial CRM del cliente o en el modulo de reparaciones. El CRM ya expone
+`GET`/`POST /api/customers` y `GET`/`PUT /api/customers/:id`; alta y edicion exigen
+`customers:manage`, mientras las consultas requieren `customers:read`. La consola
+muestra Clientes desde su navegacion y usa el access token obtenido con login.
+PostgreSQL contiene `users`, `audit_logs` y `customers` tras ejecutar migraciones.
 
 ## Criterio de actualizacion
 
