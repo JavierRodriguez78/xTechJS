@@ -19,11 +19,16 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   TypeORM y migracion inicial. El contenedor de API ejecuta las migraciones antes de
   arrancar; en local se puede usar `pnpm --filter @xtechjs/api migration:run` tras
   compilar la API.
+- Migracion incremental de credenciales para bases creadas antes de `password_hash`;
+  evita que los volumenes PostgreSQL existentes requieran borrarse al desplegar auth.
 - Matriz RBAC de permisos extensible y pruebas unitarias de roles.
 - Autenticacion inicial: bootstrap de administrador, contraseñas con hash bcrypt,
   login JWT, guards HTTP por permiso y suplantacion de tecnico/cliente con auditoria
   en `audit_logs`. La autenticacion se implementa con `@fastify/jwt`; la integracion
   declarativa de `@xtaskjs/security` sigue pendiente junto al kernel de xTaskJS.
+- Portal interno Vue protegido por login: usa `POST /api/auth/staff/login`, persiste
+  el JWT y el perfil en `localStorage`, rechaza el rol `customer` y permite cerrar
+  sesion. El portal de cliente queda pendiente como aplicacion independiente.
 - Primer vertical CRM de clientes: entidad TypeORM, migracion, puerto y repositorio
   PostgreSQL, casos de uso para alta, listado, ficha y edicion. Expone rutas
   `GET`/`POST /api/customers` y `GET`/`PUT /api/customers/:id` protegidas por
@@ -36,7 +41,7 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 - Docker Compose declara cuatro servicios independientes: `web`, `api`, `postgres`
   y `redis`, con healthchecks y volumenes persistentes para datos.
 - Imagen de API Node y una imagen de frontend Nginx con proxy interno de `/api` a
-  `api:3000`.
+  `api:3000`, preservando el prefijo `/api` necesario para las rutas Fastify.
 - `Makefile` raiz para instalar dependencias, desarrollo local, Docker, shells de
   contenedores, migraciones, pruebas, typecheck y compilacion.
 
@@ -44,10 +49,10 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 
 - `pnpm install --ignore-scripts` completado correctamente.
 - `pnpm typecheck` completado correctamente para API y frontend.
-- `pnpm --filter @xtechjs/api test`: 6 pruebas RBAC, autenticacion y CRM superadas,
-  0 fallos despues del ajuste final del contrato de persistencia.
+- `pnpm --filter @xtechjs/api test`: 8 pruebas RBAC, autenticacion y CRM superadas,
+  0 fallos tras incorporar el acceso interno.
 - `pnpm --filter @xtechjs/api build` y `pnpm --filter @xtechjs/web build` completados
-  correctamente despues de incorporar el vertical CRM.
+  correctamente tras incorporar el login persistente del portal interno.
 - `GET http://127.0.0.1:3000/health` respondio correctamente durante desarrollo local.
 - No se pudo ejecutar `docker compose config` ni construir contenedores porque Docker
   CLI no esta disponible en la distribucion WSL actual. Se requiere habilitar la
@@ -86,7 +91,8 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 ### Frontend
 
 - Router, arquitectura por features y cliente HTTP/WebSocket.
-- Autenticacion, almacenamiento de sesion y guards por rol.
+- Router y guards de navegacion por rol. El portal interno ya dispone de autenticacion
+  persistente para admin/tecnico, pero aun no tiene router ni portal de cliente.
 - Vistas funcionales para admin, tecnico y cliente.
 - Formularios, validacion, estados de carga/error y conexion con API.
 - Carga y reproduccion segura de fotos y videos.
@@ -117,7 +123,8 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 ## Punto de reanudacion
 
 El siguiente trabajo debe comenzar en la aplicacion del kernel/DI de xTaskJS, en la
-historial CRM del cliente o en el modulo de reparaciones. El CRM ya expone
+historial CRM del cliente o en el modulo de reparaciones. El portal interno solo es
+accesible tras `POST /api/auth/staff/login` para admin/tecnico. El CRM ya expone
 `GET`/`POST /api/customers` y `GET`/`PUT /api/customers/:id`; alta y edicion exigen
 `customers:manage`, mientras las consultas requieren `customers:read`. La consola
 muestra Clientes desde su navegacion y usa el access token obtenido con login.

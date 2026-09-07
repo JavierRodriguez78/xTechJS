@@ -3,6 +3,7 @@ import test from "node:test";
 import type { User, UserCredentials } from "../domain/user.js";
 import type { UserRepository } from "./user-repository.js";
 import { AuthenticationService } from "./authentication-service.js";
+import { isStaffRole } from "../../shared/domain/user-role.js";
 
 class TestUserRepository implements UserRepository {
   private readonly users: UserCredentials[] = [];
@@ -43,4 +44,10 @@ test("authentication rejects an invalid password", async () => {
   await service.bootstrapAdmin({ email: "admin@xtechjs.local", displayName: "Admin", password: "a-secure-password" });
 
   assert.equal(await service.authenticate("admin@xtechjs.local", "incorrect-password"), undefined);
+});
+
+test("only administrators and technicians belong to the internal portal", () => {
+  assert.equal(isStaffRole("admin"), true);
+  assert.equal(isStaffRole("technician"), true);
+  assert.equal(isStaffRole("customer"), false);
 });

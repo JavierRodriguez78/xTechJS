@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import StaffLogin from "./features/auth/StaffLogin.vue";
+import { signOut, staffSession } from "./features/auth/session";
 import CustomerManagement from "./features/customers/CustomerManagement.vue";
 
 const activeView = ref<"dashboard" | "customers">("dashboard");
@@ -18,7 +20,8 @@ const recentRepairs = [
 </script>
 
 <template>
-  <main class="workspace">
+  <StaffLogin v-if="!staffSession" />
+  <main v-else class="workspace">
     <aside class="sidebar">
       <a class="brand" href="#">xTech<span>JS</span></a>
       <nav aria-label="Navegacion principal">
@@ -30,12 +33,13 @@ const recentRepairs = [
         <a href="#">Mensajes</a>
       </nav>
       <div class="profile">
-        <strong>Admin Taller</strong>
-        <span>Administracion</span>
+        <strong>{{ staffSession.user.displayName }}</strong>
+        <span>{{ staffSession.user.role === "admin" ? "Administracion" : "Tecnico" }}</span>
+        <button class="logout" type="button" @click="signOut">Salir</button>
       </div>
     </aside>
 
-    <CustomerManagement v-if="activeView === 'customers'" class="content" />
+    <CustomerManagement v-if="activeView === 'customers'" class="content" :access-token="staffSession.accessToken" />
     <section v-else class="content">
       <header>
         <div>

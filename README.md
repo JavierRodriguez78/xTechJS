@@ -56,6 +56,11 @@ El inicio de sesion se realiza en `POST /api/auth/login`. La respuesta contiene 
 `accessToken` JWT que debe enviarse como `Authorization: Bearer <token>` en las rutas
 protegidas, como `GET /api/users`.
 
+El frontend incluido en este repositorio es el portal interno de administracion y taller.
+Su pagina de login usa `POST /api/auth/staff/login` y solo permite roles `admin` y
+`technician`; conserva la sesion JWT en el navegador hasta pulsar "Salir". El futuro
+portal de cliente usara una aplicacion y ruta de acceso independientes.
+
 ## Pila Docker completa
 
 ```bash

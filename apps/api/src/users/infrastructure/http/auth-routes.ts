@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import type { DataSource } from "typeorm";
-import type { UserRole } from "../../../shared/domain/user-role.js";
+import { isStaffRole, type UserRole } from "../../../shared/domain/user-role.js";
 import type { AuthenticationService } from "../../application/authentication-service.js";
 import { hasPermission, PERMISSIONS, type Permission } from "../../domain/permission.js";
 import type { User } from "../../domain/user.js";
@@ -54,6 +54,16 @@ export function registerAuthRoutes(
     const user = await authenticationService.authenticate(input?.email ?? "", input?.password ?? "");
     if (!user) {
       return reply.code(401).send({ message: "Invalid credentials" });
+    }
+    const token = await reply.jwtSign({ sub: user.id, role: user.role });
+    return { accessToken: token, user: toPublicUser(user) };
+  });
+
+  app.post("/api/auth/staff/login", async (request, reply) => {
+    const input = request.body as { email: string; password: string };
+    const user = await authenticationService.authenticate(input?.email ?? "", input?.password ?? "");
+    if (!user || !isStaffRole(user.role)) {
+      return reply.code(401).send({ message: "Invalid staff credentials" });
     }
     const token = await reply.jwtSign({ sub: user.id, role: user.role });
     return { accessToken: token, user: toPublicUser(user) };

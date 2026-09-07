@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref } from "vue";
 
+defineProps<{ accessToken: string }>();
+
 interface Customer {
   id: string;
   displayName: string;
@@ -12,7 +14,6 @@ interface Customer {
   tags: string[];
 }
 
-const accessToken = ref("");
 const customers = ref<Customer[]>([]);
 const loading = ref(false);
 const errorMessage = ref("");
@@ -20,15 +21,15 @@ const successMessage = ref("");
 const selectedCustomerId = ref<string | null>(null);
 const form = ref({ displayName: "", email: "", phone: "", address: "", taxId: "", internalNotes: "", tags: "" });
 
-function headers(): HeadersInit {
-  return { "content-type": "application/json", authorization: `Bearer ${accessToken.value}` };
+function headers(accessToken: string): HeadersInit {
+  return { "content-type": "application/json", authorization: `Bearer ${accessToken}` };
 }
 
-async function loadCustomers(): Promise<void> {
+async function loadCustomers(accessToken: string): Promise<void> {
   loading.value = true;
   errorMessage.value = "";
   try {
-    const response = await fetch("/api/customers", { headers: headers() });
+    const response = await fetch("/api/customers", { headers: headers(accessToken) });
     if (!response.ok) throw new Error("No se pudieron cargar los clientes. Comprueba tu sesion.");
     customers.value = await response.json() as Customer[];
   } catch (error) {
@@ -38,12 +39,12 @@ async function loadCustomers(): Promise<void> {
   }
 }
 
-async function createCustomer(): Promise<void> {
+async function createCustomer(accessToken: string): Promise<void> {
   errorMessage.value = "";
   successMessage.value = "";
   const response = await fetch("/api/customers", {
     method: "POST",
-    headers: headers(),
+    headers: headers(accessToken),
     body: JSON.stringify({
       displayName: form.value.displayName,
       email: form.value.email || undefined,
@@ -60,12 +61,12 @@ async function createCustomer(): Promise<void> {
   }
   resetForm();
   successMessage.value = "Cliente creado.";
-  await loadCustomers();
+  await loadCustomers(accessToken);
 }
 
-async function selectCustomer(id: string): Promise<void> {
+async function selectCustomer(id: string, accessToken: string): Promise<void> {
   errorMessage.value = "";
-  const response = await fetch(`/api/customers/${id}`, { headers: headers() });
+  const response = await fetch(`/api/customers/${id}`, { headers: headers(accessToken) });
   if (!response.ok) {
     errorMessage.value = "No se pudo cargar la ficha del cliente.";
     return;
@@ -83,13 +84,13 @@ async function selectCustomer(id: string): Promise<void> {
   };
 }
 
-async function saveCustomer(): Promise<void> {
-  if (!selectedCustomerId.value) return createCustomer();
+async function saveCustomer(accessToken: string): Promise<void> {
+  if (!selectedCustomerId.value) return createCustomer(accessToken);
   errorMessage.value = "";
   successMessage.value = "";
   const response = await fetch(`/api/customers/${selectedCustomerId.value}`, {
     method: "PUT",
-    headers: headers(),
+    headers: headers(accessToken),
     body: JSON.stringify({
       displayName: form.value.displayName,
       email: form.value.email || undefined,
@@ -105,7 +106,7 @@ async function saveCustomer(): Promise<void> {
     return;
   }
   successMessage.value = "Ficha actualizada.";
-  await loadCustomers();
+  await loadCustomers(accessToken);
 }
 
 function resetForm(): void {
@@ -123,15 +124,9 @@ function resetForm(): void {
       </div>
     </header>
 
-    <section class="session-bar" aria-label="Sesion administrativa">
-      <label>
-        <span>Token de sesion</span>
-        <input v-model="accessToken" type="password" placeholder="Pega el accessToken del login" autocomplete="off" />
-      </label>
-      <button type="button" :disabled="loading || !accessToken" @click="loadCustomers">
-        {{ loading ? "Cargando" : "Cargar clientes" }}
-      </button>
-    </section>
+    <button class="load-customers" type="button" :disabled="loading" @click="loadCustomers(accessToken)">
+      {{ loading ? "Cargando" : "Actualizar clientes" }}
+    </button>
 
     <div class="customer-grid">
       <section class="customer-list" aria-labelledby="customer-list-title">
@@ -146,7 +141,7 @@ function resetForm(): void {
         <p v-else-if="!customers.length" class="empty">Carga la lista para consultar los clientes registrados.</p>
         <ul v-else class="customer-items">
           <li v-for="customer in customers" :key="customer.id">
-            <button type="button" :class="{ selected: customer.id === selectedCustomerId }" @click="selectCustomer(customer.id)">
+            <button type="button" :class="{ selected: customer.id === selectedCustomerId }" @click="selectCustomer(customer.id, accessToken)">
             <div>
               <strong>{{ customer.displayName }}</strong>
               <span>{{ customer.email || customer.phone || "Sin datos de contacto" }}</span>
@@ -157,7 +152,7 @@ function resetForm(): void {
         </ul>
       </section>
 
-      <form class="customer-form" @submit.prevent="saveCustomer">
+      <form class="customer-form" @submit.prevent="saveCustomer(accessToken)">
         <div>
           <p class="eyebrow">{{ selectedCustomerId ? "Ficha" : "Alta" }}</p>
           <h2>{{ selectedCustomerId ? "Editar cliente" : "Nuevo cliente" }}</h2>
@@ -172,7 +167,7 @@ function resetForm(): void {
         <p v-if="successMessage" class="feedback success">{{ successMessage }}</p>
         <div class="form-actions">
           <button v-if="selectedCustomerId" class="secondary" type="button" @click="resetForm">Nuevo</button>
-          <button type="submit" :disabled="!accessToken">{{ selectedCustomerId ? "Guardar cambios" : "Guardar cliente" }}</button>
+          <button type="submit">{{ selectedCustomerId ? "Guardar cambios" : "Guardar cliente" }}</button>
         </div>
       </form>
     </div>
