@@ -7,3 +7,7 @@ export interface User {
   role: UserRole;
   active: boolean;
 }
+
+export interface UserCredentials extends User {
+  passwordHash: string;
+}

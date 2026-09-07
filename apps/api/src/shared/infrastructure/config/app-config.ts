@@ -10,7 +10,9 @@ const environmentSchema = z.object({
   POSTGRES_USER: z.string().min(1).default("xtechjs"),
   POSTGRES_PASSWORD: z.string().min(1).default("change-me"),
   REDIS_HOST: z.string().min(1).default("localhost"),
-  REDIS_PORT: z.coerce.number().int().min(1).max(65535).default(6379)
+  REDIS_PORT: z.coerce.number().int().min(1).max(65535).default(6379),
+  JWT_SECRET: z.string().min(32).default("development-only-secret-change-me-32"),
+  JWT_EXPIRES_IN: z.string().min(1).default("8h")
 });
 
 export type AppConfig = z.infer<typeof environmentSchema>;

@@ -1,6 +1,6 @@
 import type { DataSource } from "typeorm";
 import type { UserRepository } from "../../application/user-repository.js";
-import type { User } from "../../domain/user.js";
+import type { User, UserCredentials } from "../../domain/user.js";
 import { UserEntitySchema } from "./user-entity.js";
 
 export class PostgresUserRepository implements UserRepository {
@@ -12,5 +12,24 @@ export class PostgresUserRepository implements UserRepository {
 
   findById(id: string): Promise<User | undefined> {
     return this.dataSource.getRepository(UserEntitySchema).findOneBy({ id }).then((user) => user ?? undefined);
+  }
+
+  findByEmail(email: string): Promise<UserCredentials | undefined> {
+    return this.dataSource
+      .getRepository(UserEntitySchema)
+      .createQueryBuilder("user")
+      .addSelect("user.passwordHash")
+      .where("user.email = :email", { email })
+      .getOne()
+      .then((user) => user ?? undefined);
+  }
+
+  count(): Promise<number> {
+    return this.dataSource.getRepository(UserEntitySchema).count();
+  }
+
+  async create(user: UserCredentials): Promise<User> {
+    const { passwordHash: _, ...publicUser } = await this.dataSource.getRepository(UserEntitySchema).save(user);
+    return publicUser;
   }
 }

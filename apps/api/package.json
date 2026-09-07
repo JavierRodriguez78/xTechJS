@@ -21,6 +21,8 @@
     "@xtaskjs/typeorm": "^1.0.37",
     "@xtaskjs/validation": "^1.0.7",
     "@xtaskjs/value-objects": "^1.0.27",
+    "@fastify/jwt": "^10.2.2",
+    "bcryptjs": "^3.0.3",
     "fastify": "^5.6.2",
     "pg": "^8.23.0",
     "typeorm": "^0.3.28",

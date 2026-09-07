@@ -1,10 +1,10 @@
 import type { UserRepository } from "../../application/user-repository.js";
-import type { User } from "../../domain/user.js";
+import type { User, UserCredentials } from "../../domain/user.js";
 
-const users: readonly User[] = [
-  { id: "admin-1", email: "admin@xtechjs.local", displayName: "Admin Taller", role: "admin", active: true },
-  { id: "technician-1", email: "tecnico@xtechjs.local", displayName: "Ana Tecnica", role: "technician", active: true },
-  { id: "customer-1", email: "cliente@xtechjs.local", displayName: "Marta Ruiz", role: "customer", active: true }
+const users: UserCredentials[] = [
+  { id: "admin-1", email: "admin@xtechjs.local", displayName: "Admin Taller", role: "admin", active: true, passwordHash: "test-only" },
+  { id: "technician-1", email: "tecnico@xtechjs.local", displayName: "Ana Tecnica", role: "technician", active: true, passwordHash: "test-only" },
+  { id: "customer-1", email: "cliente@xtechjs.local", displayName: "Marta Ruiz", role: "customer", active: true, passwordHash: "test-only" }
 ];
 
 export class InMemoryUserRepository implements UserRepository {
@@ -14,5 +14,18 @@ export class InMemoryUserRepository implements UserRepository {
 
   async findById(id: string): Promise<User | undefined> {
     return users.find((user) => user.id === id);
+  }
+
+  async findByEmail(email: string): Promise<UserCredentials | undefined> {
+    return users.find((user) => user.email === email);
+  }
+
+  async count(): Promise<number> {
+    return users.length;
+  }
+
+  async create(user: UserCredentials): Promise<User> {
+    users.push(user);
+    return user;
   }
 }

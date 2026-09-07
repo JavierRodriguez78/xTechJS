@@ -1,6 +1,6 @@
 # Estado de implementacion - xTechJS
 
-**Actualizado:** 2026-09-03
+**Actualizado:** 2026-09-04
 
 Este documento complementa la especificacion funcional. Describe exclusivamente lo que
 existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase.
@@ -20,6 +20,10 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   arrancar; en local se puede usar `pnpm --filter @xtechjs/api migration:run` tras
   compilar la API.
 - Matriz RBAC de permisos extensible y pruebas unitarias de roles.
+- Autenticacion inicial: bootstrap de administrador, contraseñas con hash bcrypt,
+  login JWT, guards HTTP por permiso y suplantacion de tecnico/cliente con auditoria
+  en `audit_logs`. La autenticacion se implementa con `@fastify/jwt`; la integracion
+  declarativa de `@xtaskjs/security` sigue pendiente junto al kernel de xTaskJS.
 - Dependencias xTaskJS declaradas para `core`, `common`, `config`, `cqrs`,
   `fastify-http`, `security`, `validation` y `value-objects`. `config` ya se usa
   desde la API; las demas se integraran al implementar sus capacidades.
@@ -36,7 +40,7 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 
 - `pnpm install --ignore-scripts` completado correctamente.
 - `pnpm typecheck` completado correctamente para API y frontend.
-- `pnpm --filter @xtechjs/api test`: 3 pruebas RBAC superadas, 0 fallos.
+- `pnpm --filter @xtechjs/api test`: 5 pruebas RBAC y autenticacion superadas, 0 fallos.
 - `pnpm --filter @xtechjs/api build` completado correctamente despues de integrar
   la persistencia de usuarios con TypeORM.
 - `GET http://127.0.0.1:3000/health` respondio correctamente durante desarrollo local.
@@ -58,8 +62,8 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 - Modelar agregados, value objects, puertos y repositorios.
 - Completar los repositorios y migraciones de los demas bounded contexts con TypeORM.
 - Implementar CQRS: comandos, queries, handlers y proyecciones.
-- Autenticacion JWT, auditoria e impersonacion de administradores. El RBAC de dominio
-  ya existe, pero aun no protege rutas HTTP ni hay inicio de sesion.
+- Integrar la seguridad declarativa de `@xtaskjs/security` cuando se incorpore el
+  kernel xTaskJS. JWT, RBAC HTTP, auditoria e impersonacion iniciales ya existen.
 - Cache Redis, rate limiting, correo, scheduler, Socket.IO y adjuntos.
 - Tests de dominio y aplicacion con `@xtaskjs/testing`.
 
@@ -98,21 +102,20 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 
 ## Siguiente fase recomendada
 
-1. Completar `usuarios/auth`: contraseñas, JWT, guards HTTP, auditoria e
-  impersonacion.
-2. Aplicar DI y el ciclo de vida de xTaskJS al modulo de usuarios.
-3. Implementar el primer vertical funcional: alta y consulta de clientes protegidas
+1. Aplicar DI y el ciclo de vida de xTaskJS al modulo de usuarios.
+2. Implementar el primer vertical funcional: alta y consulta de clientes protegidas
   por permisos, con su pantalla administrativa en Vue.
-4. Ejecutar y validar la pila Docker completa antes de incorporar servicios que
+3. Ejecutar y validar la pila Docker completa antes de incorporar servicios que
    dependan de ella.
 
 ## Punto de reanudacion
 
-El siguiente trabajo debe comenzar en `apps/api/src/users`: implementar credenciales,
-JWT y guards HTTP sobre el modulo de usuarios existente. PostgreSQL ya tiene entidad
-`users`, repositorio TypeORM y migracion inicial; aun no hay datos semilla ni tabla de
-credenciales. El adaptador `InMemoryUserRepository` se conserva solo para pruebas
-aisladas y no debe utilizarse como almacenamiento de produccion.
+El siguiente trabajo debe comenzar en la aplicacion del kernel/DI de xTaskJS al modulo
+de usuarios o en el vertical de clientes. Usuarios dispone de contraseñas, JWT y
+guards HTTP: `POST /api/auth/bootstrap`, `POST /api/auth/login` y
+`POST /api/auth/impersonate/:userId`; `GET /api/users` requiere permiso de gestion de
+usuarios. PostgreSQL contiene `users` y `audit_logs` tras la migracion inicial. No hay
+datos semilla: el primer administrador debe crearse con el endpoint bootstrap.
 
 ## Criterio de actualizacion
 

@@ -1,7 +1,7 @@
 import { EntitySchema } from "typeorm";
-import type { User } from "../../domain/user.js";
+import type { UserCredentials } from "../../domain/user.js";
 
-export const UserEntitySchema = new EntitySchema<User>({
+export const UserEntitySchema = new EntitySchema<UserCredentials>({
   name: "User",
   tableName: "users",
   columns: {
@@ -9,6 +9,7 @@ export const UserEntitySchema = new EntitySchema<User>({
     email: { type: String, unique: true },
     displayName: { type: String, name: "display_name" },
     role: { type: String },
-    active: { type: Boolean, default: true }
+    active: { type: Boolean, default: true },
+    passwordHash: { type: String, name: "password_hash", select: false }
   }
 });

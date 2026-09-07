@@ -41,6 +41,21 @@ make db-up
 
 La API queda disponible en `http://localhost:3000/health` y el cliente en `http://localhost:5173`.
 
+## Autenticacion inicial
+
+Configura un valor aleatorio de al menos 32 caracteres para `JWT_SECRET` en `.env`.
+Con una base de datos vacia, crea el unico administrador inicial antes de iniciar sesion:
+
+```bash
+curl -X POST http://localhost:3000/api/auth/bootstrap \
+	-H 'content-type: application/json' \
+	-d '{"email":"admin@example.com","displayName":"Administrador","password":"una-contrasena-segura"}'
+```
+
+El inicio de sesion se realiza en `POST /api/auth/login`. La respuesta contiene un
+`accessToken` JWT que debe enviarse como `Authorization: Bearer <token>` en las rutas
+protegidas, como `GET /api/users`.
+
 ## Pila Docker completa
 
 ```bash
