@@ -1,6 +1,9 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import type { DataSource } from "typeorm";
 import type { CommandBus, QueryBus } from "@xtaskjs/cqrs";
+import { Controller, Body, Param, Post, Req, Res, UseGuards } from "@xtaskjs/common";
+import { InjectCommandBus, InjectQueryBus } from "@xtaskjs/cqrs";
+import { InjectDataSource } from "@xtaskjs/typeorm";
 import { isStaffRole, type UserRole } from "../../../shared/domain/user-role.js";
 import type { AuthenticationService } from "../../application/authentication-service.js";
 import { AuthenticateUserCommand, BootstrapAdminCommand, FindActiveNonAdminUserQuery } from "../../application/cqrs/user-messages.js";
@@ -29,58 +32,69 @@ export function requirePermission(permission: Permission) {
   };
 }
 
+export function requireControllerPermission(permission: Permission) {
+  return async ({ request }: { request?: FastifyRequest }): Promise<boolean> => {
+    if (!request) return false;
+    await request.jwtVerify();
+    return hasPermission(request.user.role, permission);
+  };
+}
+
 function toPublicUser(user: User): User {
   const { passwordHash: _, ...publicUser } = user as User & { passwordHash?: string };
   return publicUser;
 }
 
-export function registerAuthRoutes(
-  app: FastifyInstance,
-  dataSource: DataSource,
-  commandBus: CommandBus,
-  queryBus: QueryBus
-): void {
-  app.post("/api/auth/bootstrap", async (request, reply) => {
-    const input = request.body as { email: string; displayName: string; password: string };
+@Controller("/api/auth")
+export class AuthController {
+  constructor(
+    @InjectDataSource() private readonly dataSource: DataSource,
+    @InjectCommandBus() private readonly commandBus: CommandBus,
+    @InjectQueryBus() private readonly queryBus: QueryBus
+  ) {}
+
+  @Post("/bootstrap")
+  async bootstrap(@Body() input: { email: string; displayName: string; password: string }, @Res() reply: { code(statusCode: number): { send(payload: unknown): unknown } }): Promise<unknown> {
     if (!input?.email || !input.displayName || !input.password || input.password.length < 12) {
       return reply.code(400).send({ message: "Email, display name and a password of at least 12 characters are required" });
     }
     try {
-      return reply.code(201).send(toPublicUser(await commandBus.execute(new BootstrapAdminCommand(input))));
+      return reply.code(201).send(toPublicUser(await this.commandBus.execute(new BootstrapAdminCommand(input))));
     } catch (error) {
       return reply.code(409).send({ message: (error as Error).message });
     }
-  });
+  }
 
-  app.post("/api/auth/login", async (request, reply) => {
-    const input = request.body as { email: string; password: string };
-    const user = await commandBus.execute(new AuthenticateUserCommand(input?.email ?? "", input?.password ?? ""));
+  @Post("/login")
+  async login(@Body() input: { email: string; password: string }, @Req() request: FastifyRequest, @Res() reply: { code(statusCode: number): { send(payload: unknown): unknown } }): Promise<unknown> {
+    const user = await this.commandBus.execute(new AuthenticateUserCommand(input?.email ?? "", input?.password ?? ""));
     if (!user) {
       return reply.code(401).send({ message: "Invalid credentials" });
     }
-    const token = await reply.jwtSign({ sub: user.id, role: user.role });
+    const token = request.server.jwt.sign({ sub: user.id, role: user.role });
     return { accessToken: token, user: toPublicUser(user) };
-  });
+  }
 
-  app.post("/api/auth/staff/login", async (request, reply) => {
-    const input = request.body as { email: string; password: string };
-    const user = await commandBus.execute(new AuthenticateUserCommand(input?.email ?? "", input?.password ?? ""));
+  @Post("/staff/login")
+  async staffLogin(@Body() input: { email: string; password: string }, @Req() request: FastifyRequest, @Res() reply: { code(statusCode: number): { send(payload: unknown): unknown } }): Promise<unknown> {
+    const user = await this.commandBus.execute(new AuthenticateUserCommand(input?.email ?? "", input?.password ?? ""));
     if (!user || !isStaffRole(user.role)) {
       return reply.code(401).send({ message: "Invalid staff credentials" });
     }
-    const token = await reply.jwtSign({ sub: user.id, role: user.role });
+    const token = request.server.jwt.sign({ sub: user.id, role: user.role });
     return { accessToken: token, user: toPublicUser(user) };
-  });
+  }
 
-  app.post("/api/auth/impersonate/:userId", { preHandler: requirePermission(PERMISSIONS.impersonationUse) }, async (request, reply) => {
-    const targetId = (request.params as { userId: string }).userId;
-    const target = await queryBus.execute(new FindActiveNonAdminUserQuery(targetId));
+  @Post("/impersonate/:userId")
+  @UseGuards(requireControllerPermission(PERMISSIONS.impersonationUse))
+  async impersonate(@Param("userId") targetId: string, @Req() request: FastifyRequest, @Res() reply: { code(statusCode: number): { send(payload: unknown): unknown } }): Promise<unknown> {
+    const target = await this.queryBus.execute(new FindActiveNonAdminUserQuery(targetId));
     if (!target) {
       return reply.code(404).send({ message: "Active technician or customer not found" });
     }
 
-    await recordImpersonation(dataSource, request.user.sub, target.id);
-    const accessToken = await reply.jwtSign({ sub: target.id, role: target.role, impersonatorId: request.user.sub });
+    await recordImpersonation(this.dataSource, request.user.sub, target.id);
+    const accessToken = request.server.jwt.sign({ sub: target.id, role: target.role, impersonatorId: request.user.sub });
     return { accessToken, user: toPublicUser(target), impersonatedBy: request.user.sub };
-  });
+  }
 }

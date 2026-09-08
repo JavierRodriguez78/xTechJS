@@ -1,13 +1,10 @@
 import type { DataSource } from "typeorm";
-import { Repository as XTaskRepository } from "@xtaskjs/core";
-import { InjectDataSource } from "@xtaskjs/typeorm";
 import type { UserRepository } from "../../application/user-repository.js";
 import type { User, UserCredentials } from "../../domain/user.js";
 import { UserEntitySchema } from "./user-entity.js";
 
-@XTaskRepository({ name: "userRepository" })
 export class PostgresUserRepository implements UserRepository {
-  constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
+  constructor(private readonly dataSource: DataSource) {}
 
   findAll(): Promise<readonly User[]> {
     return this.dataSource.getRepository(UserEntitySchema).find({ order: { displayName: "ASC" } });

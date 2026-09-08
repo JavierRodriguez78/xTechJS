@@ -6,6 +6,7 @@ import { FastifyAdapter } from "@xtaskjs/fastify-http";
 import { getTypeOrmLifecycleManager } from "@xtaskjs/typeorm";
 import "./shared/infrastructure/cqrs/cqrs-configuration.js";
 import "./users/application/cqrs/user-handlers.js";
+import "./users/infrastructure/http/user-controller.js";
 import { CreateCustomer } from "./customers/application/create-customer.js";
 import { GetCustomer } from "./customers/application/get-customer.js";
 import { ListCustomers } from "./customers/application/list-customers.js";
@@ -25,9 +26,6 @@ import { PostgresRepairOrderRepository } from "./repairs/infrastructure/persiste
 import { PostgresRepairQuoteRepository } from "./repairs/infrastructure/persistence/postgres-repair-quote-repository.js";
 import { loadConfig } from "./shared/infrastructure/config/app-config.js";
 import "./shared/infrastructure/persistence/data-source.js";
-import { ListTechniciansQuery, ListUsersQuery } from "./users/application/cqrs/user-messages.js";
-import { PERMISSIONS } from "./users/domain/permission.js";
-import { registerAuthRoutes, requirePermission } from "./users/infrastructure/http/auth-routes.js";
 import { PostgresUserRepository } from "./users/infrastructure/persistence/postgres-user-repository.js";
 
 const app = Fastify({ logger: true });
@@ -38,8 +36,8 @@ const xtaskApplication = await CreateApplication({ adapter: new FastifyAdapter(a
 const container = await xtaskApplication.getKernel().getContainer();
 const dataSource = getTypeOrmLifecycleManager().getDataSource("default");
 const commandBus = container.getByName<CommandBus>(getCommandBusToken());
-const queryBus = container.getByName<QueryBus>(getQueryBusToken());
 const userRepository = new PostgresUserRepository(dataSource);
+container.registerNamedInstance("userRepository", userRepository);
 const customerRepository = new PostgresCustomerRepository(dataSource);
 const createCustomer = new CreateCustomer(customerRepository);
 const listCustomers = new ListCustomers(customerRepository);
@@ -62,12 +60,8 @@ app.get("/health", async () => ({
   timestamp: new Date().toISOString()
 }));
 
-registerAuthRoutes(app, dataSource, commandBus, queryBus);
 registerCustomerRoutes(app, createCustomer, listCustomers, getCustomer, updateCustomer);
 registerRepairRoutes(app, createRepair, listRepairs, changeRepairStatus, getRepairStatusHistory, updateRepairTechnical, getRepairQuote, saveRepairQuote, approveRepairQuote);
-
-app.get("/api/users", { preHandler: requirePermission(PERMISSIONS.usersManage) }, async () => queryBus.execute(new ListUsersQuery()));
-app.get("/api/technicians", { preHandler: requirePermission(PERMISSIONS.repairsManage) }, async () => queryBus.execute(new ListTechniciansQuery()));
 
 const port = config.get("API_PORT");
 

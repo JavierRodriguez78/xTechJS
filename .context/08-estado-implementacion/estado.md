@@ -22,8 +22,9 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 - Piloto de DI y CQRS aplicado a usuarios: `PostgresUserRepository` y los servicios
   de usuarios estan registrados como componentes xTaskJS; `BootstrapAdmin` y
   `AuthenticateUser` se despachan por `CommandBus`, mientras listado de usuarios y
-  tecnicos se resuelve por `QueryBus`. Las rutas Fastify y sus contratos HTTP se
-  conservan durante esta migracion progresiva.
+  tecnicos se resuelve por `QueryBus`. `AuthController` y `UserController` exponen
+  con decoradores xTaskJS las rutas de autenticacion, usuarios y tecnicos; Fastify
+  queda como adaptador HTTP y se conservan contratos, JWT y permisos existentes.
 - Conexion PostgreSQL mediante TypeORM: `DataSource`, entidad `users`, repositorio
   TypeORM y migracion inicial. El contenedor de API ejecuta las migraciones antes de
   arrancar; en local se puede usar `pnpm --filter @xtechjs/api migration:run` tras
@@ -95,9 +96,9 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 
 - Diseñar los bounded contexts y la estructura hexagonal definitiva para usuarios,
   clientes, reparaciones, almacen, TPV y chat.
-- Extender el patron de DI/CQRS validado en usuarios a CRM y reparaciones. Estos
-  modulos conservan por ahora casos de uso y composicion manual sobre el datasource
-  administrado por xTaskJS.
+- Extender el patron de DI/CQRS y controladores xTaskJS validado en usuarios a CRM y
+  reparaciones. Estos modulos conservan por ahora casos de uso, rutas Fastify y
+  composicion manual sobre el datasource administrado por xTaskJS.
 - Modelar agregados, value objects, puertos y repositorios.
 - Completar los repositorios y migraciones de los demas bounded contexts con TypeORM.
 - Completar CQRS: comandos, queries, handlers y proyecciones para CRM, reparaciones
