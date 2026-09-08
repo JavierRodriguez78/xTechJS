@@ -9,3 +9,7 @@ export class AuthenticateUserCommand {
 export class ListUsersQuery {}
 
 export class ListTechniciansQuery {}
+
+export class FindActiveNonAdminUserQuery {
+  constructor(public readonly id: string) {}
+}

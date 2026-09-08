@@ -25,7 +25,6 @@ import { PostgresRepairOrderRepository } from "./repairs/infrastructure/persiste
 import { PostgresRepairQuoteRepository } from "./repairs/infrastructure/persistence/postgres-repair-quote-repository.js";
 import { loadConfig } from "./shared/infrastructure/config/app-config.js";
 import "./shared/infrastructure/persistence/data-source.js";
-import { AuthenticationService } from "./users/application/authentication-service.js";
 import { ListTechniciansQuery, ListUsersQuery } from "./users/application/cqrs/user-messages.js";
 import { PERMISSIONS } from "./users/domain/permission.js";
 import { registerAuthRoutes, requirePermission } from "./users/infrastructure/http/auth-routes.js";
@@ -35,13 +34,12 @@ const app = Fastify({ logger: true });
 const config = loadConfig();
 
 await app.register(jwt, { secret: config.get("JWT_SECRET"), sign: { expiresIn: config.get("JWT_EXPIRES_IN") } });
-const xtaskApplication = await CreateApplication({ adapter: new FastifyAdapter(app), container: { resolutionStrategy: "eager" }, prebuiltManifest: { enabled: true } });
+const xtaskApplication = await CreateApplication({ adapter: new FastifyAdapter(app), container: { resolutionStrategy: "lazy" }, prebuiltManifest: { enabled: true } });
 const container = await xtaskApplication.getKernel().getContainer();
 const dataSource = getTypeOrmLifecycleManager().getDataSource("default");
-const userRepository = container.get(PostgresUserRepository);
-const authenticationService = container.get(AuthenticationService);
 const commandBus = container.getByName<CommandBus>(getCommandBusToken());
 const queryBus = container.getByName<QueryBus>(getQueryBusToken());
+const userRepository = new PostgresUserRepository(dataSource);
 const customerRepository = new PostgresCustomerRepository(dataSource);
 const createCustomer = new CreateCustomer(customerRepository);
 const listCustomers = new ListCustomers(customerRepository);
@@ -64,7 +62,7 @@ app.get("/health", async () => ({
   timestamp: new Date().toISOString()
 }));
 
-registerAuthRoutes(app, authenticationService, dataSource, commandBus);
+registerAuthRoutes(app, dataSource, commandBus, queryBus);
 registerCustomerRoutes(app, createCustomer, listCustomers, getCustomer, updateCustomer);
 registerRepairRoutes(app, createRepair, listRepairs, changeRepairStatus, getRepairStatusHistory, updateRepairTechnical, getRepairQuote, saveRepairQuote, approveRepairQuote);
 

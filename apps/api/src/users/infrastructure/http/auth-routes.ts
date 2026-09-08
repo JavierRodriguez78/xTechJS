@@ -1,9 +1,9 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import type { DataSource } from "typeorm";
-import type { CommandBus } from "@xtaskjs/cqrs";
+import type { CommandBus, QueryBus } from "@xtaskjs/cqrs";
 import { isStaffRole, type UserRole } from "../../../shared/domain/user-role.js";
 import type { AuthenticationService } from "../../application/authentication-service.js";
-import { AuthenticateUserCommand, BootstrapAdminCommand } from "../../application/cqrs/user-messages.js";
+import { AuthenticateUserCommand, BootstrapAdminCommand, FindActiveNonAdminUserQuery } from "../../application/cqrs/user-messages.js";
 import { hasPermission, PERMISSIONS, type Permission } from "../../domain/permission.js";
 import type { User } from "../../domain/user.js";
 import { recordImpersonation } from "../persistence/audit-log.js";
@@ -36,9 +36,9 @@ function toPublicUser(user: User): User {
 
 export function registerAuthRoutes(
   app: FastifyInstance,
-  authenticationService: AuthenticationService,
   dataSource: DataSource,
-  commandBus: CommandBus
+  commandBus: CommandBus,
+  queryBus: QueryBus
 ): void {
   app.post("/api/auth/bootstrap", async (request, reply) => {
     const input = request.body as { email: string; displayName: string; password: string };
@@ -74,7 +74,7 @@ export function registerAuthRoutes(
 
   app.post("/api/auth/impersonate/:userId", { preHandler: requirePermission(PERMISSIONS.impersonationUse) }, async (request, reply) => {
     const targetId = (request.params as { userId: string }).userId;
-    const target = await authenticationService.findActiveNonAdminUser(targetId);
+    const target = await queryBus.execute(new FindActiveNonAdminUserQuery(targetId));
     if (!target) {
       return reply.code(404).send({ message: "Active technician or customer not found" });
     }

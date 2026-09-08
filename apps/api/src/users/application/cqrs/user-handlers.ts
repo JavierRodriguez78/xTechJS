@@ -4,7 +4,7 @@ import type { User, UserCredentials } from "../../domain/user.js";
 import { AuthenticationService } from "../authentication-service.js";
 import { ListTechnicians } from "../list-technicians.js";
 import { ListUsers } from "../list-users.js";
-import { AuthenticateUserCommand, BootstrapAdminCommand, ListTechniciansQuery, ListUsersQuery } from "./user-messages.js";
+import { AuthenticateUserCommand, BootstrapAdminCommand, FindActiveNonAdminUserQuery, ListTechniciansQuery, ListUsersQuery } from "./user-messages.js";
 
 @Service()
 @CommandHandler(BootstrapAdminCommand)
@@ -43,5 +43,15 @@ export class ListTechniciansHandler implements IQueryHandler<ListTechniciansQuer
 
   execute(): Promise<readonly User[]> {
     return this.listTechnicians.execute();
+  }
+}
+
+@Service()
+@QueryHandler(FindActiveNonAdminUserQuery)
+export class FindActiveNonAdminUserHandler implements IQueryHandler<FindActiveNonAdminUserQuery, User | undefined> {
+  constructor(private readonly authenticationService: AuthenticationService) {}
+
+  execute(query: FindActiveNonAdminUserQuery): Promise<User | undefined> {
+    return this.authenticationService.findActiveNonAdminUser(query.id);
   }
 }
