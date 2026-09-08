@@ -1,9 +1,11 @@
 import { randomUUID } from "node:crypto";
+import { Qualifier, Service } from "@xtaskjs/core";
 import type { CreateCustomerInput, Customer } from "../domain/customer.js";
 import type { CustomerRepository, NewCustomerRecord } from "./customer-repository.js";
 
+@Service()
 export class CreateCustomer {
-  constructor(private readonly customerRepository: CustomerRepository) {}
+  constructor(@Qualifier("customerRepository") private readonly customerRepository: CustomerRepository) {}
 
   execute(input: CreateCustomerInput): Promise<Customer> {
     const customer: NewCustomerRecord = {

@@ -1,8 +1,10 @@
+import { Qualifier, Service } from "@xtaskjs/core";
 import type { Customer, UpdateCustomerInput } from "../domain/customer.js";
 import type { CustomerRepository } from "./customer-repository.js";
 
+@Service()
 export class UpdateCustomer {
-  constructor(private readonly customerRepository: CustomerRepository) {}
+  constructor(@Qualifier("customerRepository") private readonly customerRepository: CustomerRepository) {}
 
   execute(id: string, input: UpdateCustomerInput): Promise<Customer | undefined> {
     return this.customerRepository.update(id, {

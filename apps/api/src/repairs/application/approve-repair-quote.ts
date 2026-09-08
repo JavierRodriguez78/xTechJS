@@ -1,9 +1,11 @@
+import { Qualifier, Service } from "@xtaskjs/core";
 import type { ChangeRepairStatus } from "./change-repair-status.js";
 import type { RepairQuote } from "../domain/repair-quote.js";
 import type { RepairQuoteRepository } from "./repair-quote-repository.js";
 
+@Service()
 export class ApproveRepairQuote {
-  constructor(private readonly quoteRepository: RepairQuoteRepository, private readonly changeRepairStatus: ChangeRepairStatus) {}
+  constructor(@Qualifier("repairQuoteRepository") private readonly quoteRepository: RepairQuoteRepository, private readonly changeRepairStatus: ChangeRepairStatus) {}
 
   async execute(repairOrderId: string): Promise<RepairQuote | undefined> {
     const quote = await this.quoteRepository.findByRepairOrderId(repairOrderId);

@@ -75,7 +75,7 @@ function removeQuoteLine(index: number): void { if (quoteForm.value.lines.length
 async function saveQuote(status: "draft" | "sent"): Promise<void> {
   if (!selectedRepairId.value) return;
   errorMessage.value = ""; successMessage.value = "";
-  const response = await fetch(`/api/repairs/${selectedRepairId.value}/quote`, { method: "PUT", headers: headers(), body: JSON.stringify({ status, lines: quoteForm.value.lines }) });
+  const response = await fetch(`/api/repairs/${selectedRepairId.value}/quote`, { method: "PATCH", headers: headers(), body: JSON.stringify({ status, lines: quoteForm.value.lines }) });
   if (!response.ok) { errorMessage.value = status === "sent" ? "El presupuesto solo puede enviarse desde diagnostico." : "Revisa las lineas del presupuesto."; return; }
   quote.value = await response.json() as RepairQuote;
   successMessage.value = status === "sent" ? "Presupuesto enviado al cliente." : "Borrador de presupuesto guardado.";

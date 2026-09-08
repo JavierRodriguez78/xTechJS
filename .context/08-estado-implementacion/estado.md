@@ -40,9 +40,13 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   el JWT y el perfil en `localStorage`, rechaza el rol `customer` y permite cerrar
   sesion. El portal de cliente queda pendiente como aplicacion independiente.
 - Primer vertical CRM de clientes: entidad TypeORM, migracion, puerto y repositorio
-  PostgreSQL, casos de uso para alta, listado, ficha y edicion. Expone rutas
-  `GET`/`POST /api/customers` y `GET`/`PUT /api/customers/:id` protegidas por
-  permisos. La consola Vue permite consultar, crear y editar clientes con JWT.
+  PostgreSQL, casos de uso para alta, listado, ficha y edicion. Migrado a DI/CQRS
+  xTaskJS: casos de uso como servicios decorados, comandos/queries con handlers y
+  `CustomerController` con guards por permiso. El contrato de edicion pasa de
+  `PUT /api/customers/:id` a `PATCH /api/customers/:id` porque el adaptador
+  Fastify de xTaskJS no enruta `PUT`; la semantica (actualizacion parcial) es la
+  misma y el frontend ya lo usa. Las rutas manuales de Fastify del CRM fueron
+  eliminadas.
 - Modulo inicial de reparaciones: ordenes vinculadas a cliente con equipo, averia y
   accesorios; persistencia TypeORM y migracion para `repair_orders` y su linea de
   tiempo `repair_status_events`. Expone `GET`/`POST /api/repairs`, cambio de estado
@@ -51,13 +55,13 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 - Reparaciones incorpora asignacion a tecnicos activos y diagnostico tecnico, con
   migracion incremental y ruta `PATCH /api/repairs/:id/technical`. La consola carga
   tecnicos autorizados desde `GET /api/technicians` y permite guardar ambos datos.
-- Reparaciones incorpora un presupuesto vigente por orden, con lineas, cantidades e
-  importes en centimos, total calculado en servidor y migracion `repair_quotes`.
-  Las rutas internas son `GET`/`PUT /api/repairs/:id/quote` y
-  `POST /api/repairs/:id/quote/approve`. Enviar desde diagnostico mueve la orden a
-  `quoted`; aprobar un presupuesto enviado la mueve a `approved` y deja evento en
-  el historial. La consola permite editar lineas, guardar borrador, enviar y
-  registrar la aprobacion interna.
+- Reparaciones migrado a DI/CQRS xTaskJS: los 8 casos de uso son servicios
+  decorados, expuestos mediante comandos/queries y `RepairController` con guards
+  por permiso. El guardado de presupuesto pasa de `PUT` a
+  `PATCH /api/repairs/:id/quote` (el adaptador Fastify de xTaskJS no enruta `PUT`)
+  y el frontend ya lo usa. Las rutas manuales de Fastify de reparaciones fueron
+  eliminadas; `main.ts` solo registra instancias nombradas de repositorios y
+  delega todo el transporte en controladores xTaskJS.
 - Dependencias xTaskJS declaradas para `core`, `common`, `config`, `cqrs`,
   `fastify-http`, `security`, `validation` y `value-objects`. `config` ya se usa
   desde la API; las demas se integraran al implementar sus capacidades.
@@ -94,17 +98,12 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 
 ### Backend y dominio
 
-- Diseñar los bounded contexts y la estructura hexagonal definitiva para usuarios,
-  clientes, reparaciones, almacen, TPV y chat.
-- Extender el patron de DI/CQRS y controladores xTaskJS validado en usuarios a CRM y
-  reparaciones. Estos modulos conservan por ahora casos de uso, rutas Fastify y
-  composicion manual sobre el datasource administrado por xTaskJS.
-- Modelar agregados, value objects, puertos y repositorios.
-- Completar los repositorios y migraciones de los demas bounded contexts con TypeORM.
-- Completar CQRS: comandos, queries, handlers y proyecciones para CRM, reparaciones
-  y los bounded contexts pendientes.
-- Integrar la seguridad declarativa de `@xtaskjs/security` cuando se incorpore el
-  kernel xTaskJS. JWT, RBAC HTTP, auditoria e impersonacion iniciales ya existen.
+- Diseñar los bounded contexts y la estructura hexagonal definitiva para los
+  modulos pendientes: almacen, TPV y chat.
+- Modelar agregados, value objects, puertos y repositorios de esos modulos.
+- Completar proyecciones CQRS de lectura si se separan modelos de lectura.
+- Integrar la seguridad declarativa de `@xtaskjs/security` (guards `@Authenticated`,
+  `@Roles`) en los controladores, sustituyendo el guard local por permisos.
 - Cache Redis, rate limiting, correo, scheduler, Socket.IO y adjuntos.
 - Tests de dominio y aplicacion con `@xtaskjs/testing`.
 
@@ -143,24 +142,20 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 
 ## Siguiente fase recomendada
 
-1. Extender DI/CQRS y sus proyecciones desde usuarios a CRM y reparaciones.
-2. Completar la aprobacion de presupuestos desde el portal de cliente, o el historial
-  CRM usando las ordenes existentes.
-3. Ejecutar y validar la pila Docker completa antes de incorporar servicios que
-   dependan de ella.
+1. Migrar los guards locales `requireControllerPermission` a la seguridad
+   declarativa de `@xtaskjs/security`.
+2. Completar la aprobacion de presupuestos desde el portal de cliente, o el
+   historial CRM usando las ordenes existentes.
+3. Empezar el modulo de almacen siguiendo el patron ya validado (servicios DI,
+   CQRS, controladores decorados, repositorio como instancia nombrada).
 
-## Punto de reanudacion
-
-El siguiente trabajo debe comenzar migrando CRM o reparaciones al patron DI/CQRS ya
-aplicado a usuarios, en el historial CRM del cliente o en la aprobacion de
-presupuestos por cliente. El portal interno solo es
-accesible tras `POST /api/auth/staff/login` para admin/tecnico. El CRM ya expone
-`GET`/`POST /api/customers` y `GET`/`PUT /api/customers/:id`; alta y edicion exigen
-`customers:manage`, mientras las consultas requieren `customers:read`. La consola
-muestra Clientes desde su navegacion y usa el access token obtenido con login.
+Los tres modulos implementados (usuarios, CRM, reparaciones) usan el patron
+xTaskJS completo: servicios `@Service` con `@Qualifier`, comandos/queries con
+handlers `@CommandHandler`/`@QueryHandler`, controladores `@Controller` con guards
+y repositorios registrados como instancias nombradas en `main.ts`. No quedan rutas
+Fastify manuales. Patron a replicar en modulos futuros: almacen, TPV y chat.
 PostgreSQL contiene `users`, `audit_logs`, `customers`, `repair_orders`,
-`repair_status_events` y `repair_quotes` tras ejecutar migraciones. La orden incluye
-`technician_id` y `diagnosis` tras la migracion incremental de detalles tecnicos.
+`repair_status_events` y `repair_quotes` tras ejecutar migraciones.
 
 ## Criterio de actualizacion
 

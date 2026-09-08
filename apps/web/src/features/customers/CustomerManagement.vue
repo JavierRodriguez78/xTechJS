@@ -89,7 +89,7 @@ async function saveCustomer(accessToken: string): Promise<void> {
   errorMessage.value = "";
   successMessage.value = "";
   const response = await fetch(`/api/customers/${selectedCustomerId.value}`, {
-    method: "PUT",
+    method: "PATCH",
     headers: headers(accessToken),
     body: JSON.stringify({
       displayName: form.value.displayName,

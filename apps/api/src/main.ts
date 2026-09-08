@@ -7,21 +7,11 @@ import { getTypeOrmLifecycleManager } from "@xtaskjs/typeorm";
 import "./shared/infrastructure/cqrs/cqrs-configuration.js";
 import "./users/application/cqrs/user-handlers.js";
 import "./users/infrastructure/http/user-controller.js";
-import { CreateCustomer } from "./customers/application/create-customer.js";
-import { GetCustomer } from "./customers/application/get-customer.js";
-import { ListCustomers } from "./customers/application/list-customers.js";
-import { UpdateCustomer } from "./customers/application/update-customer.js";
-import { registerCustomerRoutes } from "./customers/infrastructure/http/customer-routes.js";
+import "./customers/application/cqrs/customer-handlers.js";
+import "./customers/infrastructure/http/customer-controller.js";
+import "./repairs/application/cqrs/repair-handlers.js";
+import "./repairs/infrastructure/http/repair-controller.js";
 import { PostgresCustomerRepository } from "./customers/infrastructure/persistence/postgres-customer-repository.js";
-import { ChangeRepairStatus } from "./repairs/application/change-repair-status.js";
-import { ApproveRepairQuote } from "./repairs/application/approve-repair-quote.js";
-import { CreateRepairOrder } from "./repairs/application/create-repair-order.js";
-import { GetRepairStatusHistory } from "./repairs/application/get-repair-status-history.js";
-import { GetRepairQuote } from "./repairs/application/get-repair-quote.js";
-import { ListRepairOrders } from "./repairs/application/list-repair-orders.js";
-import { SaveRepairQuote } from "./repairs/application/save-repair-quote.js";
-import { UpdateRepairTechnical } from "./repairs/application/update-repair-technical.js";
-import { registerRepairRoutes } from "./repairs/infrastructure/http/repair-routes.js";
 import { PostgresRepairOrderRepository } from "./repairs/infrastructure/persistence/postgres-repair-order-repository.js";
 import { PostgresRepairQuoteRepository } from "./repairs/infrastructure/persistence/postgres-repair-quote-repository.js";
 import { loadConfig } from "./shared/infrastructure/config/app-config.js";
@@ -39,29 +29,15 @@ const commandBus = container.getByName<CommandBus>(getCommandBusToken());
 const userRepository = new PostgresUserRepository(dataSource);
 container.registerNamedInstance("userRepository", userRepository);
 const customerRepository = new PostgresCustomerRepository(dataSource);
-const createCustomer = new CreateCustomer(customerRepository);
-const listCustomers = new ListCustomers(customerRepository);
-const getCustomer = new GetCustomer(customerRepository);
-const updateCustomer = new UpdateCustomer(customerRepository);
-const repairRepository = new PostgresRepairOrderRepository(dataSource);
-const createRepair = new CreateRepairOrder(repairRepository);
-const listRepairs = new ListRepairOrders(repairRepository);
-const changeRepairStatus = new ChangeRepairStatus(repairRepository);
-const getRepairStatusHistory = new GetRepairStatusHistory(repairRepository);
-const quoteRepository = new PostgresRepairQuoteRepository(dataSource);
-const getRepairQuote = new GetRepairQuote(quoteRepository);
-const saveRepairQuote = new SaveRepairQuote(quoteRepository, repairRepository, changeRepairStatus);
-const approveRepairQuote = new ApproveRepairQuote(quoteRepository, changeRepairStatus);
-const updateRepairTechnical = new UpdateRepairTechnical(repairRepository, userRepository);
+container.registerNamedInstance("customerRepository", customerRepository);
+container.registerNamedInstance("repairOrderRepository", new PostgresRepairOrderRepository(dataSource));
+container.registerNamedInstance("repairQuoteRepository", new PostgresRepairQuoteRepository(dataSource));
 
 app.get("/health", async () => ({
   status: "ok",
   service: "xtechjs-api",
   timestamp: new Date().toISOString()
 }));
-
-registerCustomerRoutes(app, createCustomer, listCustomers, getCustomer, updateCustomer);
-registerRepairRoutes(app, createRepair, listRepairs, changeRepairStatus, getRepairStatusHistory, updateRepairTechnical, getRepairQuote, saveRepairQuote, approveRepairQuote);
 
 const port = config.get("API_PORT");
 
