@@ -1,11 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { Service } from "@xtaskjs/core";
 import { DataSource, InjectDataSource } from "@xtaskjs/typeorm";
+import { Traceable } from "../../../shared/infrastructure/observability/trace.js";
 import type { RepairOrderRepository, NewRepairOrderRecord } from "../../application/repair-order-repository.js";
 import type { RepairOrder, RepairStatusEvent } from "../../domain/repair-order.js";
 import type { RepairStatus } from "../../domain/repair-status.js";
 import { RepairOrderEntitySchema, RepairStatusEventEntitySchema } from "./repair-order-entity.js";
 
+@Traceable("PostgresRepairOrderRepository")
 @Service({ name: "repairOrderRepository" })
 export class PostgresRepairOrderRepository implements RepairOrderRepository {
   @InjectDataSource()

@@ -1,9 +1,11 @@
 import { Service } from "@xtaskjs/core";
 import { DataSource, InjectDataSource } from "@xtaskjs/typeorm";
+import { Traceable } from "../../../shared/infrastructure/observability/trace.js";
 import type { UserRepository } from "../../application/user-repository.js";
 import type { User, UserCredentials } from "../../domain/user.js";
 import { UserEntitySchema } from "./user-entity.js";
 
+@Traceable("PostgresUserRepository")
 @Service({ name: "userRepository" })
 export class PostgresUserRepository implements UserRepository {
   @InjectDataSource()

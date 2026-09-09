@@ -1,8 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { Qualifier, Service } from "@xtaskjs/core";
+import { Traceable } from "../../shared/infrastructure/observability/trace.js";
 import type { CreateRepairOrderInput, RepairOrder } from "../domain/repair-order.js";
 import type { RepairOrderRepository } from "./repair-order-repository.js";
 
+@Traceable("CreateRepairOrder")
 @Service()
 export class CreateRepairOrder {
   constructor(@Qualifier("repairOrderRepository") private readonly repairOrderRepository: RepairOrderRepository) {}

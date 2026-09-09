@@ -53,7 +53,8 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   `PUT /api/customers/:id` a `PATCH /api/customers/:id` porque el adaptador
   Fastify de xTaskJS no enruta `PUT`; la semantica (actualizacion parcial) es la
   misma y el frontend ya lo usa. Las rutas manuales de Fastify del CRM fueron
-  eliminadas.
+  eliminadas. La vista CRM carga automaticamente el listado de clientes al
+  montarse y conserva el boton de actualizacion manual.
 - Modulo inicial de reparaciones: ordenes vinculadas a cliente con equipo, averia y
   accesorios; persistencia TypeORM y migracion para `repair_orders` y su linea de
   tiempo `repair_status_events`. Expone `GET`/`POST /api/repairs`, cambio de estado
@@ -85,6 +86,16 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 - `reflect-metadata` es una dependencia directa de produccion de la API porque
   `main.ts` la carga antes del kernel; asi `pnpm deploy --prod` la conserva en la
   imagen final.
+- Trazabilidad de peticiones: el frontend genera un UUID por cada `fetch` y lo
+  propaga en `x-correlation-id`; la API acepta o genera ese identificador, lo
+  devuelve en la respuesta y lo incluye en los logs de inicio, error y fin de la
+  peticion. `CommandBus`, `QueryBus`, todos los casos de uso y repositorios
+  PostgreSQL estan instrumentados con `@Traceable`, que registra inicio, fin,
+  error y duracion de cada operacion con el mismo identificador.
+- El frontend publica eventos minimos de inicio, fin y error en
+  `POST /api/observability/frontend-trace` mediante `sendBeacon`; no transmite
+  payloads, queries, credenciales ni JWT. `make trace CORRELATION_ID=<uuid>`
+  muestra por separado los logs de API y los eventos del frontend.
 - `Makefile` raiz para instalar dependencias, desarrollo local, Docker, shells de
   contenedores, migraciones, pruebas, typecheck y compilacion.
 
@@ -99,14 +110,35 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   @xtechjs/api test` supera 14 pruebas, incluido el smoke check de componentes.
 - `pnpm --filter @xtechjs/api build` y `pnpm --filter @xtechjs/web build` completados
   correctamente tras incorporar presupuestos de reparacion.
+- `pnpm --filter @xtechjs/web build` completado correctamente tras incorporar la
+  carga automatica de clientes al entrar en CRM.
 - `GET http://127.0.0.1:3000/health` respondio correctamente durante desarrollo local.
 - `make rebuild` construyo y arranco correctamente los servicios `postgres`, `redis`,
   `api` y `web`; `GET http://127.0.0.1:3000/health` respondio desde la pila Docker.
+- Trazabilidad verificada en Docker: una peticion a `/health` con
+  `x-correlation-id: trace-check-20260909` devuelve esa misma cabecera y deja los
+  logs correlacionados de inicio y fin en la API.
+- Trazabilidad por capas verificada en Docker: `GET /api/customers` deja, bajo el
+  mismo `correlationId`, los logs de `QueryBus`, `ListCustomers` y
+  `PostgresCustomerRepository`, con sus duraciones.
+- `make trace CORRELATION_ID=b7a2d7c1-245e-4efc-b0b8-01a636c7d4fb` validado en
+  Docker: el evento frontend se registra de forma separada y el receptor responde
+  `204`.
 - El Dockerfile de API utiliza `pnpm deploy --legacy --prod /opt/api`, correccion
   necesaria para pnpm 10+ sin `inject-workspace-packages`. Falta confirmar el build
   de esa capa con Docker disponible.
 
 ## Pendiente por area
+
+## Requisito transversal obligatorio
+
+- Todo endpoint, proceso asíncrono y servicio nuevo debe emitir logs estructurados
+  con `correlationId`. Las llamadas originadas en frontend deben propagarlo en la
+  cabecera `x-correlation-id`; los servicios internos deben conservarlo al invocar
+  otros servicios, colas o tareas. Todo caso de uso y repositorio debe instrumentarse
+  con `@Traceable` (o una alternativa equivalente que cubra inicio, fin, error y
+  duracion). No registrar secretos, contraseñas, JWT ni datos sensibles completos en
+  los logs.
 
 ### Backend y dominio
 

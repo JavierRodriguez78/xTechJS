@@ -1,10 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { Service } from "@xtaskjs/core";
 import { DataSource, InjectDataSource } from "@xtaskjs/typeorm";
+import { Traceable } from "../../../shared/infrastructure/observability/trace.js";
 import type { CustomerRepository, NewCustomerRecord } from "../../application/customer-repository.js";
 import type { Customer, UpdateCustomerInput } from "../../domain/customer.js";
 import { CustomerEntitySchema } from "./customer-entity.js";
 
+@Traceable("PostgresCustomerRepository")
 @Service({ name: "customerRepository" })
 export class PostgresCustomerRepository implements CustomerRepository {
   @InjectDataSource()

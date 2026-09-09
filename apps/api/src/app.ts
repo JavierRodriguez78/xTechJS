@@ -1,10 +1,13 @@
 import jwt from "@fastify/jwt";
 import Fastify from "fastify";
+import { randomUUID } from "node:crypto";
 import { CreateApplication, type Container, type XTaskHttpApplication } from "@xtaskjs/core";
+import { getCommandBusToken, getQueryBusToken, type CommandBus, type QueryBus } from "@xtaskjs/cqrs";
 import { FastifyAdapter } from "@xtaskjs/fastify-http";
 import "./shared/infrastructure/config/app-config.js";
 import { loadConfig } from "./shared/infrastructure/config/app-config.js";
 import "./shared/infrastructure/cqrs/cqrs-configuration.js";
+import "./shared/infrastructure/http/observability-controller.js";
 import "./shared/infrastructure/persistence/data-source.js";
 import "./users/application/cqrs/user-handlers.js";
 import "./users/infrastructure/http/auth-routes.js";
@@ -17,9 +20,21 @@ import "./repairs/application/cqrs/repair-handlers.js";
 import "./repairs/infrastructure/http/repair-controller.js";
 import "./repairs/infrastructure/persistence/postgres-repair-order-repository.js";
 import "./repairs/infrastructure/persistence/postgres-repair-quote-repository.js";
+import { startTrace, traceOperation } from "./shared/infrastructure/observability/trace.js";
+
+declare module "fastify" {
+  interface FastifyRequest {
+    correlationId: string;
+  }
+}
 
 let application: XTaskHttpApplication | undefined;
 const requiredComponentNames = ["userRepository", "customerRepository", "repairOrderRepository", "repairQuoteRepository"] as const;
+
+function instrumentBus(bus: CommandBus | QueryBus, component: "CommandBus" | "QueryBus"): void {
+  const execute = bus.execute.bind(bus);
+  bus.execute = (async <TResult>(message: object): Promise<TResult> => traceOperation(component, message.constructor.name, () => execute(message) as Promise<TResult>)) as typeof bus.execute;
+}
 
 export function assertRequiredComponents(container: Pick<Container, "getByName">): void {
   for (const name of requiredComponentNames) container.getByName(name);
@@ -29,7 +44,19 @@ export async function createApplication(): Promise<XTaskHttpApplication> {
   if (application) return application;
 
   const config = loadConfig();
-  const fastify = Fastify({ logger: true });
+  const fastify = Fastify({ logger: true, requestIdHeader: "x-correlation-id", genReqId: () => randomUUID() });
+  fastify.addHook("onRequest", async (request, reply) => {
+    request.correlationId = request.id;
+    reply.header("x-correlation-id", request.correlationId);
+    startTrace(request.correlationId, request.log);
+    request.log.info({ correlationId: request.correlationId }, "Request started");
+  });
+  fastify.addHook("onError", async (request, _reply, error) => {
+    request.log.error({ correlationId: request.correlationId, err: error }, "Request failed");
+  });
+  fastify.addHook("onResponse", async (request, reply) => {
+    request.log.info({ correlationId: request.correlationId, statusCode: reply.statusCode }, "Request completed");
+  });
   await fastify.register(jwt, { secret: config.get("JWT_SECRET"), sign: { expiresIn: config.get("JWT_EXPIRES_IN") } });
   fastify.get("/health", async () => ({ status: "ok", service: "xtechjs-api", timestamp: new Date().toISOString() }));
 
@@ -38,7 +65,10 @@ export async function createApplication(): Promise<XTaskHttpApplication> {
     container: { resolutionStrategy: "lazy" },
     prebuiltManifest: { enabled: true }
   });
-  assertRequiredComponents(await application.getKernel().getContainer());
+  const container = await application.getKernel().getContainer();
+  assertRequiredComponents(container);
+  instrumentBus(container.getByName<CommandBus>(getCommandBusToken()), "CommandBus");
+  instrumentBus(container.getByName<QueryBus>(getQueryBusToken()), "QueryBus");
   return application;
 }
 

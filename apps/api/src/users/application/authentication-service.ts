@@ -1,9 +1,11 @@
 import { compare, hash } from "bcryptjs";
 import { randomUUID } from "node:crypto";
 import { Qualifier, Service } from "@xtaskjs/core";
+import { Traceable } from "../../shared/infrastructure/observability/trace.js";
 import type { User, UserCredentials } from "../domain/user.js";
 import type { UserRepository } from "./user-repository.js";
 
+@Traceable("AuthenticationService")
 @Service()
 export class AuthenticationService {
   constructor(@Qualifier("userRepository") private readonly userRepository: UserRepository) {}

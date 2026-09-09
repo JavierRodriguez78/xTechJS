@@ -1,10 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { Service } from "@xtaskjs/core";
 import { DataSource, InjectDataSource } from "@xtaskjs/typeorm";
+import { Traceable } from "../../../shared/infrastructure/observability/trace.js";
 import type { RepairQuoteRepository } from "../../application/repair-quote-repository.js";
 import type { RepairQuote, SaveRepairQuoteInput } from "../../domain/repair-quote.js";
 import { RepairQuoteEntitySchema } from "./repair-quote-entity.js";
 
+@Traceable("PostgresRepairQuoteRepository")
 @Service({ name: "repairQuoteRepository" })
 export class PostgresRepairQuoteRepository implements RepairQuoteRepository {
   @InjectDataSource()

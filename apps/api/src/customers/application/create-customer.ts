@@ -1,8 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { Qualifier, Service } from "@xtaskjs/core";
+import { Traceable } from "../../shared/infrastructure/observability/trace.js";
 import type { CreateCustomerInput, Customer } from "../domain/customer.js";
 import type { CustomerRepository, NewCustomerRecord } from "./customer-repository.js";
 
+@Traceable("CreateCustomer")
 @Service()
 export class CreateCustomer {
   constructor(@Qualifier("customerRepository") private readonly customerRepository: CustomerRepository) {}

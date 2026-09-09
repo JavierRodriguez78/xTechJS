@@ -7,7 +7,7 @@ WEB_PACKAGE := @xtechjs/web
 
 .DEFAULT_GOAL := help
 
-.PHONY: help install dev db-up db-down up down rebuild ps logs logs-api logs-web shell-api shell-web shell-db shell-redis migrate test test-api test-web typecheck typecheck-api typecheck-web build build-api build-web clean
+.PHONY: help install dev db-up db-down up down rebuild ps logs logs-api logs-web trace shell-api shell-web shell-db shell-redis migrate test test-api test-web typecheck typecheck-api typecheck-web build build-api build-web clean
 
 help: ## Muestra los objetivos disponibles
 
@@ -45,6 +45,13 @@ logs-api: ## Sigue los logs del servicio API
 
 logs-web: ## Sigue los logs del servicio frontend
 	$(COMPOSE) logs -f web
+
+trace: ## Muestra trazas de API y frontend (CORRELATION_ID=<uuid>)
+	@test -n "$(CORRELATION_ID)" || (echo "Uso: make trace CORRELATION_ID=<correlation-id>"; exit 2)
+	@echo "=== API ==="
+	@$(COMPOSE) logs --no-log-prefix api | grep -F '"correlationId":"$(CORRELATION_ID)"' | grep -v '"traceSource":"frontend"' || true
+	@echo "=== FRONTEND ==="
+	@$(COMPOSE) logs --no-log-prefix api | grep -F '"correlationId":"$(CORRELATION_ID)"' | grep -F '"traceSource":"frontend"' || true
 
 shell-api: ## Abre una shell en el contenedor de API
 	$(COMPOSE) exec api sh

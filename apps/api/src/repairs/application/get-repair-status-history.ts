@@ -1,7 +1,9 @@
 import { Qualifier, Service } from "@xtaskjs/core";
+import { Traceable } from "../../shared/infrastructure/observability/trace.js";
 import type { RepairStatusEvent } from "../domain/repair-order.js";
 import type { RepairOrderRepository } from "./repair-order-repository.js";
 
+@Traceable("GetRepairStatusHistory")
 @Service()
 export class GetRepairStatusHistory {
   constructor(@Qualifier("repairOrderRepository") private readonly repairOrderRepository: RepairOrderRepository) {}
