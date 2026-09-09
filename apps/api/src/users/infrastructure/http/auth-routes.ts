@@ -1,16 +1,16 @@
-import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { FastifyRequest } from "fastify";
 import type { DataSource } from "typeorm";
 import type { CommandBus, QueryBus } from "@xtaskjs/cqrs";
-import { Controller, Body, Param, Post, Req, Res, UseGuards } from "@xtaskjs/common";
+import { Controller, Body, Param, Post, Req, Res } from "@xtaskjs/common";
 import { InjectCommandBus, InjectQueryBus } from "@xtaskjs/cqrs";
 import { Authenticated } from "@xtaskjs/security";
 import { InjectDataSource } from "@xtaskjs/typeorm";
 import { isStaffRole, type UserRole } from "../../../shared/domain/user-role.js";
-import type { AuthenticationService } from "../../application/authentication-service.js";
 import { AuthenticateUserCommand, BootstrapAdminCommand, FindActiveNonAdminUserQuery } from "../../application/cqrs/user-messages.js";
-import { hasPermission, PERMISSIONS, type Permission } from "../../domain/permission.js";
+import { PERMISSIONS } from "../../domain/permission.js";
 import type { User } from "../../domain/user.js";
 import { recordImpersonation } from "../persistence/audit-log.js";
+import { PermissionRequired } from "./permission-guard.js";
 
 export interface AuthTokenPayload {
   sub: string;
@@ -22,23 +22,6 @@ declare module "@fastify/jwt" {
   interface FastifyJWT {
     user: AuthTokenPayload;
   }
-}
-
-export function requirePermission(permission: Permission) {
-  return async (request: FastifyRequest): Promise<void> => {
-    await request.jwtVerify();
-    if (!hasPermission(request.user.role, permission)) {
-      throw Object.assign(new Error("Forbidden"), { statusCode: 403 });
-    }
-  };
-}
-
-export function requireControllerPermission(permission: Permission) {
-  return async ({ request }: { request?: FastifyRequest }): Promise<boolean> => {
-    if (!request) return false;
-    await request.jwtVerify();
-    return hasPermission(request.user.role, permission);
-  };
 }
 
 function toPublicUser(user: User): User {
@@ -88,7 +71,7 @@ export class AuthController {
 
   @Post("/impersonate/:userId")
   @Authenticated()
-  @UseGuards(requireControllerPermission(PERMISSIONS.impersonationUse))
+  @PermissionRequired(PERMISSIONS.impersonationUse)
   async impersonate(@Param("userId") targetId: string, @Req() request: FastifyRequest, @Res() reply: { code(statusCode: number): { send(payload: unknown): unknown } }): Promise<unknown> {
     const target = await this.queryBus.execute(new FindActiveNonAdminUserQuery(targetId));
     if (!target) {

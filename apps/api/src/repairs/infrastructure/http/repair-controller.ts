@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Res, UseGuards } from "@xtaskjs/common";
+import { Body, Controller, Get, Param, Patch, Post, Res } from "@xtaskjs/common";
 import { InjectCommandBus, InjectQueryBus, type CommandBus, type QueryBus } from "@xtaskjs/cqrs";
 import { Authenticated } from "@xtaskjs/security";
 import { z } from "zod";
@@ -17,7 +17,7 @@ import {
 } from "../../application/cqrs/repair-messages.js";
 import { REPAIR_STATUSES } from "../../domain/repair-status.js";
 import { PERMISSIONS } from "../../../users/domain/permission.js";
-import { requireControllerPermission } from "../../../users/infrastructure/http/auth-routes.js";
+import { PermissionRequired } from "../../../users/infrastructure/http/permission-guard.js";
 
 const createSchema = z.object({ customerId: z.string().uuid(), deviceType: z.string().trim().min(1).max(100), brand: z.string().trim().min(1).max(100), model: z.string().trim().min(1).max(160), serialNumber: z.string().trim().max(160).optional(), reportedIssue: z.string().trim().min(1).max(5000), deliveredAccessories: z.string().trim().max(2000).optional() });
 const statusSchema = z.object({ status: z.enum(REPAIR_STATUSES), note: z.string().trim().max(2000).optional() });
@@ -35,20 +35,20 @@ export class RepairController {
   ) {}
 
   @Get()
-  @UseGuards(requireControllerPermission(PERMISSIONS.repairsRead))
+  @PermissionRequired(PERMISSIONS.repairsRead)
   listRepairs(): Promise<unknown> {
     return this.queryBus.execute(new ListRepairOrdersQuery());
   }
 
   @Get("/:id/history")
-  @UseGuards(requireControllerPermission(PERMISSIONS.repairsRead))
+  @PermissionRequired(PERMISSIONS.repairsRead)
   async getHistory(@Param("id") id: string, @Res() reply: ControllerReply): Promise<unknown> {
     const history = await this.queryBus.execute(new GetRepairStatusHistoryQuery(id));
     return history.length ? history : reply.code(404).send({ message: "Repair order not found" });
   }
 
   @Post()
-  @UseGuards(requireControllerPermission(PERMISSIONS.repairsManage))
+  @PermissionRequired(PERMISSIONS.repairsManage)
   async createRepair(@Body() body: unknown, @Res() reply: ControllerReply): Promise<unknown> {
     const parsed = createSchema.safeParse(body);
     if (!parsed.success) return reply.code(400).send({ message: "Invalid repair order", issues: parsed.error.flatten() });
@@ -56,7 +56,7 @@ export class RepairController {
   }
 
   @Patch("/:id/status")
-  @UseGuards(requireControllerPermission(PERMISSIONS.repairsManage))
+  @PermissionRequired(PERMISSIONS.repairsManage)
   async changeStatus(@Param("id") id: string, @Body() body: unknown, @Res() reply: ControllerReply): Promise<unknown> {
     const parsed = statusSchema.safeParse(body);
     if (!parsed.success) return reply.code(400).send({ message: "Invalid repair status", issues: parsed.error.flatten() });
@@ -69,7 +69,7 @@ export class RepairController {
   }
 
   @Patch("/:id/technical")
-  @UseGuards(requireControllerPermission(PERMISSIONS.repairsManage))
+  @PermissionRequired(PERMISSIONS.repairsManage)
   async updateTechnical(@Param("id") id: string, @Body() body: unknown, @Res() reply: ControllerReply): Promise<unknown> {
     const parsed = technicalSchema.safeParse(body);
     if (!parsed.success) return reply.code(400).send({ message: "Invalid technical details", issues: parsed.error.flatten() });
@@ -82,14 +82,14 @@ export class RepairController {
   }
 
   @Get("/:id/quote")
-  @UseGuards(requireControllerPermission(PERMISSIONS.repairsRead))
+  @PermissionRequired(PERMISSIONS.repairsRead)
   async getQuote(@Param("id") id: string, @Res() reply: ControllerReply): Promise<unknown> {
     const quote = await this.queryBus.execute(new GetRepairQuoteQuery(id));
     return quote ?? reply.code(404).send({ message: "Repair quote not found" });
   }
 
   @Patch("/:id/quote")
-  @UseGuards(requireControllerPermission(PERMISSIONS.repairsManage))
+  @PermissionRequired(PERMISSIONS.repairsManage)
   async saveQuote(@Param("id") id: string, @Body() body: unknown, @Res() reply: ControllerReply): Promise<unknown> {
     const parsed = quoteSchema.safeParse(body);
     if (!parsed.success) return reply.code(400).send({ message: "Invalid repair quote", issues: parsed.error.flatten() });
@@ -98,7 +98,7 @@ export class RepairController {
   }
 
   @Post("/:id/quote/approve")
-  @UseGuards(requireControllerPermission(PERMISSIONS.repairsManage))
+  @PermissionRequired(PERMISSIONS.repairsManage)
   async approveQuote(@Param("id") id: string, @Res() reply: ControllerReply): Promise<unknown> {
     try {
       const quote = await this.commandBus.execute(new ApproveRepairQuoteCommand(id));

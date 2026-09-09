@@ -1,11 +1,11 @@
-import { Body, Controller, Get, Param, Patch, Post, Res, UseGuards } from "@xtaskjs/common";
+import { Body, Controller, Get, Param, Patch, Post, Res } from "@xtaskjs/common";
 import { InjectCommandBus, InjectQueryBus, type CommandBus, type QueryBus } from "@xtaskjs/cqrs";
 import { Authenticated } from "@xtaskjs/security";
 import { z } from "zod";
 import type { CreateCustomerInput, UpdateCustomerInput } from "../../domain/customer.js";
 import { CreateCustomerCommand, GetCustomerQuery, ListCustomersQuery, UpdateCustomerCommand } from "../../application/cqrs/customer-messages.js";
 import { PERMISSIONS } from "../../../users/domain/permission.js";
-import { requireControllerPermission } from "../../../users/infrastructure/http/auth-routes.js";
+import { PermissionRequired } from "../../../users/infrastructure/http/permission-guard.js";
 
 const createCustomerSchema = z.object({
   displayName: z.string().trim().min(1).max(160),
@@ -30,20 +30,20 @@ export class CustomerController {
   ) {}
 
   @Get()
-  @UseGuards(requireControllerPermission(PERMISSIONS.customersRead))
+  @PermissionRequired(PERMISSIONS.customersRead)
   listCustomers(): Promise<unknown> {
     return this.queryBus.execute(new ListCustomersQuery());
   }
 
   @Get("/:id")
-  @UseGuards(requireControllerPermission(PERMISSIONS.customersRead))
+  @PermissionRequired(PERMISSIONS.customersRead)
   async getCustomer(@Param("id") id: string, @Res() reply: ControllerReply): Promise<unknown> {
     const customer = await this.queryBus.execute(new GetCustomerQuery(id));
     return customer ? customer : reply.code(404).send({ message: "Customer not found" });
   }
 
   @Post()
-  @UseGuards(requireControllerPermission(PERMISSIONS.customersManage))
+  @PermissionRequired(PERMISSIONS.customersManage)
   async createCustomer(@Body() body: unknown, @Res() reply: ControllerReply): Promise<unknown> {
     const parsed = createCustomerSchema.safeParse(body);
     if (!parsed.success) {
@@ -54,7 +54,7 @@ export class CustomerController {
   }
 
   @Patch("/:id")
-  @UseGuards(requireControllerPermission(PERMISSIONS.customersManage))
+  @PermissionRequired(PERMISSIONS.customersManage)
   async updateCustomer(@Param("id") id: string, @Body() body: unknown, @Res() reply: ControllerReply): Promise<unknown> {
     const parsed = updateCustomerSchema.safeParse(body);
     if (!parsed.success) {
