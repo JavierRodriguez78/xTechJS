@@ -3,6 +3,7 @@ import type { DataSource } from "typeorm";
 import type { CommandBus, QueryBus } from "@xtaskjs/cqrs";
 import { Controller, Body, Param, Post, Req, Res, UseGuards } from "@xtaskjs/common";
 import { InjectCommandBus, InjectQueryBus } from "@xtaskjs/cqrs";
+import { Authenticated } from "@xtaskjs/security";
 import { InjectDataSource } from "@xtaskjs/typeorm";
 import { isStaffRole, type UserRole } from "../../../shared/domain/user-role.js";
 import type { AuthenticationService } from "../../application/authentication-service.js";
@@ -86,6 +87,7 @@ export class AuthController {
   }
 
   @Post("/impersonate/:userId")
+  @Authenticated()
   @UseGuards(requireControllerPermission(PERMISSIONS.impersonationUse))
   async impersonate(@Param("userId") targetId: string, @Req() request: FastifyRequest, @Res() reply: { code(statusCode: number): { send(payload: unknown): unknown } }): Promise<unknown> {
     const target = await this.queryBus.execute(new FindActiveNonAdminUserQuery(targetId));

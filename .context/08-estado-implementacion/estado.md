@@ -41,8 +41,10 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 - Matriz RBAC de permisos extensible y pruebas unitarias de roles.
 - Autenticacion inicial: bootstrap de administrador, contraseñas con hash bcrypt,
   login JWT, guards HTTP por permiso y suplantacion de tecnico/cliente con auditoria
-  en `audit_logs`. La autenticacion se implementa con `@fastify/jwt`; la integracion
-  declarativa de `@xtaskjs/security` sigue pendiente junto al kernel de xTaskJS.
+  en `audit_logs`. La estrategia JWT de `@xtaskjs/security` se registra durante el
+  arranque y los controladores privados usan `@Authenticated()`; `@fastify/jwt` se
+  conserva para emitir tokens y compatibilidad de request. El guard local mantiene
+  temporalmente la autorizacion granular por permiso sobre esa autenticacion.
 - Portal interno Vue protegido por login: usa `POST /api/auth/staff/login`, persiste
   el JWT y el perfil en `localStorage`, rechaza el rol `customer` y permite cerrar
   sesion. El portal de cliente queda pendiente como aplicacion independiente.
@@ -121,6 +123,9 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 - Trazabilidad por capas verificada en Docker: `GET /api/customers` deja, bajo el
   mismo `correlationId`, los logs de `QueryBus`, `ListCustomers` y
   `PostgresCustomerRepository`, con sus duraciones.
+- Seguridad declarativa verificada en Docker: las rutas privadas con
+  `@Authenticated()` devuelven `401` sin token y `GET /api/customers` devuelve
+  `200` con un JWT administrativo valido emitido con la configuracion de la API.
 - `make trace CORRELATION_ID=b7a2d7c1-245e-4efc-b0b8-01a636c7d4fb` validado en
   Docker: el evento frontend se registra de forma separada y el receptor responde
   `204`.
@@ -146,8 +151,8 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   modulos pendientes: almacen, TPV y chat.
 - Modelar agregados, value objects, puertos y repositorios de esos modulos.
 - Completar proyecciones CQRS de lectura si se separan modelos de lectura.
-- Integrar la seguridad declarativa de `@xtaskjs/security` (guards `@Authenticated`,
-  `@Roles`) en los controladores, sustituyendo el guard local por permisos.
+- Sustituir el guard local de permisos por una capa declarativa equivalente sobre
+  `@xtaskjs/security`, manteniendo el RBAC granular actual.
 - Cache Redis, rate limiting, correo, scheduler, Socket.IO y adjuntos.
 - Tests de dominio y aplicacion con `@xtaskjs/testing`.
 
@@ -186,8 +191,8 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 
 ## Siguiente fase recomendada
 
-1. Migrar los guards locales `requireControllerPermission` a la seguridad
-   declarativa de `@xtaskjs/security`.
+1. Migrar los guards locales `requireControllerPermission` a una autorizacion
+  declarativa por permiso sobre `@xtaskjs/security`.
 2. Completar la aprobacion de presupuestos desde el portal de cliente, o el
    historial CRM usando las ordenes existentes.
 3. Empezar el modulo de almacen siguiendo el patron ya validado (servicios DI,

@@ -4,11 +4,13 @@ import { randomUUID } from "node:crypto";
 import { CreateApplication, type Container, type XTaskHttpApplication } from "@xtaskjs/core";
 import { getCommandBusToken, getQueryBusToken, type CommandBus, type QueryBus } from "@xtaskjs/cqrs";
 import { FastifyAdapter } from "@xtaskjs/fastify-http";
+import { initializeSecurityIntegration, shutdownSecurityIntegration } from "@xtaskjs/security";
 import "./shared/infrastructure/config/app-config.js";
 import { loadConfig } from "./shared/infrastructure/config/app-config.js";
 import "./shared/infrastructure/cqrs/cqrs-configuration.js";
 import "./shared/infrastructure/http/observability-controller.js";
 import "./shared/infrastructure/persistence/data-source.js";
+import "./shared/infrastructure/security/security-configuration.js";
 import "./users/application/cqrs/user-handlers.js";
 import "./users/infrastructure/http/auth-routes.js";
 import "./users/infrastructure/http/user-controller.js";
@@ -66,6 +68,7 @@ export async function createApplication(): Promise<XTaskHttpApplication> {
     prebuiltManifest: { enabled: true }
   });
   const container = await application.getKernel().getContainer();
+  await initializeSecurityIntegration(container);
   assertRequiredComponents(container);
   instrumentBus(container.getByName<CommandBus>(getCommandBusToken()), "CommandBus");
   instrumentBus(container.getByName<QueryBus>(getQueryBusToken()), "QueryBus");
@@ -81,5 +84,6 @@ export async function startApplication(): Promise<XTaskHttpApplication> {
 
 export async function stopApplication(): Promise<void> {
   await application?.close();
+  await shutdownSecurityIntegration();
   application = undefined;
 }

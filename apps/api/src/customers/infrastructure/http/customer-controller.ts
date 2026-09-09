@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, Patch, Post, Res, UseGuards } from "@xtaskjs/common";
 import { InjectCommandBus, InjectQueryBus, type CommandBus, type QueryBus } from "@xtaskjs/cqrs";
+import { Authenticated } from "@xtaskjs/security";
 import { z } from "zod";
 import type { CreateCustomerInput, UpdateCustomerInput } from "../../domain/customer.js";
 import { CreateCustomerCommand, GetCustomerQuery, ListCustomersQuery, UpdateCustomerCommand } from "../../application/cqrs/customer-messages.js";
@@ -20,6 +21,7 @@ const updateCustomerSchema = createCustomerSchema.partial().refine((input) => Ob
 
 type ControllerReply = { code(statusCode: number): { send(payload: unknown): unknown } };
 
+@Authenticated()
 @Controller("/api/customers")
 export class CustomerController {
   constructor(

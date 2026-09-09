@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, Patch, Post, Res, UseGuards } from "@xtaskjs/common";
 import { InjectCommandBus, InjectQueryBus, type CommandBus, type QueryBus } from "@xtaskjs/cqrs";
+import { Authenticated } from "@xtaskjs/security";
 import { z } from "zod";
 import type { CreateRepairOrderInput, UpdateRepairTechnicalInput } from "../../domain/repair-order.js";
 import type { RepairStatus } from "../../domain/repair-status.js";
@@ -25,6 +26,7 @@ const quoteSchema = z.object({ status: z.enum(["draft", "sent"]), lines: z.array
 
 type ControllerReply = { code(statusCode: number): { send(payload: unknown): unknown } };
 
+@Authenticated()
 @Controller("/api/repairs")
 export class RepairController {
   constructor(
