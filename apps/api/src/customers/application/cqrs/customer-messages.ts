@@ -13,3 +13,7 @@ export class ListCustomersQuery {}
 export class GetCustomerQuery {
   constructor(public readonly id: string) {}
 }
+
+export class ListCustomerRepairsQuery {
+  constructor(public readonly customerId: string) {}
+}

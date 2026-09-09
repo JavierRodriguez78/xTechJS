@@ -3,7 +3,7 @@ import { InjectCommandBus, InjectQueryBus, type CommandBus, type QueryBus } from
 import { Authenticated } from "@xtaskjs/security";
 import { z } from "zod";
 import type { CreateCustomerInput, UpdateCustomerInput } from "../../domain/customer.js";
-import { CreateCustomerCommand, GetCustomerQuery, ListCustomersQuery, UpdateCustomerCommand } from "../../application/cqrs/customer-messages.js";
+import { CreateCustomerCommand, GetCustomerQuery, ListCustomerRepairsQuery, ListCustomersQuery, UpdateCustomerCommand } from "../../application/cqrs/customer-messages.js";
 import { PERMISSIONS } from "../../../users/domain/permission.js";
 import { PermissionRequired } from "../../../users/infrastructure/http/permission-guard.js";
 
@@ -40,6 +40,12 @@ export class CustomerController {
   async getCustomer(@Param("id") id: string, @Res() reply: ControllerReply): Promise<unknown> {
     const customer = await this.queryBus.execute(new GetCustomerQuery(id));
     return customer ? customer : reply.code(404).send({ message: "Customer not found" });
+  }
+
+  @Get("/:id/repairs")
+  @PermissionRequired(PERMISSIONS.customersRead)
+  listCustomerRepairs(@Param("id") id: string): Promise<unknown> {
+    return this.queryBus.execute(new ListCustomerRepairsQuery(id));
   }
 
   @Post()

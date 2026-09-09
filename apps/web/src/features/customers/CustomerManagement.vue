@@ -14,7 +14,17 @@ interface Customer {
   tags: string[];
 }
 
+interface CustomerRepair {
+  id: string;
+  deviceType: string;
+  brand: string;
+  model: string;
+  reportedIssue: string;
+  status: string;
+}
+
 const customers = ref<Customer[]>([]);
+const customerRepairs = ref<CustomerRepair[]>([]);
 const loading = ref(false);
 const errorMessage = ref("");
 const successMessage = ref("");
@@ -66,12 +76,16 @@ async function createCustomer(accessToken: string): Promise<void> {
 
 async function selectCustomer(id: string, accessToken: string): Promise<void> {
   errorMessage.value = "";
-  const response = await fetch(`/api/customers/${id}`, { headers: headers(accessToken) });
-  if (!response.ok) {
+  const [customerResponse, repairsResponse] = await Promise.all([
+    fetch(`/api/customers/${id}`, { headers: headers(accessToken) }),
+    fetch(`/api/customers/${id}/repairs`, { headers: headers(accessToken) })
+  ]);
+  if (!customerResponse.ok || !repairsResponse.ok) {
     errorMessage.value = "No se pudo cargar la ficha del cliente.";
     return;
   }
-  const customer = await response.json() as Customer;
+  const customer = await customerResponse.json() as Customer;
+  customerRepairs.value = await repairsResponse.json() as CustomerRepair[];
   selectedCustomerId.value = customer.id;
   form.value = {
     displayName: customer.displayName,
@@ -111,6 +125,7 @@ async function saveCustomer(accessToken: string): Promise<void> {
 
 function resetForm(): void {
   selectedCustomerId.value = null;
+  customerRepairs.value = [];
   form.value = { displayName: "", email: "", phone: "", address: "", taxId: "", internalNotes: "", tags: "" };
 }
 
@@ -152,6 +167,11 @@ onMounted(() => loadCustomers(props.accessToken));
             </button>
           </li>
         </ul>
+        <section v-if="selectedCustomerId" class="customer-repair-history" aria-labelledby="customer-repairs-title">
+          <div class="section-heading"><div><p class="eyebrow">Historial</p><h2 id="customer-repairs-title">Reparaciones</h2></div><span class="count">{{ customerRepairs.length }}</span></div>
+          <p v-if="!customerRepairs.length" class="empty">Este cliente no tiene reparaciones registradas.</p>
+          <ul v-else class="customer-repair-items"><li v-for="repair in customerRepairs" :key="repair.id"><strong>{{ repair.brand }} {{ repair.model }}</strong><span>{{ repair.deviceType }} · {{ repair.reportedIssue }}</span><em>{{ repair.status }}</em></li></ul>
+        </section>
       </section>
 
       <form class="customer-form" @submit.prevent="saveCustomer(accessToken)">

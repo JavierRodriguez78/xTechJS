@@ -29,6 +29,10 @@ export class PostgresRepairOrderRepository implements RepairOrderRepository {
     return this.dataSource.getRepository(RepairOrderEntitySchema).findOneBy({ id }).then((repair) => repair ?? undefined);
   }
 
+  findByCustomerId(customerId: string): Promise<readonly RepairOrder[]> {
+    return this.dataSource.getRepository(RepairOrderEntitySchema).find({ where: { customerId }, order: { createdAt: "DESC" } });
+  }
+
   async changeStatus(id: string, status: RepairStatus, note?: string): Promise<RepairOrder | undefined> {
     return this.dataSource.transaction(async (manager) => {
       const repository = manager.getRepository(RepairOrderEntitySchema);

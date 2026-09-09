@@ -5,7 +5,9 @@ import { CreateCustomer } from "../create-customer.js";
 import { GetCustomer } from "../get-customer.js";
 import { ListCustomers } from "../list-customers.js";
 import { UpdateCustomer } from "../update-customer.js";
-import { CreateCustomerCommand, GetCustomerQuery, ListCustomersQuery, UpdateCustomerCommand } from "./customer-messages.js";
+import { ListCustomerRepairs } from "../../../repairs/application/list-customer-repairs.js";
+import type { RepairOrder } from "../../../repairs/domain/repair-order.js";
+import { CreateCustomerCommand, GetCustomerQuery, ListCustomerRepairsQuery, ListCustomersQuery, UpdateCustomerCommand } from "./customer-messages.js";
 
 @Service()
 @CommandHandler(CreateCustomerCommand)
@@ -44,5 +46,15 @@ export class GetCustomerHandler implements IQueryHandler<GetCustomerQuery, Custo
 
   execute(query: GetCustomerQuery): Promise<Customer | undefined> {
     return this.getCustomer.execute(query.id);
+  }
+}
+
+@Service()
+@QueryHandler(ListCustomerRepairsQuery)
+export class ListCustomerRepairsHandler implements IQueryHandler<ListCustomerRepairsQuery, readonly RepairOrder[]> {
+  constructor(private readonly listCustomerRepairs: ListCustomerRepairs) {}
+
+  execute(query: ListCustomerRepairsQuery): Promise<readonly RepairOrder[]> {
+    return this.listCustomerRepairs.execute(query.customerId);
   }
 }

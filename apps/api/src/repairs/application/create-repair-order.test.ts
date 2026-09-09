@@ -13,6 +13,7 @@ class TestRepairRepository implements RepairOrderRepository {
   async create(input: NewRepairOrderRecord): Promise<RepairOrder> { return { ...input, serialNumber: input.serialNumber ?? null, deliveredAccessories: input.deliveredAccessories ?? null, technicianId: null, diagnosis: null, status: "received", createdAt: new Date(), updatedAt: new Date() }; }
   async findAll(): Promise<readonly RepairOrder[]> { return []; }
   async findById(): Promise<RepairOrder | undefined> { return undefined; }
+  async findByCustomerId(): Promise<readonly RepairOrder[]> { return []; }
   async changeStatus(_: string, __: RepairStatus): Promise<RepairOrder | undefined> { return undefined; }
   async findStatusHistory(): Promise<readonly RepairStatusEvent[]> { return []; }
   async updateTechnical(id: string, input: { technicianId?: string; diagnosis?: string }): Promise<RepairOrder | undefined> { return { id, customerId: "customer-1", deviceType: "Consola", brand: "Sony", model: "PS5", serialNumber: null, reportedIssue: "No enciende", deliveredAccessories: null, technicianId: input.technicianId ?? null, diagnosis: input.diagnosis ?? null, status: "received", createdAt: new Date(), updatedAt: new Date() }; }

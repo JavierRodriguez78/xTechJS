@@ -57,7 +57,9 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   Fastify de xTaskJS no enruta `PUT`; la semantica (actualizacion parcial) es la
   misma y el frontend ya lo usa. Las rutas manuales de Fastify del CRM fueron
   eliminadas. La vista CRM carga automaticamente el listado de clientes al
-  montarse y conserva el boton de actualizacion manual.
+  montarse y conserva el boton de actualizacion manual. La ficha de cliente carga
+  y muestra su historial de reparaciones mediante `GET /api/customers/:id/repairs`
+  y la query CQRS `ListCustomerRepairs`.
 - Modulo inicial de reparaciones: ordenes vinculadas a cliente con equipo, averia y
   accesorios; persistencia TypeORM y migracion para `repair_orders` y su linea de
   tiempo `repair_status_events`. Expone `GET`/`POST /api/repairs`, cambio de estado
@@ -130,6 +132,8 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 - RBAC declarativo verificado en Docker: un tecnico sin `customers:manage` recibe
   `403 Forbidden` al crear clientes, mientras un administrador autorizado recibe
   `201`.
+- Historial CRM verificado en Docker: `GET /api/customers/:id/repairs` devuelve
+  `200` y una coleccion vacia para un cliente sin ordenes.
 - `make trace CORRELATION_ID=b7a2d7c1-245e-4efc-b0b8-01a636c7d4fb` validado en
   Docker: el evento frontend se registra de forma separada y el receptor responde
   `204`.
@@ -162,8 +166,8 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 
 ### Funcionalidad
 
-- CRM: historial de interacciones/reparaciones y registro de notificaciones. Alta,
-  listado, ficha, edicion y etiquetado inicial ya existen.
+- CRM: historial de interacciones y registro de notificaciones. Alta, listado,
+  ficha, edicion, etiquetado e historial de reparaciones ya existen.
 - Reparaciones: adjuntos, consumo de materiales y aprobacion desde el portal de
   cliente. Ordenes, equipo basico, estados, timeline, diagnostico, asignacion y
   presupuesto interno ya existen.
@@ -195,8 +199,7 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 
 ## Siguiente fase recomendada
 
-1. Completar la aprobacion de presupuestos desde el portal de cliente, o el
-   historial CRM usando las ordenes existentes.
+1. Completar la aprobacion de presupuestos desde el portal de cliente.
 2. Empezar el modulo de almacen siguiendo el patron ya validado (servicios DI,
    CQRS, controladores decorados, repositorio como instancia nombrada).
 
