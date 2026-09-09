@@ -49,6 +49,9 @@ importers:
       pg:
         specifier: ^8.23.0
         version: 8.23.0
+      reflect-metadata:
+        specifier: ^0.2.2
+        version: 0.2.2
       typeorm:
         specifier: ^0.3.28
         version: 0.3.31(pg@8.23.0)

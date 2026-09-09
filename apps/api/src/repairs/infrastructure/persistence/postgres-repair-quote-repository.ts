@@ -1,11 +1,14 @@
 import { randomUUID } from "node:crypto";
-import type { DataSource } from "typeorm";
+import { Service } from "@xtaskjs/core";
+import { DataSource, InjectDataSource } from "@xtaskjs/typeorm";
 import type { RepairQuoteRepository } from "../../application/repair-quote-repository.js";
 import type { RepairQuote, SaveRepairQuoteInput } from "../../domain/repair-quote.js";
 import { RepairQuoteEntitySchema } from "./repair-quote-entity.js";
 
+@Service({ name: "repairQuoteRepository" })
 export class PostgresRepairQuoteRepository implements RepairQuoteRepository {
-  constructor(private readonly dataSource: DataSource) {}
+  @InjectDataSource()
+  private readonly dataSource!: DataSource;
 
   findByRepairOrderId(repairOrderId: string): Promise<RepairQuote | undefined> {
     return this.dataSource.getRepository(RepairQuoteEntitySchema).findOneBy({ repairOrderId }).then((quote) => quote ?? undefined);

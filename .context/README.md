@@ -14,10 +14,14 @@ Este paquete contiene el contexto técnico y funcional completo del proyecto **x
 - `07-entregables/entregables.md` — Qué se espera que genere ChatGPT
 - `08-estado-implementacion/estado.md` — Estado real, decisiones y trabajo pendiente
 - `05-infraestructura/infraestructura.md` — Incluye los comandos operativos del Makefile
+- `09-hallazgos-tecnicos/bug-arranque-userrepository.md` — Causa raíz confirmada del fallo de `make up` (`No component found with name: userRepository`) y fix recomendado
+- `10-referencia-xgestoria/patron-arranque.md` — Comparativa con el backend de xGestoria (mismo stack xtaskjs) como referencia de arquitectura de arranque y convenciones DI
 
 ## Uso recomendado
 
 1. Pega primero `00-general/resumen.md` para dar contexto inicial.
 2. Ve añadiendo el resto de archivos según la parte de la app en la que estéis trabajando (por ejemplo, `03-backend/backend.md` cuando toque diseñar la arquitectura del servidor).
 3. Consulta `08-estado-implementacion/estado.md` antes de continuar el desarrollo para conocer el punto de partida actual.
-4. `07-entregables/entregables.md` sirve como guion de las peticiones concretas a hacer a ChatGPT.
+4. **Antes de seguir añadiendo funcionalidad**, pega `09-hallazgos-tecnicos/bug-arranque-userrepository.md` — describe un bug de arranque en producción ya diagnosticado y reproducido, con el fix exacto a aplicar.
+5. `10-referencia-xgestoria/patron-arranque.md` sirve de guía de estilo para los próximos módulos (almacén, TPV, chat).
+6. `07-entregables/entregables.md` sirve como guion de las peticiones concretas a hacer a ChatGPT.

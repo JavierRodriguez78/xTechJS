@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 
-defineProps<{ accessToken: string }>();
+const props = defineProps<{ accessToken: string }>();
 
 interface Customer {
   id: string;
@@ -113,6 +113,8 @@ function resetForm(): void {
   selectedCustomerId.value = null;
   form.value = { displayName: "", email: "", phone: "", address: "", taxId: "", internalNotes: "", tags: "" };
 }
+
+onMounted(() => loadCustomers(props.accessToken));
 </script>
 
 <template>

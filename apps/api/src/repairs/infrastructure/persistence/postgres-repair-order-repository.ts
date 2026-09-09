@@ -1,12 +1,15 @@
 import { randomUUID } from "node:crypto";
-import type { DataSource } from "typeorm";
+import { Service } from "@xtaskjs/core";
+import { DataSource, InjectDataSource } from "@xtaskjs/typeorm";
 import type { RepairOrderRepository, NewRepairOrderRecord } from "../../application/repair-order-repository.js";
 import type { RepairOrder, RepairStatusEvent } from "../../domain/repair-order.js";
 import type { RepairStatus } from "../../domain/repair-status.js";
 import { RepairOrderEntitySchema, RepairStatusEventEntitySchema } from "./repair-order-entity.js";
 
+@Service({ name: "repairOrderRepository" })
 export class PostgresRepairOrderRepository implements RepairOrderRepository {
-  constructor(private readonly dataSource: DataSource) {}
+  @InjectDataSource()
+  private readonly dataSource!: DataSource;
 
   async create(input: NewRepairOrderRecord): Promise<RepairOrder> {
     return this.dataSource.transaction(async (manager) => {

@@ -1,11 +1,14 @@
 import { randomUUID } from "node:crypto";
-import type { DataSource } from "typeorm";
+import { Service } from "@xtaskjs/core";
+import { DataSource, InjectDataSource } from "@xtaskjs/typeorm";
 import type { CustomerRepository, NewCustomerRecord } from "../../application/customer-repository.js";
 import type { Customer, UpdateCustomerInput } from "../../domain/customer.js";
 import { CustomerEntitySchema } from "./customer-entity.js";
 
+@Service({ name: "customerRepository" })
 export class PostgresCustomerRepository implements CustomerRepository {
-  constructor(private readonly dataSource: DataSource) {}
+  @InjectDataSource()
+  private readonly dataSource!: DataSource;
 
   async create(input: NewCustomerRecord): Promise<Customer> {
     const customer = this.dataSource.getRepository(CustomerEntitySchema).create({

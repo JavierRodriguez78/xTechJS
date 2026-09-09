@@ -15,6 +15,13 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   El ciclo de vida de `@xtaskjs/typeorm` administra el datasource `default`, ejecuta
   las migraciones al iniciar el servidor y cierra la conexion al detenerse. El script
   de migraciones conserva su `DataSource` explicito para ejecutarse fuera de la API.
+- El arranque queda separado: `main.ts` carga metadatos y llama a `startApplication`,
+  mientras `app.ts` expone `createApplication`, `startApplication` y
+  `stopApplication`. Los repositorios PostgreSQL se registran con `@Service({ name })`
+  e inyectan el datasource mediante `@InjectDataSource`; no se usan decoradores
+  `@Repository` para componentes DI.
+- `app.ts` incluye un smoke check que resuelve los repositorios nombrados requeridos
+  antes de escuchar peticiones, y sus pruebas cubren el fallo explícito si falta uno.
 - Tipos de dominio iniciales: roles `admin`, `technician`, `customer` y estados de
   reparacion configurables por codigo.
 - Modulo inicial de usuarios con entidad, puerto de repositorio, caso de uso de
@@ -75,6 +82,9 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   el runtime, omite fuentes TypeScript y ejecuta como usuario `node` con permiso para
   su cache de manifiesto. Esto permite descubrir componentes DI/CQRS sin que Node
   intente ejecutar `.ts` en produccion.
+- `reflect-metadata` es una dependencia directa de produccion de la API porque
+  `main.ts` la carga antes del kernel; asi `pnpm deploy --prod` la conserva en la
+  imagen final.
 - `Makefile` raiz para instalar dependencias, desarrollo local, Docker, shells de
   contenedores, migraciones, pruebas, typecheck y compilacion.
 
@@ -85,6 +95,8 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 - `pnpm --filter @xtechjs/api test`: 12 pruebas de RBAC, autenticacion, CRM y
   reparaciones superadas, 0 fallos, incluido el calculo del total de presupuesto y
   tras incorporar el piloto de DI/CQRS de usuarios.
+- Tras separar el arranque y adoptar repositorios `@Service`, `pnpm --filter
+  @xtechjs/api test` supera 14 pruebas, incluido el smoke check de componentes.
 - `pnpm --filter @xtechjs/api build` y `pnpm --filter @xtechjs/web build` completados
   correctamente tras incorporar presupuestos de reparacion.
 - `GET http://127.0.0.1:3000/health` respondio correctamente durante desarrollo local.
