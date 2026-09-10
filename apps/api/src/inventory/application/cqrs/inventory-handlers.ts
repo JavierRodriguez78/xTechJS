@@ -6,7 +6,8 @@ import { ConsumeInventoryForRepair } from "../consume-inventory-for-repair.js";
 import { CreateInventoryItem } from "../create-inventory-item.js";
 import { GetInventoryMovements } from "../get-inventory-movements.js";
 import { ListInventoryItems } from "../list-inventory-items.js";
-import { AdjustInventoryStockCommand, ConsumeInventoryForRepairCommand, CreateInventoryItemCommand, GetInventoryMovementsQuery, ListInventoryItemsQuery } from "./inventory-messages.js";
+import { ListLowStockItems } from "../list-low-stock-items.js";
+import { AdjustInventoryStockCommand, ConsumeInventoryForRepairCommand, CreateInventoryItemCommand, GetInventoryMovementsQuery, ListInventoryItemsQuery, ListLowStockItemsQuery } from "./inventory-messages.js";
 
 @Service()
 @CommandHandler(CreateInventoryItemCommand)
@@ -33,6 +34,13 @@ export class ConsumeInventoryForRepairHandler implements ICommandHandler<Consume
 @QueryHandler(ListInventoryItemsQuery)
 export class ListInventoryItemsHandler implements IQueryHandler<ListInventoryItemsQuery, readonly InventoryItem[]> {
   constructor(private readonly useCase: ListInventoryItems) {}
+  execute(): Promise<readonly InventoryItem[]> { return this.useCase.execute(); }
+}
+
+@Service()
+@QueryHandler(ListLowStockItemsQuery)
+export class ListLowStockItemsHandler implements IQueryHandler<ListLowStockItemsQuery, readonly InventoryItem[]> {
+  constructor(private readonly useCase: ListLowStockItems) {}
   execute(): Promise<readonly InventoryItem[]> { return this.useCase.execute(); }
 }
 

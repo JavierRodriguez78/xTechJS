@@ -136,6 +136,8 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   consulta de movimientos `200`, con trazabilidad de la operacion.
 - Consumo de almacén verificado en Docker: entrada de `5`, consumo enlazado de `2`
   con `repairOrderId`, stock final `3` y movimientos consultables `200`.
+- Alertas de stock verificadas en Docker: material creado con stock `0` y minimo `5`
+  aparece en `GET /api/inventory/alerts/low-stock` con `200`.
 - Seguridad declarativa verificada en Docker: las rutas privadas con
   `@Authenticated()` devuelven `401` sin token y `GET /api/customers` devuelve
   `200` con un JWT administrativo valido emitido con la configuracion de la API.
@@ -190,7 +192,8 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   `PATCH /api/inventory/:id/stock` y `GET /api/inventory/:id/movements`, protegidos
   por `inventory:manage`; impide stock negativo en transaccion. El consumo desde
   reparaciones se registra mediante `POST /api/inventory/:id/consume`, con
-  `repairOrderId`, movimiento negativo auditado y migracion incremental.
+  `repairOrderId`, movimiento negativo auditado y migracion incremental. Las alertas
+  de stock bajo minimo se consultan en `GET /api/inventory/alerts/low-stock`.
 - TPV: cobros, facturas/tickets, cierre de caja y reportes.
 - Chat y notificaciones en tiempo real.
 - Administracion: usuarios, roles, configuracion, auditoria y dashboards.

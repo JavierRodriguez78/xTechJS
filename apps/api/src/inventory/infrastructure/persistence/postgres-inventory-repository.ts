@@ -20,6 +20,10 @@ export class PostgresInventoryRepository implements InventoryRepository {
     return this.dataSource.getRepository(InventoryItemEntitySchema).find({ order: { name: "ASC" } });
   }
 
+  findBelowMinimum(): Promise<readonly InventoryItem[]> {
+    return this.dataSource.getRepository(InventoryItemEntitySchema).createQueryBuilder("item").where("item.stock <= item.minimum_stock").orderBy("item.stock", "ASC").addOrderBy("item.name", "ASC").getMany();
+  }
+
   findById(id: string): Promise<InventoryItem | undefined> {
     return this.dataSource.getRepository(InventoryItemEntitySchema).findOneBy({ id }).then((item) => item ?? undefined);
   }

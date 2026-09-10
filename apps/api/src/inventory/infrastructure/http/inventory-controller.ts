@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, Patch, Post, Res } from "@xtaskjs/common"
 import { InjectCommandBus, InjectQueryBus, type CommandBus, type QueryBus } from "@xtaskjs/cqrs";
 import { Authenticated } from "@xtaskjs/security";
 import { z } from "zod";
-import { AdjustInventoryStockCommand, ConsumeInventoryForRepairCommand, CreateInventoryItemCommand, GetInventoryMovementsQuery, ListInventoryItemsQuery } from "../../application/cqrs/inventory-messages.js";
+import { AdjustInventoryStockCommand, ConsumeInventoryForRepairCommand, CreateInventoryItemCommand, GetInventoryMovementsQuery, ListInventoryItemsQuery, ListLowStockItemsQuery } from "../../application/cqrs/inventory-messages.js";
 import { PERMISSIONS } from "../../../users/domain/permission.js";
 import { PermissionRequired } from "../../../users/infrastructure/http/permission-guard.js";
 
@@ -19,6 +19,10 @@ export class InventoryController {
   @Get()
   @PermissionRequired(PERMISSIONS.inventoryManage)
   list(): Promise<unknown> { return this.queryBus.execute(new ListInventoryItemsQuery()); }
+
+  @Get("/alerts/low-stock")
+  @PermissionRequired(PERMISSIONS.inventoryManage)
+  lowStock(): Promise<unknown> { return this.queryBus.execute(new ListLowStockItemsQuery()); }
 
   @Post()
   @PermissionRequired(PERMISSIONS.inventoryManage)
