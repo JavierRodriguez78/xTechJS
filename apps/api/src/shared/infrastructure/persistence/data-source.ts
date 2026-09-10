@@ -11,6 +11,8 @@ import { RepairQuoteEntitySchema } from "../../../repairs/infrastructure/persist
 import { AddUserPasswordHashMigration } from "../../../users/infrastructure/persistence/migrations/1736035200000-add-user-password-hash.js";
 import { InitialUsersMigration } from "../../../users/infrastructure/persistence/migrations/1735862400000-initial-users.js";
 import { UserEntitySchema } from "../../../users/infrastructure/persistence/user-entity.js";
+import { InventoryItemEntitySchema, InventoryMovementEntitySchema } from "../../../inventory/infrastructure/persistence/inventory-entity.js";
+import { InitialInventoryMigration } from "../../../inventory/infrastructure/persistence/migrations/1736553600000-initial-inventory.js";
 
 const config = loadConfig();
 
@@ -22,8 +24,8 @@ const dataSourceOptions: XTaskTypeOrmDataSourceOptions = {
   database: config.get("POSTGRES_DB"),
   username: config.get("POSTGRES_USER"),
   password: config.get("POSTGRES_PASSWORD"),
-  entities: [UserEntitySchema, CustomerEntitySchema, RepairOrderEntitySchema, RepairStatusEventEntitySchema, RepairQuoteEntitySchema],
-  migrations: [InitialUsersMigration, InitialCustomersMigration, AddUserPasswordHashMigration, InitialRepairOrdersMigration, AddRepairTechnicalDetailsMigration, InitialRepairQuotesMigration],
+  entities: [UserEntitySchema, CustomerEntitySchema, RepairOrderEntitySchema, RepairStatusEventEntitySchema, RepairQuoteEntitySchema, InventoryItemEntitySchema, InventoryMovementEntitySchema],
+  migrations: [InitialUsersMigration, InitialCustomersMigration, AddUserPasswordHashMigration, InitialRepairOrdersMigration, AddRepairTechnicalDetailsMigration, InitialRepairQuotesMigration, InitialInventoryMigration],
   synchronize: false,
   initializeOnServerStart: true,
   runMigrationsOnServerStart: true

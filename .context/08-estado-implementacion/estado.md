@@ -132,6 +132,8 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 - Trazabilidad por capas verificada en Docker: `GET /api/customers` deja, bajo el
   mismo `correlationId`, los logs de `QueryBus`, `ListCustomers` y
   `PostgresCustomerRepository`, con sus duraciones.
+- Almacen verificado en Docker: alta de material `201`, entrada de stock `200` y
+  consulta de movimientos `200`, con trazabilidad de la operacion.
 - Seguridad declarativa verificada en Docker: las rutas privadas con
   `@Authenticated()` devuelven `401` sin token y `GET /api/customers` devuelve
   `200` con un JWT administrativo valido emitido con la configuracion de la API.
@@ -180,7 +182,11 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 - Reparaciones: adjuntos y consumo de materiales. Ordenes, equipo basico, estados,
   timeline, diagnostico, asignacion, presupuesto interno y aprobacion desde portal
   de cliente ya existen.
-- Almacen: catalogo, stock, movimientos, alertas y proveedores.
+- Almacen: primer vertical implementado con catalogo de materiales, stock entero y
+  movimientos auditados. Usa `@Service`, CQRS, `InventoryController` y migraciones
+  `inventory_items`/`inventory_movements`. Expone `GET`/`POST /api/inventory`,
+  `PATCH /api/inventory/:id/stock` y `GET /api/inventory/:id/movements`, protegidos
+  por `inventory:manage`; impide stock negativo en transaccion.
 - TPV: cobros, facturas/tickets, cierre de caja y reportes.
 - Chat y notificaciones en tiempo real.
 - Administracion: usuarios, roles, configuracion, auditoria y dashboards.
@@ -209,16 +215,17 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 
 ## Siguiente fase recomendada
 
-1. Empezar el modulo de almacen siguiendo el patron ya validado (servicios DI,
-   CQRS, controladores decorados, repositorio como instancia nombrada).
+1. Completar almacen con consumo desde reparaciones, alertas de stock minimo y
+  proveedores, manteniendo el patron DI/CQRS ya validado.
 
-Los tres modulos implementados (usuarios, CRM, reparaciones) usan el patron
+Los cuatro modulos implementados (usuarios, CRM, reparaciones y almacen) usan el patron
 xTaskJS completo: servicios `@Service` con `@Qualifier`, comandos/queries con
 handlers `@CommandHandler`/`@QueryHandler`, controladores `@Controller` con guards
 y repositorios registrados como instancias nombradas en `main.ts`. No quedan rutas
 Fastify manuales. Patron a replicar en modulos futuros: almacen, TPV y chat.
 PostgreSQL contiene `users`, `audit_logs`, `customers`, `repair_orders`,
-`repair_status_events` y `repair_quotes` tras ejecutar migraciones.
+`repair_status_events`, `repair_quotes`, `inventory_items` e
+`inventory_movements` tras ejecutar migraciones.
 
 ## Criterio de actualizacion
 

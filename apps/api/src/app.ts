@@ -23,6 +23,9 @@ import "./repairs/infrastructure/http/repair-controller.js";
 import "./repairs/infrastructure/http/customer-repair-controller.js";
 import "./repairs/infrastructure/persistence/postgres-repair-order-repository.js";
 import "./repairs/infrastructure/persistence/postgres-repair-quote-repository.js";
+import "./inventory/application/cqrs/inventory-handlers.js";
+import "./inventory/infrastructure/http/inventory-controller.js";
+import "./inventory/infrastructure/persistence/postgres-inventory-repository.js";
 import { startTrace, traceOperation } from "./shared/infrastructure/observability/trace.js";
 
 declare module "fastify" {
@@ -32,7 +35,7 @@ declare module "fastify" {
 }
 
 let application: XTaskHttpApplication | undefined;
-const requiredComponentNames = ["userRepository", "customerRepository", "repairOrderRepository", "repairQuoteRepository"] as const;
+const requiredComponentNames = ["userRepository", "customerRepository", "repairOrderRepository", "repairQuoteRepository", "inventoryRepository"] as const;
 
 function instrumentBus(bus: CommandBus | QueryBus, component: "CommandBus" | "QueryBus"): void {
   const execute = bus.execute.bind(bus);
