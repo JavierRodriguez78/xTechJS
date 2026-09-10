@@ -23,12 +23,14 @@ export interface CreateInventoryItemInput {
 export interface AdjustInventoryInput {
   quantity: number;
   type: InventoryMovementType;
+  repairOrderId?: string;
   note?: string;
 }
 
 export interface InventoryMovement {
   id: string;
   inventoryItemId: string;
+  repairOrderId: string | null;
   quantity: number;
   type: InventoryMovementType;
   note: string | null;

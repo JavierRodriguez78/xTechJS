@@ -23,6 +23,7 @@ export const InventoryMovementEntitySchema = new EntitySchema<InventoryMovement>
   columns: {
     id: { type: "uuid", primary: true },
     inventoryItemId: { type: "uuid", name: "inventory_item_id" },
+    repairOrderId: { type: "uuid", name: "repair_order_id", nullable: true },
     quantity: { type: Number },
     type: { type: String },
     note: { type: String, nullable: true },

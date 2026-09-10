@@ -2,10 +2,11 @@ import { Service } from "@xtaskjs/core";
 import { CommandHandler, type ICommandHandler, type IQueryHandler, QueryHandler } from "@xtaskjs/cqrs";
 import type { InventoryItem, InventoryMovement } from "../../domain/inventory-item.js";
 import { AdjustInventoryStock } from "../adjust-inventory-stock.js";
+import { ConsumeInventoryForRepair } from "../consume-inventory-for-repair.js";
 import { CreateInventoryItem } from "../create-inventory-item.js";
 import { GetInventoryMovements } from "../get-inventory-movements.js";
 import { ListInventoryItems } from "../list-inventory-items.js";
-import { AdjustInventoryStockCommand, CreateInventoryItemCommand, GetInventoryMovementsQuery, ListInventoryItemsQuery } from "./inventory-messages.js";
+import { AdjustInventoryStockCommand, ConsumeInventoryForRepairCommand, CreateInventoryItemCommand, GetInventoryMovementsQuery, ListInventoryItemsQuery } from "./inventory-messages.js";
 
 @Service()
 @CommandHandler(CreateInventoryItemCommand)
@@ -19,6 +20,13 @@ export class CreateInventoryItemHandler implements ICommandHandler<CreateInvento
 export class AdjustInventoryStockHandler implements ICommandHandler<AdjustInventoryStockCommand, InventoryItem | undefined> {
   constructor(private readonly useCase: AdjustInventoryStock) {}
   execute(command: AdjustInventoryStockCommand): Promise<InventoryItem | undefined> { return this.useCase.execute(command.id, command.input); }
+}
+
+@Service()
+@CommandHandler(ConsumeInventoryForRepairCommand)
+export class ConsumeInventoryForRepairHandler implements ICommandHandler<ConsumeInventoryForRepairCommand, InventoryItem | undefined> {
+  constructor(private readonly useCase: ConsumeInventoryForRepair) {}
+  execute(command: ConsumeInventoryForRepairCommand): Promise<InventoryItem | undefined> { return this.useCase.execute(command.repairOrderId, command.inventoryItemId, command.quantity, command.note); }
 }
 
 @Service()

@@ -33,7 +33,7 @@ export class PostgresInventoryRepository implements InventoryRepository {
       if (nextStock < 0) throw new Error("Inventory stock cannot be negative");
       item.stock = nextStock;
       const saved = await repository.save(item);
-      await manager.getRepository(InventoryMovementEntitySchema).save({ id: randomUUID(), inventoryItemId: id, quantity: input.quantity, type: input.type, note: input.note || null });
+      await manager.getRepository(InventoryMovementEntitySchema).save({ id: randomUUID(), inventoryItemId: id, repairOrderId: input.repairOrderId || null, quantity: input.quantity, type: input.type, note: input.note || null });
       return saved;
     });
   }
