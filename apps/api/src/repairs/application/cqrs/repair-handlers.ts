@@ -3,6 +3,9 @@ import { CommandHandler, type ICommandHandler, type IQueryHandler, QueryHandler 
 import type { RepairOrder, RepairStatusEvent } from "../../domain/repair-order.js";
 import type { RepairQuote } from "../../domain/repair-quote.js";
 import { ApproveRepairQuote } from "../approve-repair-quote.js";
+import { ApproveCustomerRepairQuote } from "../approve-customer-repair-quote.js";
+import { ListOwnCustomerRepairs } from "../list-own-customer-repairs.js";
+import { GetOwnCustomerQuote } from "../get-own-customer-quote.js";
 import { ChangeRepairStatus } from "../change-repair-status.js";
 import { CreateRepairOrder } from "../create-repair-order.js";
 import { GetRepairQuote } from "../get-repair-quote.js";
@@ -12,11 +15,14 @@ import { SaveRepairQuote } from "../save-repair-quote.js";
 import { UpdateRepairTechnical } from "../update-repair-technical.js";
 import {
   ApproveRepairQuoteCommand,
+  ApproveCustomerRepairQuoteCommand,
   ChangeRepairStatusCommand,
   CreateRepairOrderCommand,
   GetRepairQuoteQuery,
+  GetOwnCustomerQuoteQuery,
   GetRepairStatusHistoryQuery,
   ListRepairOrdersQuery,
+  ListOwnCustomerRepairsQuery,
   SaveRepairQuoteCommand,
   UpdateRepairTechnicalCommand
 } from "./repair-messages.js";
@@ -72,6 +78,16 @@ export class ApproveRepairQuoteHandler implements ICommandHandler<ApproveRepairQ
 }
 
 @Service()
+@CommandHandler(ApproveCustomerRepairQuoteCommand)
+export class ApproveCustomerRepairQuoteHandler implements ICommandHandler<ApproveCustomerRepairQuoteCommand, RepairQuote | undefined> {
+  constructor(private readonly useCase: ApproveCustomerRepairQuote) {}
+
+  execute(command: ApproveCustomerRepairQuoteCommand): Promise<RepairQuote | undefined> {
+    return this.useCase.execute(command.repairOrderId, command.email);
+  }
+}
+
+@Service()
 @QueryHandler(ListRepairOrdersQuery)
 export class ListRepairOrdersHandler implements IQueryHandler<ListRepairOrdersQuery, readonly RepairOrder[]> {
   constructor(private readonly useCase: ListRepairOrders) {}
@@ -98,5 +114,25 @@ export class GetRepairQuoteHandler implements IQueryHandler<GetRepairQuoteQuery,
 
   execute(query: GetRepairQuoteQuery): Promise<RepairQuote | undefined> {
     return this.useCase.execute(query.repairOrderId);
+  }
+}
+
+@Service()
+@QueryHandler(ListOwnCustomerRepairsQuery)
+export class ListOwnCustomerRepairsHandler implements IQueryHandler<ListOwnCustomerRepairsQuery, readonly RepairOrder[]> {
+  constructor(private readonly useCase: ListOwnCustomerRepairs) {}
+
+  execute(query: ListOwnCustomerRepairsQuery): Promise<readonly RepairOrder[]> {
+    return this.useCase.execute(query.email);
+  }
+}
+
+@Service()
+@QueryHandler(GetOwnCustomerQuoteQuery)
+export class GetOwnCustomerQuoteHandler implements IQueryHandler<GetOwnCustomerQuoteQuery, RepairQuote | undefined> {
+  constructor(private readonly useCase: GetOwnCustomerQuote) {}
+
+  execute(query: GetOwnCustomerQuoteQuery): Promise<RepairQuote | undefined> {
+    return this.useCase.execute(query.repairOrderId, query.email);
   }
 }

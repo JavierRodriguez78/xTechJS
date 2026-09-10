@@ -8,5 +8,6 @@ export interface CustomerRepository {
   create(input: NewCustomerRecord): Promise<Customer>;
   findAll(): Promise<readonly Customer[]>;
   findById(id: string): Promise<Customer | undefined>;
+  findByEmail(email: string): Promise<Customer | undefined>;
   update(id: string, input: UpdateCustomerInput): Promise<Customer | undefined>;
 }

@@ -19,7 +19,11 @@ const selectedRepairId = ref<string | null>(null);
 const quote = ref<RepairQuote | null>(null);
 const quoteForm = ref<{ lines: QuoteLine[] }>({ lines: [{ description: "", quantity: 1, unitPriceCents: 0 }] });
 
-function headers(): HeadersInit { return { "content-type": "application/json", authorization: `Bearer ${props.accessToken}` }; }
+function headers(withJsonBody = false): HeadersInit {
+  return withJsonBody
+    ? { "content-type": "application/json", authorization: `Bearer ${props.accessToken}` }
+    : { authorization: `Bearer ${props.accessToken}` };
+}
 function customerName(id: string): string { return customers.value.find((customer) => customer.id === id)?.displayName ?? "Cliente"; }
 function money(cents: number): string { return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(cents / 100); }
 function quoteTotal(): number { return quoteForm.value.lines.reduce((total, line) => total + Number(line.quantity || 0) * Number(line.unitPriceCents || 0), 0); }
@@ -38,7 +42,7 @@ async function loadData(): Promise<void> {
 
 async function createRepair(): Promise<void> {
   successMessage.value = ""; errorMessage.value = "";
-  const response = await fetch("/api/repairs", { method: "POST", headers: headers(), body: JSON.stringify(form.value) });
+  const response = await fetch("/api/repairs", { method: "POST", headers: headers(true), body: JSON.stringify(form.value) });
   if (!response.ok) { errorMessage.value = "No se pudo crear la orden. Revisa los datos y tus permisos."; return; }
   form.value = { customerId: "", deviceType: "", brand: "", model: "", serialNumber: "", reportedIssue: "", deliveredAccessories: "" };
   successMessage.value = "Orden de reparacion creada.";
@@ -47,14 +51,14 @@ async function createRepair(): Promise<void> {
 
 async function changeStatus(repair: Repair, event: Event): Promise<void> {
   const status = (event.target as HTMLSelectElement).value;
-  const response = await fetch(`/api/repairs/${repair.id}/status`, { method: "PATCH", headers: headers(), body: JSON.stringify({ status }) });
+  const response = await fetch(`/api/repairs/${repair.id}/status`, { method: "PATCH", headers: headers(true), body: JSON.stringify({ status }) });
   if (!response.ok) { errorMessage.value = "Ese cambio de estado no esta permitido en el flujo actual."; await loadData(); return; }
   await loadData();
 }
 
 async function saveTechnical(repair: Repair, form: { technicianId: string; diagnosis: string }): Promise<void> {
   errorMessage.value = "";
-  const response = await fetch(`/api/repairs/${repair.id}/technical`, { method: "PATCH", headers: headers(), body: JSON.stringify({ technicianId: form.technicianId || undefined, diagnosis: form.diagnosis || undefined }) });
+  const response = await fetch(`/api/repairs/${repair.id}/technical`, { method: "PATCH", headers: headers(true), body: JSON.stringify({ technicianId: form.technicianId || undefined, diagnosis: form.diagnosis || undefined }) });
   if (!response.ok) { errorMessage.value = "No se pudieron guardar los datos tecnicos."; return; }
   successMessage.value = "Ficha tecnica actualizada.";
   await loadData();
@@ -75,7 +79,7 @@ function removeQuoteLine(index: number): void { if (quoteForm.value.lines.length
 async function saveQuote(status: "draft" | "sent"): Promise<void> {
   if (!selectedRepairId.value) return;
   errorMessage.value = ""; successMessage.value = "";
-  const response = await fetch(`/api/repairs/${selectedRepairId.value}/quote`, { method: "PATCH", headers: headers(), body: JSON.stringify({ status, lines: quoteForm.value.lines }) });
+  const response = await fetch(`/api/repairs/${selectedRepairId.value}/quote`, { method: "PATCH", headers: headers(true), body: JSON.stringify({ status, lines: quoteForm.value.lines }) });
   if (!response.ok) { errorMessage.value = status === "sent" ? "El presupuesto solo puede enviarse desde diagnostico." : "Revisa las lineas del presupuesto."; return; }
   quote.value = await response.json() as RepairQuote;
   successMessage.value = status === "sent" ? "Presupuesto enviado al cliente." : "Borrador de presupuesto guardado.";

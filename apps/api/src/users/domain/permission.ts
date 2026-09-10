@@ -6,6 +6,7 @@ export const PERMISSIONS = {
   customersManage: "customers:manage",
   repairsRead: "repairs:read",
   repairsManage: "repairs:manage",
+  repairsApproveQuote: "repairs:approve-quote",
   inventoryManage: "inventory:manage",
   paymentsManage: "payments:manage",
   chatUse: "chat:use",
@@ -19,7 +20,7 @@ const allPermissions = Object.values(PERMISSIONS);
 const permissionsByRole: Record<UserRole, readonly Permission[]> = {
   admin: allPermissions,
   technician: [PERMISSIONS.customersRead, PERMISSIONS.repairsRead, PERMISSIONS.repairsManage, PERMISSIONS.chatUse],
-  customer: [PERMISSIONS.repairsRead, PERMISSIONS.chatUse]
+  customer: [PERMISSIONS.repairsRead, PERMISSIONS.repairsApproveQuote, PERMISSIONS.chatUse]
 };
 
 export function hasPermission(role: UserRole, permission: Permission): boolean {

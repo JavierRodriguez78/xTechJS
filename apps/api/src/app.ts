@@ -20,6 +20,7 @@ import "./customers/infrastructure/http/customer-controller.js";
 import "./customers/infrastructure/persistence/postgres-customer-repository.js";
 import "./repairs/application/cqrs/repair-handlers.js";
 import "./repairs/infrastructure/http/repair-controller.js";
+import "./repairs/infrastructure/http/customer-repair-controller.js";
 import "./repairs/infrastructure/persistence/postgres-repair-order-repository.js";
 import "./repairs/infrastructure/persistence/postgres-repair-quote-repository.js";
 import { startTrace, traceOperation } from "./shared/infrastructure/observability/trace.js";

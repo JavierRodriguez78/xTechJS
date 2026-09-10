@@ -1,7 +1,7 @@
 import { Qualifier, Service } from "@xtaskjs/core";
 import { Traceable } from "../../shared/infrastructure/observability/trace.js";
 import type { RepairOrderRepository } from "./repair-order-repository.js";
-import type { ChangeRepairStatus } from "./change-repair-status.js";
+import { ChangeRepairStatus } from "./change-repair-status.js";
 import type { RepairQuote, SaveRepairQuoteInput } from "../domain/repair-quote.js";
 import type { RepairQuoteRepository } from "./repair-quote-repository.js";
 

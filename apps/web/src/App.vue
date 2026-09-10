@@ -4,8 +4,12 @@ import StaffLogin from "./features/auth/StaffLogin.vue";
 import { signOut, staffSession } from "./features/auth/session";
 import CustomerManagement from "./features/customers/CustomerManagement.vue";
 import RepairManagement from "./features/repairs/RepairManagement.vue";
+import CustomerLogin from "./features/customer-portal/CustomerLogin.vue";
+import CustomerPortal from "./features/customer-portal/CustomerPortal.vue";
+import { customerSession } from "./features/customer-portal/session";
 
 const activeView = ref<"dashboard" | "customers" | "repairs">("dashboard");
+const isCustomerPortal = window.location.pathname.startsWith("/customer");
 
 const repairSummary = [
   { label: "En diagnostico", value: 12, tone: "amber" },
@@ -21,6 +25,11 @@ const recentRepairs = [
 </script>
 
 <template>
+  <template v-if="isCustomerPortal">
+    <CustomerLogin v-if="!customerSession" />
+    <CustomerPortal v-else />
+  </template>
+  <template v-else>
   <StaffLogin v-if="!staffSession" />
   <main v-else class="workspace">
     <aside class="sidebar">
@@ -77,4 +86,5 @@ const recentRepairs = [
       </section>
     </section>
   </main>
+  </template>
 </template>

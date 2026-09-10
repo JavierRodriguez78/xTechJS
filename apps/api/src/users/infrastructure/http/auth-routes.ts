@@ -14,6 +14,7 @@ import { PermissionRequired } from "./permission-guard.js";
 
 export interface AuthTokenPayload {
   sub: string;
+  email?: string;
   role: UserRole;
   impersonatorId?: string;
 }
@@ -65,7 +66,15 @@ export class AuthController {
     if (!user || !isStaffRole(user.role)) {
       return reply.code(401).send({ message: "Invalid staff credentials" });
     }
-    const token = request.server.jwt.sign({ sub: user.id, role: user.role });
+    const token = request.server.jwt.sign({ sub: user.id, email: user.email, role: user.role });
+    return { accessToken: token, user: toPublicUser(user) };
+  }
+
+  @Post("/customer/login")
+  async customerLogin(@Body() input: { email: string; password: string }, @Req() request: FastifyRequest, @Res() reply: { code(statusCode: number): { send(payload: unknown): unknown } }): Promise<unknown> {
+    const user = await this.commandBus.execute(new AuthenticateUserCommand(input?.email ?? "", input?.password ?? ""));
+    if (!user || user.role !== "customer") return reply.code(401).send({ message: "Invalid customer credentials" });
+    const token = request.server.jwt.sign({ sub: user.id, email: user.email, role: user.role });
     return { accessToken: token, user: toPublicUser(user) };
   }
 

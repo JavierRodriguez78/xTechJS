@@ -34,6 +34,10 @@ export class PostgresCustomerRepository implements CustomerRepository {
     return this.dataSource.getRepository(CustomerEntitySchema).findOneBy({ id }).then((customer) => customer ?? undefined);
   }
 
+  findByEmail(email: string): Promise<Customer | undefined> {
+    return this.dataSource.getRepository(CustomerEntitySchema).findOneBy({ email: email.toLowerCase() }).then((customer) => customer ?? undefined);
+  }
+
   async update(id: string, input: UpdateCustomerInput): Promise<Customer | undefined> {
     const repository = this.dataSource.getRepository(CustomerEntitySchema);
     const customer = await repository.preload({ id, ...input });

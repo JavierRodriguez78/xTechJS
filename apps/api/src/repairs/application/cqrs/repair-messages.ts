@@ -22,6 +22,10 @@ export class ApproveRepairQuoteCommand {
   constructor(public readonly repairOrderId: string) {}
 }
 
+export class ApproveCustomerRepairQuoteCommand {
+  constructor(public readonly repairOrderId: string, public readonly email: string) {}
+}
+
 export class ListRepairOrdersQuery {}
 
 export class GetRepairStatusHistoryQuery {
@@ -30,4 +34,12 @@ export class GetRepairStatusHistoryQuery {
 
 export class GetRepairQuoteQuery {
   constructor(public readonly repairOrderId: string) {}
+}
+
+export class ListOwnCustomerRepairsQuery {
+  constructor(public readonly email: string) {}
+}
+
+export class GetOwnCustomerQuoteQuery {
+  constructor(public readonly repairOrderId: string, public readonly email: string) {}
 }

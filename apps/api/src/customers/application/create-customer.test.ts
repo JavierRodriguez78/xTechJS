@@ -29,6 +29,10 @@ class TestCustomerRepository implements CustomerRepository {
     return undefined;
   }
 
+  async findByEmail(): Promise<Customer | undefined> {
+    return undefined;
+  }
+
   async update(id: string, input: UpdateCustomerInput): Promise<Customer | undefined> {
     return {
       id,

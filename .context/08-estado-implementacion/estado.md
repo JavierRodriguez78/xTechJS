@@ -46,6 +46,12 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   conserva para emitir tokens y compatibilidad de request. La autorizacion granular
   se declara mediante `@PermissionRequired`, que consume el contexto autenticado de
   xTaskJS y devuelve `403` sin repetir la verificacion del JWT.
+- Portal de cliente separado en `/customer`: login mediante
+  `POST /api/auth/customer/login`, listado de reparaciones propias mediante
+  `GET /api/customer/repairs`, consulta de presupuesto propio y aprobacion mediante
+  `POST /api/customer/repairs/:id/quote/approve`. La API valida la propiedad usando
+  el email del usuario autenticado contra el CRM antes de devolver o aprobar un
+  presupuesto; el portal interno de trabajadores no se mezcla con esta vista.
 - Portal interno Vue protegido por login: usa `POST /api/auth/staff/login`, persiste
   el JWT y el perfil en `localStorage`, rechaza el rol `customer` y permite cerrar
   sesion. El portal de cliente queda pendiente como aplicacion independiente.
@@ -132,6 +138,9 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 - RBAC declarativo verificado en Docker: un tecnico sin `customers:manage` recibe
   `403 Forbidden` al crear clientes, mientras un administrador autorizado recibe
   `201`.
+- Portal cliente compilado correctamente: API con login, consultas y aprobacion
+  protegida por propiedad; frontend con entrada separada `/customer` y boton de
+  aprobacion para presupuestos enviados.
 - Historial CRM verificado en Docker: `GET /api/customers/:id/repairs` devuelve
   `200` y una coleccion vacia para un cliente sin ordenes.
 - `make trace CORRELATION_ID=b7a2d7c1-245e-4efc-b0b8-01a636c7d4fb` validado en
@@ -168,9 +177,9 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 
 - CRM: historial de interacciones y registro de notificaciones. Alta, listado,
   ficha, edicion, etiquetado e historial de reparaciones ya existen.
-- Reparaciones: adjuntos, consumo de materiales y aprobacion desde el portal de
-  cliente. Ordenes, equipo basico, estados, timeline, diagnostico, asignacion y
-  presupuesto interno ya existen.
+- Reparaciones: adjuntos y consumo de materiales. Ordenes, equipo basico, estados,
+  timeline, diagnostico, asignacion, presupuesto interno y aprobacion desde portal
+  de cliente ya existen.
 - Almacen: catalogo, stock, movimientos, alertas y proveedores.
 - TPV: cobros, facturas/tickets, cierre de caja y reportes.
 - Chat y notificaciones en tiempo real.
@@ -179,8 +188,9 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 ### Frontend
 
 - Router, arquitectura por features y cliente HTTP/WebSocket.
-- Router y guards de navegacion por rol. El portal interno ya dispone de autenticacion
-  persistente para admin/tecnico, pero aun no tiene router ni portal de cliente.
+- Router y guards de navegacion por rol. El portal interno y el portal de cliente
+  ya tienen entradas separadas, aunque la navegacion sigue siendo una bifurcacion
+  simple por pathname y no un router Vue dedicado.
 - Vistas funcionales para admin, tecnico y cliente.
 - Formularios, validacion, estados de carga/error y conexion con API.
 - Carga y reproduccion segura de fotos y videos.
@@ -199,8 +209,7 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 
 ## Siguiente fase recomendada
 
-1. Completar la aprobacion de presupuestos desde el portal de cliente.
-2. Empezar el modulo de almacen siguiendo el patron ya validado (servicios DI,
+1. Empezar el modulo de almacen siguiendo el patron ya validado (servicios DI,
    CQRS, controladores decorados, repositorio como instancia nombrada).
 
 Los tres modulos implementados (usuarios, CRM, reparaciones) usan el patron
