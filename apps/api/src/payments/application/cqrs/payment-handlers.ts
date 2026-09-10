@@ -4,7 +4,8 @@ import type { Payment } from "../../domain/payment.js";
 import { CreatePayment } from "../create-payment.js";
 import { ListPayments } from "../list-payments.js";
 import { ListRepairPayments } from "../list-repair-payments.js";
-import { CreatePaymentCommand, ListPaymentsQuery, ListRepairPaymentsQuery } from "./payment-messages.js";
+import { RefundPayment } from "../refund-payment.js";
+import { CreatePaymentCommand, ListPaymentsQuery, ListRepairPaymentsQuery, RefundPaymentCommand } from "./payment-messages.js";
 
 @Service()
 @CommandHandler(CreatePaymentCommand)
@@ -25,4 +26,11 @@ export class ListPaymentsHandler implements IQueryHandler<ListPaymentsQuery, rea
 export class ListRepairPaymentsHandler implements IQueryHandler<ListRepairPaymentsQuery, readonly Payment[]> {
   constructor(private readonly useCase: ListRepairPayments) {}
   execute(query: ListRepairPaymentsQuery): Promise<readonly Payment[]> { return this.useCase.execute(query.repairOrderId); }
+}
+
+@Service()
+@CommandHandler(RefundPaymentCommand)
+export class RefundPaymentHandler implements ICommandHandler<RefundPaymentCommand, Payment | undefined> {
+  constructor(private readonly useCase: RefundPayment) {}
+  execute(command: RefundPaymentCommand): Promise<Payment | undefined> { return this.useCase.execute(command.id); }
 }

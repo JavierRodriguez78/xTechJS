@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, Post, Res } from "@xtaskjs/common";
 import { InjectCommandBus, InjectQueryBus, type CommandBus, type QueryBus } from "@xtaskjs/cqrs";
 import { Authenticated } from "@xtaskjs/security";
 import { z } from "zod";
-import { CreatePaymentCommand, ListPaymentsQuery, ListRepairPaymentsQuery } from "../../application/cqrs/payment-messages.js";
+import { CreatePaymentCommand, ListPaymentsQuery, ListRepairPaymentsQuery, RefundPaymentCommand } from "../../application/cqrs/payment-messages.js";
 import { PERMISSIONS } from "../../../users/domain/permission.js";
 import { PermissionRequired } from "../../../users/infrastructure/http/permission-guard.js";
 
@@ -28,5 +28,14 @@ export class PaymentController {
     const parsed = paymentSchema.safeParse(body);
     if (!parsed.success) return reply.code(400).send({ message: "Invalid payment", issues: parsed.error.flatten() });
     return reply.code(201).send(await this.commandBus.execute(new CreatePaymentCommand(parsed.data)));
+  }
+
+  @Post("/:id/refund")
+  @PermissionRequired(PERMISSIONS.paymentsManage)
+  async refund(@Param("id") id: string, @Res() reply: ControllerReply): Promise<unknown> {
+    try {
+      const payment = await this.commandBus.execute(new RefundPaymentCommand(id));
+      return payment ? payment : reply.code(404).send({ message: "Payment not found" });
+    } catch (error) { return reply.code(409).send({ message: (error as Error).message }); }
   }
 }

@@ -4,11 +4,13 @@ import StaffLogin from "./features/auth/StaffLogin.vue";
 import { signOut, staffSession } from "./features/auth/session";
 import CustomerManagement from "./features/customers/CustomerManagement.vue";
 import RepairManagement from "./features/repairs/RepairManagement.vue";
+import InventoryManagement from "./features/inventory/InventoryManagement.vue";
+import PaymentManagement from "./features/payments/PaymentManagement.vue";
 import CustomerLogin from "./features/customer-portal/CustomerLogin.vue";
 import CustomerPortal from "./features/customer-portal/CustomerPortal.vue";
 import { customerSession } from "./features/customer-portal/session";
 
-const activeView = ref<"dashboard" | "customers" | "repairs">("dashboard");
+const activeView = ref<"dashboard" | "customers" | "repairs" | "inventory" | "payments">("dashboard");
 const isCustomerPortal = window.location.pathname.startsWith("/customer");
 
 const repairSummary = [
@@ -38,8 +40,8 @@ const recentRepairs = [
         <a :class="{ active: activeView === 'dashboard' }" href="#panel" @click.prevent="activeView = 'dashboard'">Panel</a>
         <a :class="{ active: activeView === 'repairs' }" href="#reparaciones" @click.prevent="activeView = 'repairs'">Reparaciones</a>
         <a :class="{ active: activeView === 'customers' }" href="#clientes" @click.prevent="activeView = 'customers'">Clientes</a>
-        <a href="#">Almacen</a>
-        <a href="#">TPV</a>
+        <a :class="{ active: activeView === 'inventory' }" href="#almacen" @click.prevent="activeView = 'inventory'">Almacen</a>
+        <a :class="{ active: activeView === 'payments' }" href="#tpv" @click.prevent="activeView = 'payments'">TPV</a>
         <a href="#">Mensajes</a>
       </nav>
       <div class="profile">
@@ -51,6 +53,8 @@ const recentRepairs = [
 
     <CustomerManagement v-if="activeView === 'customers'" class="content" :access-token="staffSession.accessToken" />
     <RepairManagement v-else-if="activeView === 'repairs'" class="content" :access-token="staffSession.accessToken" />
+    <InventoryManagement v-else-if="activeView === 'inventory'" :access-token="staffSession.accessToken" />
+    <PaymentManagement v-else-if="activeView === 'payments'" :access-token="staffSession.accessToken" />
     <section v-else class="content">
       <header>
         <div>

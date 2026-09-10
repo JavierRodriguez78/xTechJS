@@ -4,4 +4,5 @@ export interface PaymentRepository {
   create(input: CreatePaymentInput & { id: string }): Promise<Payment>;
   findAll(): Promise<readonly Payment[]>;
   findByRepairOrderId(repairOrderId: string): Promise<readonly Payment[]>;
+  refund(id: string): Promise<Payment | undefined>;
 }

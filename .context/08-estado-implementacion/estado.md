@@ -85,7 +85,10 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   `fastify-http`, `security`, `validation` y `value-objects`. `config` ya se usa
   desde la API; las demas se integraran al implementar sus capacidades.
 - Cliente Vue 3 + TypeScript con una vista estatica de panel de taller. Los datos de
-  resumen y ordenes son de ejemplo; no consume la API, no tiene router ni sesiones.
+  resumen y ordenes son de ejemplo; el portal interno ahora incluye vistas graficas
+  para CRM, reparaciones, almacén y TPV, conectadas a sus endpoints con JWT. Almacén
+  permite gestionar materiales, ajustes, consumos, alertas, proveedores y recepción
+  de órdenes de compra; TPV permite registrar y reembolsar cobros.
 - Docker Compose declara cuatro servicios independientes: `web`, `api`, `postgres`
   y `redis`, con healthchecks y volumenes persistentes para datos.
 - Imagen de API Node y una imagen de frontend Nginx con proxy interno de `/api` a
@@ -147,6 +150,8 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   usando importes enteros en centimos y metodos `cash`, `card` o `transfer`. Expone
   `GET`/`POST /api/payments` y `GET /api/payments/repair/:repairOrderId`, protegidos
   por `payments:manage`; un cobro de tarjeta devuelve `201` y su consulta `200`.
+- Reembolsos TPV verificados en Docker: `POST /api/payments/:id/refund` devuelve
+  `200` y cambia el pago a `refunded`; un segundo reembolso devuelve `409`.
 - Seguridad declarativa verificada en Docker: las rutas privadas con
   `@Authenticated()` devuelven `401` sin token y `GET /api/customers` devuelve
   `200` con un JWT administrativo valido emitido con la configuracion de la API.
@@ -156,6 +161,8 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 - Portal cliente compilado correctamente: API con login, consultas y aprobacion
   protegida por propiedad; frontend con entrada separada `/customer` y boton de
   aprobacion para presupuestos enviados.
+- Consola interna validada mediante build web después de añadir las vistas de almacén
+  y TPV; se mantiene la entrada separada del portal de cliente.
 - Historial CRM verificado en Docker: `GET /api/customers/:id/repairs` devuelve
   `200` y una coleccion vacia para un cliente sin ordenes.
 - `make trace CORRELATION_ID=b7a2d7c1-245e-4efc-b0b8-01a636c7d4fb` validado en
@@ -207,8 +214,8 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   `GET`/`POST /api/inventory/suppliers`; las ordenes de compra exponen
   `GET`/`POST /api/inventory/purchase-orders` y
   `POST /api/inventory/purchase-orders/:id/receive`.
-- TPV: cobros asociados a reparaciones implementados con TypeORM, CQRS,
-  `PaymentController` y trazabilidad. Quedan pendientes tickets/facturas, reembolsos,
+- TPV: cobros y reembolsos asociados a reparaciones implementados con TypeORM,
+  CQRS, `PaymentController` y trazabilidad. Quedan pendientes tickets/facturas,
   cierre de caja y reportes.
 - TPV: cobros, facturas/tickets, cierre de caja y reportes.
 - Chat y notificaciones en tiempo real.

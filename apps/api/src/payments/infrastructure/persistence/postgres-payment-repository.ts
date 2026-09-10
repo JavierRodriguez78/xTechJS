@@ -13,4 +13,12 @@ export class PostgresPaymentRepository implements PaymentRepository {
   create(input: CreatePaymentInput & { id: string }): Promise<Payment> { return this.dataSource.getRepository(PaymentEntitySchema).save({ ...input, status: "paid" }); }
   findAll(): Promise<readonly Payment[]> { return this.dataSource.getRepository(PaymentEntitySchema).find({ order: { createdAt: "DESC" } }); }
   findByRepairOrderId(repairOrderId: string): Promise<readonly Payment[]> { return this.dataSource.getRepository(PaymentEntitySchema).find({ where: { repairOrderId }, order: { createdAt: "DESC" } }); }
+  async refund(id: string): Promise<Payment | undefined> {
+    const repository = this.dataSource.getRepository(PaymentEntitySchema);
+    const payment = await repository.findOneBy({ id });
+    if (!payment) return undefined;
+    if (payment.status === "refunded") throw new Error("Payment is already refunded");
+    payment.status = "refunded";
+    return repository.save(payment);
+  }
 }
