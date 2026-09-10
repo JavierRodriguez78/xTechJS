@@ -5,7 +5,7 @@ import { assertRequiredComponents } from "./app.js";
 test("startup smoke check resolves every required repository", () => {
   const resolved: string[] = [];
   assertRequiredComponents({ getByName<T>(name: string) { resolved.push(name); return {} as T; } });
-  assert.deepEqual(resolved, ["userRepository", "customerRepository", "repairOrderRepository", "repairQuoteRepository", "inventoryRepository"]);
+  assert.deepEqual(resolved, ["userRepository", "customerRepository", "repairOrderRepository", "repairQuoteRepository", "inventoryRepository", "supplierRepository", "purchaseOrderRepository", "paymentRepository"]);
 });
 
 test("startup smoke check fails when a required repository is unavailable", () => {

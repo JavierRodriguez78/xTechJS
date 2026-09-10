@@ -25,7 +25,16 @@ import "./repairs/infrastructure/persistence/postgres-repair-order-repository.js
 import "./repairs/infrastructure/persistence/postgres-repair-quote-repository.js";
 import "./inventory/application/cqrs/inventory-handlers.js";
 import "./inventory/infrastructure/http/inventory-controller.js";
+import "./inventory/infrastructure/http/supplier-controller.js";
 import "./inventory/infrastructure/persistence/postgres-inventory-repository.js";
+import "./inventory/application/cqrs/supplier-handlers.js";
+import "./inventory/infrastructure/persistence/postgres-supplier-repository.js";
+import "./inventory/application/cqrs/purchase-order-handlers.js";
+import "./inventory/infrastructure/http/purchase-order-controller.js";
+import "./inventory/infrastructure/persistence/postgres-purchase-order-repository.js";
+import "./payments/application/cqrs/payment-handlers.js";
+import "./payments/infrastructure/http/payment-controller.js";
+import "./payments/infrastructure/persistence/postgres-payment-repository.js";
 import { startTrace, traceOperation } from "./shared/infrastructure/observability/trace.js";
 
 declare module "fastify" {
@@ -35,7 +44,7 @@ declare module "fastify" {
 }
 
 let application: XTaskHttpApplication | undefined;
-const requiredComponentNames = ["userRepository", "customerRepository", "repairOrderRepository", "repairQuoteRepository", "inventoryRepository"] as const;
+const requiredComponentNames = ["userRepository", "customerRepository", "repairOrderRepository", "repairQuoteRepository", "inventoryRepository", "supplierRepository", "purchaseOrderRepository", "paymentRepository"] as const;
 
 function instrumentBus(bus: CommandBus | QueryBus, component: "CommandBus" | "QueryBus"): void {
   const execute = bus.execute.bind(bus);

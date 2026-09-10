@@ -138,6 +138,15 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   con `repairOrderId`, stock final `3` y movimientos consultables `200`.
 - Alertas de stock verificadas en Docker: material creado con stock `0` y minimo `5`
   aparece en `GET /api/inventory/alerts/low-stock` con `200`.
+- Proveedores verificados en Docker: alta `201` y listado `200` mediante el catalogo
+  protegido de inventario.
+- Ordenes de compra verificadas en Docker: proveedor, material y orden creados; la
+  recepcion devuelve `200`, cambia el estado a `received`, incrementa el stock y
+  registra el movimiento de entrada asociado.
+- TPV verificado en Docker: primer vertical de cobros asociado a reparaciones,
+  usando importes enteros en centimos y metodos `cash`, `card` o `transfer`. Expone
+  `GET`/`POST /api/payments` y `GET /api/payments/repair/:repairOrderId`, protegidos
+  por `payments:manage`; un cobro de tarjeta devuelve `201` y su consulta `200`.
 - Seguridad declarativa verificada en Docker: las rutas privadas con
   `@Authenticated()` devuelven `401` sin token y `GET /api/customers` devuelve
   `200` con un JWT administrativo valido emitido con la configuracion de la API.
@@ -193,7 +202,14 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   por `inventory:manage`; impide stock negativo en transaccion. El consumo desde
   reparaciones se registra mediante `POST /api/inventory/:id/consume`, con
   `repairOrderId`, movimiento negativo auditado y migracion incremental. Las alertas
-  de stock bajo minimo se consultan en `GET /api/inventory/alerts/low-stock`.
+  de stock bajo minimo se consultan en `GET /api/inventory/alerts/low-stock`. El
+  catalogo de proveedores usa `inventory_suppliers` y expone
+  `GET`/`POST /api/inventory/suppliers`; las ordenes de compra exponen
+  `GET`/`POST /api/inventory/purchase-orders` y
+  `POST /api/inventory/purchase-orders/:id/receive`.
+- TPV: cobros asociados a reparaciones implementados con TypeORM, CQRS,
+  `PaymentController` y trazabilidad. Quedan pendientes tickets/facturas, reembolsos,
+  cierre de caja y reportes.
 - TPV: cobros, facturas/tickets, cierre de caja y reportes.
 - Chat y notificaciones en tiempo real.
 - Administracion: usuarios, roles, configuracion, auditoria y dashboards.
