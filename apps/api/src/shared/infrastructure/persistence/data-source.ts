@@ -20,6 +20,8 @@ import { PurchaseOrderEntitySchema } from "../../../inventory/infrastructure/per
 import { InitialPurchaseOrdersMigration } from "../../../inventory/infrastructure/persistence/migrations/1736812800000-initial-purchase-orders.js";
 import { PaymentEntitySchema } from "../../../payments/infrastructure/persistence/payment-entity.js";
 import { InitialPaymentsMigration } from "../../../payments/infrastructure/persistence/migrations/1736899200000-initial-payments.js";
+import { CashRegisterEntitySchema } from "../../../payments/infrastructure/persistence/cash-register-entity.js";
+import { InitialCashRegistersMigration } from "../../../payments/infrastructure/persistence/migrations/1736985600000-initial-cash-registers.js";
 
 const config = loadConfig();
 
@@ -31,8 +33,8 @@ const dataSourceOptions: XTaskTypeOrmDataSourceOptions = {
   database: config.get("POSTGRES_DB"),
   username: config.get("POSTGRES_USER"),
   password: config.get("POSTGRES_PASSWORD"),
-  entities: [UserEntitySchema, CustomerEntitySchema, RepairOrderEntitySchema, RepairStatusEventEntitySchema, RepairQuoteEntitySchema, InventoryItemEntitySchema, InventoryMovementEntitySchema, SupplierEntitySchema, PurchaseOrderEntitySchema, PaymentEntitySchema],
-  migrations: [InitialUsersMigration, InitialCustomersMigration, AddUserPasswordHashMigration, InitialRepairOrdersMigration, AddRepairTechnicalDetailsMigration, InitialRepairQuotesMigration, InitialInventoryMigration, AddRepairToInventoryMovementsMigration, InitialSuppliersMigration, InitialPurchaseOrdersMigration, InitialPaymentsMigration],
+  entities: [UserEntitySchema, CustomerEntitySchema, RepairOrderEntitySchema, RepairStatusEventEntitySchema, RepairQuoteEntitySchema, InventoryItemEntitySchema, InventoryMovementEntitySchema, SupplierEntitySchema, PurchaseOrderEntitySchema, PaymentEntitySchema, CashRegisterEntitySchema],
+  migrations: [InitialUsersMigration, InitialCustomersMigration, AddUserPasswordHashMigration, InitialRepairOrdersMigration, AddRepairTechnicalDetailsMigration, InitialRepairQuotesMigration, InitialInventoryMigration, AddRepairToInventoryMovementsMigration, InitialSuppliersMigration, InitialPurchaseOrdersMigration, InitialPaymentsMigration, InitialCashRegistersMigration],
   synchronize: false,
   initializeOnServerStart: true,
   runMigrationsOnServerStart: true

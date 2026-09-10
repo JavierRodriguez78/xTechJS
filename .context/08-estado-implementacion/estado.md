@@ -1,6 +1,6 @@
 # Estado de implementacion - xTechJS
 
-**Actualizado:** 2026-09-07
+**Actualizado:** 2026-09-10
 
 Este documento complementa la especificacion funcional. Describe exclusivamente lo que
 existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase.
@@ -54,7 +54,7 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   presupuesto; el portal interno de trabajadores no se mezcla con esta vista.
 - Portal interno Vue protegido por login: usa `POST /api/auth/staff/login`, persiste
   el JWT y el perfil en `localStorage`, rechaza el rol `customer` y permite cerrar
-  sesion. El portal de cliente queda pendiente como aplicacion independiente.
+  sesion. El portal de cliente funciona de forma independiente en `/customer`.
 - Primer vertical CRM de clientes: entidad TypeORM, migracion, puerto y repositorio
   PostgreSQL, casos de uso para alta, listado, ficha y edicion. Migrado a DI/CQRS
   xTaskJS: casos de uso como servicios decorados, comandos/queries con handlers y
@@ -122,6 +122,9 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   tras incorporar el piloto de DI/CQRS de usuarios.
 - Tras separar el arranque y adoptar repositorios `@Service`, `pnpm --filter
   @xtechjs/api test` supera 14 pruebas, incluido el smoke check de componentes.
+- Validacion mas reciente: 14 pruebas API superadas, build API y build web
+  completados correctamente tras incorporar caja diaria, reportes TPV y recibo
+  simplificado enriquecido.
 - `pnpm --filter @xtechjs/api build` y `pnpm --filter @xtechjs/web build` completados
   correctamente tras incorporar presupuestos de reparacion.
 - `pnpm --filter @xtechjs/web build` completado correctamente tras incorporar la
@@ -152,6 +155,25 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   por `payments:manage`; un cobro de tarjeta devuelve `201` y su consulta `200`.
 - Reembolsos TPV verificados en Docker: `POST /api/payments/:id/refund` devuelve
   `200` y cambia el pago a `refunded`; un segundo reembolso devuelve `409`.
+- Ticket simplificado TPV verificado en Docker: `GET /api/payments/:id/receipt`
+  devuelve `200` con numero de recibo, pago, cliente, reparación e instante de
+  emision; queda preparado como base para generar PDF.
+- PDF TPV implementado mediante `GET /api/payments/:id/pdf`, con descarga
+  `application/pdf`, datos de cliente/reparación, importe y método de pago; validado
+  en Docker con respuesta `200` y firma `%PDF`.
+- Resumen diario TPV implementado mediante `GET /api/payments/summary/:date`,
+  agrupando cobros, reembolsos y neto por método de pago; la consola muestra las
+  métricas del día.
+- Caja diaria TPV implementada con apertura, consulta y cierre persistente mediante
+  `POST /api/payments/cash-register/:date/open`,
+  `GET /api/payments/cash-register/:date` y
+  `POST /api/payments/cash-register/:date/close`. El cierre congela cobros,
+  reembolsos y neto del día.
+- Reporte TPV por rango implementado mediante
+  `GET /api/payments/report/:from/:to`, con totales globales, desglose diario y
+  desglose por método de pago, técnico y tipo de dispositivo.
+- Cierre diario TPV validado en Docker: apertura `201`, cierre `200` y resumen
+  congelado con cobros, reembolsos y neto.
 - Seguridad declarativa verificada en Docker: las rutas privadas con
   `@Authenticated()` devuelven `401` sin token y `GET /api/customers` devuelve
   `200` con un JWT administrativo valido emitido con la configuracion de la API.
@@ -163,6 +185,8 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   aprobacion para presupuestos enviados.
 - Consola interna validada mediante build web después de añadir las vistas de almacén
   y TPV; se mantiene la entrada separada del portal de cliente.
+- Vista TPV actualizada con estado de caja diaria, controles de apertura/cierre y
+  neto de caja; el ticket PDF sigue disponible mediante endpoint protegido.
 - Historial CRM verificado en Docker: `GET /api/customers/:id/repairs` devuelve
   `200` y una coleccion vacia para un cliente sin ordenes.
 - `make trace CORRELATION_ID=b7a2d7c1-245e-4efc-b0b8-01a636c7d4fb` validado en
@@ -215,9 +239,11 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   `GET`/`POST /api/inventory/purchase-orders` y
   `POST /api/inventory/purchase-orders/:id/receive`.
 - TPV: cobros y reembolsos asociados a reparaciones implementados con TypeORM,
-  CQRS, `PaymentController` y trazabilidad. Quedan pendientes tickets/facturas,
-  cierre de caja y reportes.
-- TPV: cobros, facturas/tickets, cierre de caja y reportes.
+  CQRS, `PaymentController` y trazabilidad. Ticket simplificado implementado como
+  respuesta estructurada, resumen diario por método, cierre persistente de caja y
+  reporte por rango con desglose por técnico/dispositivo. El ticket simplificado
+  incluye cliente y reparación y dispone de descarga PDF; queda pendiente la
+  facturación fiscal formal y sus requisitos legales.
 - Chat y notificaciones en tiempo real.
 - Administracion: usuarios, roles, configuracion, auditoria y dashboards.
 
@@ -245,8 +271,7 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 
 ## Siguiente fase recomendada
 
-1. Completar almacen con consumo desde reparaciones, alertas de stock minimo y
-  proveedores, manteniendo el patron DI/CQRS ya validado.
+1. Completar TPV con PDF/facturas fiscales, manteniendo el patron DI/CQRS ya validado.
 
 Los cuatro modulos implementados (usuarios, CRM, reparaciones y almacen) usan el patron
 xTaskJS completo: servicios `@Service` con `@Qualifier`, comandos/queries con
