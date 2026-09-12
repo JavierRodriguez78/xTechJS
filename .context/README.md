@@ -16,6 +16,7 @@ Este paquete contiene el contexto técnico y funcional completo del proyecto **x
 - `05-infraestructura/infraestructura.md` — Incluye los comandos operativos del Makefile
 - `09-hallazgos-tecnicos/bug-arranque-userrepository.md` — Causa raíz confirmada del fallo de `make up` (`No component found with name: userRepository`) y fix recomendado
 - `10-referencia-xgestoria/patron-arranque.md` — Comparativa con el backend de xGestoria (mismo stack xtaskjs) como referencia de arquitectura de arranque y convenciones DI
+- `11-alta-clientes/registro-cliente.md` — Flujo de alta de cliente con email obligatorio, autorregistro (contraseña + datos de facturación), autorización LOPD/RGPD, y MailHog como SMTP de pruebas
 
 ## Uso recomendado
 
@@ -24,4 +25,5 @@ Este paquete contiene el contexto técnico y funcional completo del proyecto **x
 3. Consulta `08-estado-implementacion/estado.md` antes de continuar el desarrollo para conocer el punto de partida actual.
 4. **Antes de seguir añadiendo funcionalidad**, pega `09-hallazgos-tecnicos/bug-arranque-userrepository.md` — describe un bug de arranque en producción ya diagnosticado y reproducido, con el fix exacto a aplicar.
 5. `10-referencia-xgestoria/patron-arranque.md` sirve de guía de estilo para los próximos módulos (almacén, TPV, chat).
-6. `07-entregables/entregables.md` sirve como guion de las peticiones concretas a hacer a ChatGPT.
+6. Para implementar el autorregistro de clientes, pega `11-alta-clientes/registro-cliente.md` junto con `05-infraestructura/infraestructura.md` (MailHog) y `02-modulos-funcionales/modulos.md` (sección CRM actualizada).
+7. `07-entregables/entregables.md` sirve como guion de las peticiones concretas a hacer a ChatGPT.

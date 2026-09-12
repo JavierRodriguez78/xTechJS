@@ -1,8 +1,31 @@
 # Infraestructura y despliegue — xTechJS
 
-- **Dockerizado por completo**: backend, frontend, PostgreSQL y Redis como servicios independientes, orquestados con `docker-compose` (y preparado para poder llevarse a un entorno de orquestación mayor en el futuro, ej. Kubernetes).
+- **Dockerizado por completo**: backend, frontend, PostgreSQL, Redis y **MailHog**
+  (servidor SMTP de pruebas) como servicios independientes, orquestados con
+  `docker-compose` (y preparado para poder llevarse a un entorno de orquestación
+  mayor en el futuro, ej. Kubernetes).
 - Variables de entorno gestionadas vía `@xtaskjs/config`, con validación de esquema.
 - Backend y frontend deben poder desplegarse y escalar de forma independiente.
+
+## MailHog (SMTP de pruebas)
+
+Para poder verificar en desarrollo y en Docker los correos transaccionales (email
+de invitación de registro de cliente, y cualquier otro futuro: recuperación de
+contraseña, notificaciones de estado de reparación) **sin enviar correos reales**,
+se incorpora `mailhog/mailhog` como servicio adicional en `compose.yaml`:
+
+- Puerto SMTP (`1025` por defecto) al que la API envía los correos vía
+  `@xtaskjs/mailer`.
+- Puerto de interfaz web (`8025` por defecto,
+  `http://localhost:8025`) donde se puede leer el contenido completo de cada
+  correo capturado, incluidos los enlaces de un solo uso.
+- Sin volumen persistente: los correos capturados son solo para pruebas y se
+  pierden al reiniciar el contenedor, lo cual es el comportamiento deseado.
+- El servicio `api` debe declarar `mailhog` en su `depends_on` con
+  `condition: service_healthy`, igual que ya hace con `postgres` y `redis`.
+- Variables de entorno nuevas para la API: `SMTP_HOST`, `SMTP_PORT`,
+  `SMTP_SECURE`, `MAIL_FROM`. Ver el detalle completo en
+  `11-alta-clientes/registro-cliente.md` (sección 5).
 
 ## Operativa de desarrollo
 

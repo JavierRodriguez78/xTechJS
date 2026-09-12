@@ -16,11 +16,12 @@ export class PostgresCustomerRepository implements CustomerRepository {
     const customer = this.dataSource.getRepository(CustomerEntitySchema).create({
       id: input.id ?? randomUUID(),
       displayName: input.displayName,
-      email: input.email || null,
+      email: input.email,
       phone: input.phone || null,
       address: input.address || null,
       taxId: input.taxId || null,
       internalNotes: input.internalNotes || null,
+      registrationStatus: "pending",
       tags: input.tags ?? []
     });
     return this.dataSource.getRepository(CustomerEntitySchema).save(customer);

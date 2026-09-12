@@ -2,6 +2,18 @@
 
 ## CRM y gestión de clientes
 - Alta, edición y ficha de cliente (datos de contacto, dirección, NIF/DNI si aplica, notas internas).
+- **El email es obligatorio al dar de alta un cliente** (ya no opcional): es la vía
+  para el autorregistro descrito a continuación.
+- **Autorregistro del cliente tras el alta por staff**: al crear un cliente, se le
+  envía un email con un enlace de un solo uso (caducidad recomendada 72h) para que
+  complete su propio registro: fija su contraseña de acceso al portal `/customer`,
+  aporta los datos de facturación necesarios para poder emitir factura (NIF/CIF,
+  dirección fiscal, razón social si aplica), y **acepta la autorización de
+  tratamiento de datos exigida por la LOPD-GDD/RGPD española**, con registro
+  verificable de esa aceptación (texto/versión aceptada, fecha/hora, IP). El
+  cliente queda en estado `pending` hasta completar el registro; el staff puede
+  reenviar la invitación si el token caduca. Especificación completa en
+  `11-alta-clientes/registro-cliente.md`.
 - Histórico de interacciones y reparaciones por cliente.
 - Segmentación/etiquetado de clientes (particular, empresa, recurrente, etc.).
 - Comunicaciones: registro de notificaciones enviadas (email, y opcionalmente SMS/WhatsApp) sobre cambios de estado de sus equipos.

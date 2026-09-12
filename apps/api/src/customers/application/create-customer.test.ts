@@ -15,6 +15,7 @@ class TestCustomerRepository implements CustomerRepository {
       address: input.address ?? null,
       taxId: input.taxId ?? null,
       internalNotes: input.internalNotes ?? null,
+      registrationStatus: "pending",
       tags: input.tags ?? [],
       createdAt: new Date(),
       updatedAt: new Date()
@@ -42,6 +43,7 @@ class TestCustomerRepository implements CustomerRepository {
       address: input.address ?? null,
       taxId: input.taxId ?? null,
       internalNotes: input.internalNotes ?? null,
+      registrationStatus: "pending",
       tags: input.tags ?? [],
       createdAt: new Date(),
       updatedAt: new Date()
@@ -49,7 +51,11 @@ class TestCustomerRepository implements CustomerRepository {
   }
 }
 
-test("customer creation normalizes identity fields and tags", async () => {
+test("customer creation requires an email and starts as pending registration", async () => {
+  await assert.rejects(() => new CreateCustomer(new TestCustomerRepository()).execute({
+    displayName: "  Marta Ruiz "
+  } as any), /email/i);
+
   const customer = await new CreateCustomer(new TestCustomerRepository()).execute({
     displayName: "  Marta Ruiz ",
     email: " MARTA@EXAMPLE.COM ",
@@ -59,6 +65,7 @@ test("customer creation normalizes identity fields and tags", async () => {
 
   assert.equal(customer.displayName, "Marta Ruiz");
   assert.equal(customer.email, "marta@example.com");
+  assert.equal(customer.registrationStatus, "pending");
   assert.equal(customer.taxId, "1234A");
   assert.deepEqual(customer.tags, ["recurrente", "particular"]);
 });

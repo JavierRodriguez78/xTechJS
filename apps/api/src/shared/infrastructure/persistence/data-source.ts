@@ -3,6 +3,8 @@ import { registerTypeOrmDataSource, type XTaskTypeOrmDataSourceOptions } from "@
 import { loadConfig } from "../config/app-config.js";
 import { InitialCustomersMigration } from "../../../customers/infrastructure/persistence/migrations/1735948800000-initial-customers.js";
 import { CustomerEntitySchema } from "../../../customers/infrastructure/persistence/customer-entity.js";
+import { AddCustomerRegistrationTokensMigration } from "../../../customers/infrastructure/persistence/migrations/1737500000000-add-customer-registration-tokens.js";
+import { CustomerRegistrationTokenEntitySchema } from "../../../customers/infrastructure/persistence/customer-registration-token-entity.js";
 import { InitialRepairOrdersMigration } from "../../../repairs/infrastructure/persistence/migrations/1736121600000-initial-repair-orders.js";
 import { AddRepairTechnicalDetailsMigration } from "../../../repairs/infrastructure/persistence/migrations/1736208000000-add-repair-technical-details.js";
 import { InitialRepairQuotesMigration } from "../../../repairs/infrastructure/persistence/migrations/1736294400000-initial-repair-quotes.js";
@@ -33,8 +35,8 @@ const dataSourceOptions: XTaskTypeOrmDataSourceOptions = {
   database: config.get("POSTGRES_DB"),
   username: config.get("POSTGRES_USER"),
   password: config.get("POSTGRES_PASSWORD"),
-  entities: [UserEntitySchema, CustomerEntitySchema, RepairOrderEntitySchema, RepairStatusEventEntitySchema, RepairQuoteEntitySchema, InventoryItemEntitySchema, InventoryMovementEntitySchema, SupplierEntitySchema, PurchaseOrderEntitySchema, PaymentEntitySchema, CashRegisterEntitySchema],
-  migrations: [InitialUsersMigration, InitialCustomersMigration, AddUserPasswordHashMigration, InitialRepairOrdersMigration, AddRepairTechnicalDetailsMigration, InitialRepairQuotesMigration, InitialInventoryMigration, AddRepairToInventoryMovementsMigration, InitialSuppliersMigration, InitialPurchaseOrdersMigration, InitialPaymentsMigration, InitialCashRegistersMigration],
+  entities: [UserEntitySchema, CustomerEntitySchema, CustomerRegistrationTokenEntitySchema, RepairOrderEntitySchema, RepairStatusEventEntitySchema, RepairQuoteEntitySchema, InventoryItemEntitySchema, InventoryMovementEntitySchema, SupplierEntitySchema, PurchaseOrderEntitySchema, PaymentEntitySchema, CashRegisterEntitySchema],
+  migrations: [InitialUsersMigration, InitialCustomersMigration, AddUserPasswordHashMigration, AddCustomerRegistrationTokensMigration, InitialRepairOrdersMigration, AddRepairTechnicalDetailsMigration, InitialRepairQuotesMigration, InitialInventoryMigration, AddRepairToInventoryMovementsMigration, InitialSuppliersMigration, InitialPurchaseOrdersMigration, InitialPaymentsMigration, InitialCashRegistersMigration],
   synchronize: false,
   initializeOnServerStart: true,
   runMigrationsOnServerStart: true

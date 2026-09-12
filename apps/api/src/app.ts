@@ -9,6 +9,7 @@ import "./shared/infrastructure/config/app-config.js";
 import { loadConfig } from "./shared/infrastructure/config/app-config.js";
 import "./shared/infrastructure/cqrs/cqrs-configuration.js";
 import "./shared/infrastructure/http/observability-controller.js";
+import "./shared/infrastructure/mailer/mailer-config.js";
 import "./shared/infrastructure/persistence/data-source.js";
 import "./shared/infrastructure/security/security-configuration.js";
 import "./users/application/cqrs/user-handlers.js";

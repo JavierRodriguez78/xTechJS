@@ -11,6 +11,12 @@ export const environmentSchema = z.object({
   POSTGRES_PASSWORD: z.string().min(1).default("change-me"),
   REDIS_HOST: z.string().min(1).default("localhost"),
   REDIS_PORT: z.coerce.number().int().min(1).max(65535).default(6379),
+  SMTP_HOST: z.string().min(1).default("localhost"),
+  SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(1025),
+  SMTP_SECURE: z.union([z.boolean(), z.enum(["true", "false"])]).transform((value) => value === true || value === "true").default(false),
+  SMTP_USER: z.string().optional().default(""),
+  SMTP_PASSWORD: z.string().optional().default(""),
+  MAIL_FROM: z.string().min(1).default("no-reply@xtechjs.local"),
   JWT_SECRET: z.string().min(32).default("development-only-secret-change-me-32"),
   JWT_EXPIRES_IN: z.string().min(1).default("8h")
 });

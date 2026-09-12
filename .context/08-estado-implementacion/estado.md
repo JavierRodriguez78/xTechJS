@@ -1,6 +1,6 @@
 # Estado de implementacion - xTechJS
 
-**Actualizado:** 2026-09-10
+**Actualizado:** 2026-09-11
 
 Este documento complementa la especificacion funcional. Describe exclusivamente lo que
 existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase.
@@ -195,6 +195,35 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 - El Dockerfile de API utiliza `pnpm deploy --legacy --prod /opt/api`, correccion
   necesaria para pnpm 10+ sin `inject-workspace-packages`. Falta confirmar el build
   de esa capa con Docker disponible.
+- Se ha integrado `@xtaskjs/mailer` con `registerMailerTransport()` y configuracion
+  de `SMTP_*`/`MAIL_FROM`, siguiendo el contrato oficial del paquete. El servicio
+  `mailhog` ya queda declarado en `compose.yaml` y la API la usa como transporte de
+  pruebas SMTP local, sin enviar correos reales.
+- Nuevo flujo de alta de cliente: `email` obligatorio, `registrationStatus` con
+  valor inicial `pending`, validacion de token de invitacion y endpoints publicos de
+  registro para `/api/customers/register/:token` con confirmacion de contraseña,
+  facturacion y consentimiento. El registro no completo queda bloqueado hasta que
+  el cliente termina el proceso.
+- Integrado el repositorio de tokens de registro de clientes y la migracion de tabla
+  `customer_registration_tokens` para persistir tokens con hash y caducidad.
+- Implementado el caso de uso `SendCustomerRegistrationEmail` que genera un token de
+  un solo uso y envía la invitacion por SMTP usando `@xtaskjs/mailer` y la URL
+  publica configurable `WEB_PUBLIC_URL` (fallback `http://localhost:8080`).
+- La API verifica que el token existente siga vigente (`usedAt IS NULL` + expiracion)
+  antes de completar el alta del cliente; la confirmacion guarda la contraseña hash,
+  los datos fiscales y marca el cliente como `completed`.
+
+## Cambios recientes (2026-09-11)
+
+- Ajuste del dominio y contrato del cliente para incluir `registrationStatus` y
+  campos de facturacion en `Customer` y `CreateCustomerInput`.
+- El alta de cliente ya exige `email` y genera `registrationStatus: "pending"` al
+  crear la entidad, con pruebas unitarias que cubren el requisito.
+- La infraestructura SMTP de la API queda configurada para MailHog y preparada para
+  envio de invitaciones transaccionales.
+- Se ha dejado preparado el backend para la siguiente capa de frontend: validacion
+  publica de token, registro del cliente y reenvio de invitacion. La vista web de
+  autorregistro sigue pendiente en la UI.
 
 ## Pendiente por area
 

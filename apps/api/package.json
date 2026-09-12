@@ -19,6 +19,7 @@
     "@xtaskjs/core": "^1.0.49",
     "@xtaskjs/cqrs": "^1.1.26",
     "@xtaskjs/fastify-http": "^1.0.48",
+    "@xtaskjs/mailer": "^1.0.33",
     "@xtaskjs/security": "^1.0.34",
     "@xtaskjs/typeorm": "^1.0.37",
     "@xtaskjs/validation": "^1.0.7",
