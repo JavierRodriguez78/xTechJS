@@ -241,6 +241,26 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   informacion solo al abrirse.
 - `pnpm --filter @xtechjs/web build` completado correctamente despues de añadir
   las rutas, layouts y vistas de clientes separadas.
+- Segunda iteracion de migracion frontend completada para Reparaciones: listado,
+  alta, detalle y las pestañas de datos generales, diagnostico, presupuesto e
+  historial usan rutas propias bajo `/reparaciones`. Diagnostico, cambios de estado
+  y presupuesto quedan aislados en sus pestañas y el historial se carga bajo demanda.
+- `pnpm --filter @xtechjs/web build` completado correctamente despues de migrar
+  la feature de Reparaciones a Vue Router.
+- Tercera iteracion frontend completada para Almacen: catalogo, alta, ficha de
+  material con pestañas de general y movimientos, alertas de stock, proveedores y
+  ordenes de compra usan rutas independientes bajo `/almacen`.
+- Cuarta iteracion frontend completada para TPV: listado de cobros, registro de
+  cobro, detalle de recibo con descarga PDF, caja diaria e informes por rango usan
+  rutas propias bajo `/tpv`.
+- `pnpm --filter @xtechjs/web build` completado correctamente tras migrar Almacen
+  y TPV a las nuevas vistas enrutadas.
+- La ficha de Reparacion incorpora las pestañas enrutadas `materiales` y `cobros`.
+  Materiales consulta movimientos vinculados a la orden y registra consumos contra
+  el endpoint de inventario; Cobros lista los pagos de la orden y enlaza a su recibo.
+  Ambas capacidades usan la API existente y respetan sus permisos de inventario y TPV.
+- `pnpm --filter @xtechjs/web build` completado correctamente despues de completar
+  las pestañas de materiales y cobros de Reparaciones.
 
 ## Cambios recientes (2026-09-13)
 
@@ -261,6 +281,12 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   detalle y vistas independientes. Reparaciones, Almacen y TPV se mantienen como
   siguientes iteraciones de migracion antes de volver a exponerlas en la navegacion
   interna.
+- Las cuatro features internas implementadas (Clientes, Reparaciones, Almacen y
+  TPV) ya usan rutas independientes y no exponen las consolas mixtas heredadas en
+  la navegacion. Chat, Administracion y las rutas restantes de adjuntos/materiales
+  siguen pendientes de desarrollo y migracion.
+- Adjuntos y chat por reparacion continúan pendientes de API, persistencia y
+  transporte WebSocket; no se han creado pantallas ficticias para esas capacidades.
 
 ## Pendiente por area
 
