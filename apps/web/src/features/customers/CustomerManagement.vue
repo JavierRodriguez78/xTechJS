@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 
 const props = defineProps<{ accessToken: string }>();
 
@@ -11,6 +11,7 @@ interface Customer {
   address: string | null;
   taxId: string | null;
   internalNotes: string | null;
+  registrationStatus?: "pending" | "completed";
   tags: string[];
 }
 
@@ -29,6 +30,7 @@ const loading = ref(false);
 const errorMessage = ref("");
 const successMessage = ref("");
 const selectedCustomerId = ref<string | null>(null);
+const selectedCustomer = computed(() => customers.value.find((customer) => customer.id === selectedCustomerId.value) ?? null);
 const form = ref({ displayName: "", email: "", phone: "", address: "", taxId: "", internalNotes: "", tags: "" });
 
 function headers(accessToken: string): HeadersInit {
@@ -123,6 +125,23 @@ async function saveCustomer(accessToken: string): Promise<void> {
   await loadCustomers(accessToken);
 }
 
+async function resendInvitation(accessToken: string): Promise<void> {
+  if (!selectedCustomerId.value) return;
+  errorMessage.value = "";
+  successMessage.value = "";
+  const response = await fetch(`/api/customers/${selectedCustomerId.value}/resend-invitation`, {
+    method: "POST",
+    headers: headers(accessToken)
+  });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({ message: "No se pudo reenviar la invitacion." }));
+    errorMessage.value = payload.message ?? "No se pudo reenviar la invitacion.";
+    return;
+  }
+  successMessage.value = "Invitacion reenviada correctamente.";
+  await loadCustomers(accessToken);
+}
+
 function resetForm(): void {
   selectedCustomerId.value = null;
   customerRepairs.value = [];
@@ -163,7 +182,12 @@ onMounted(() => loadCustomers(props.accessToken));
               <strong>{{ customer.displayName }}</strong>
               <span>{{ customer.email || customer.phone || "Sin datos de contacto" }}</span>
             </div>
-            <span v-if="customer.tags.length" class="tag">{{ customer.tags[0] }}</span>
+            <div class="customer-meta">
+              <span v-if="customer.tags.length" class="tag">{{ customer.tags[0] }}</span>
+              <span :class="['status-pill', customer.registrationStatus === 'pending' ? 'pending' : 'completed']">
+                {{ customer.registrationStatus === 'pending' ? 'Pendiente' : 'Completado' }}
+              </span>
+            </div>
             </button>
           </li>
         </ul>
@@ -189,6 +213,7 @@ onMounted(() => loadCustomers(props.accessToken));
         <p v-if="successMessage" class="feedback success">{{ successMessage }}</p>
         <div class="form-actions">
           <button v-if="selectedCustomerId" class="secondary" type="button" @click="resetForm">Nuevo</button>
+          <button v-if="selectedCustomer && selectedCustomer.registrationStatus === 'pending'" class="secondary" type="button" @click="resendInvitation(accessToken)">Reenviar invitacion</button>
           <button type="submit">{{ selectedCustomerId ? "Guardar cambios" : "Guardar cliente" }}</button>
         </div>
       </form>

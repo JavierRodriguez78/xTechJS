@@ -5,6 +5,11 @@ Con el contexto de este paquete, se solicita a ChatGPT que ayude a producir (seg
 1. Diseño de la arquitectura hexagonal + CQRS del backend, con la estructura de carpetas/módulos usando xtaskjs.
 2. Modelo de dominio y modelo de datos (entidades, agregados, relaciones) para PostgreSQL.
 3. Diseño de la API (endpoints REST y eventos WebSocket) por módulo.
-4. Estructura del frontend Vue 3 + TypeScript, con las vistas por rol.
+4. Estructura del frontend Vue 3 + TypeScript, con las vistas por rol,
+   **respetando obligatoriamente la seccion 2 de `04-frontend/frontend.md`**:
+   listado, alta, detalle y edicion como rutas independientes; pestañas del
+   detalle como sub-rutas anidadas; filtros con estado en la query string en
+   todos los listados. Antes de dar por buena una pantalla, verificar la
+   checklist de la seccion 11 de ese mismo documento.
 5. Definición de los `docker-compose.yml` y Dockerfiles para backend, frontend, PostgreSQL y Redis.
 6. Plan de implementación por fases/módulos.

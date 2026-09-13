@@ -8,6 +8,10 @@ export class UpdateCustomerCommand {
   constructor(public readonly id: string, public readonly input: UpdateCustomerInput) {}
 }
 
+export class ResendCustomerInvitationCommand {
+  constructor(public readonly id: string) {}
+}
+
 export class ListCustomersQuery {}
 
 export class GetCustomerQuery {

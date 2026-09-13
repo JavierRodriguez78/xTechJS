@@ -1,6 +1,6 @@
 # Estado de implementacion - xTechJS
 
-**Actualizado:** 2026-09-11
+**Actualizado:** 2026-09-13
 
 Este documento complementa la especificacion funcional. Describe exclusivamente lo que
 existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase.
@@ -212,8 +212,37 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 - La API verifica que el token existente siga vigente (`usedAt IS NULL` + expiracion)
   antes de completar el alta del cliente; la confirmacion guarda la contraseña hash,
   los datos fiscales y marca el cliente como `completed`.
+- Vista publica de autorregistro implementada en
+  `/customer/register?token=<token>`: valida el enlace, solicita contraseña con
+  confirmacion, datos de facturacion y consentimiento expreso; informa de tokens
+  ausentes, invalidos, caducados o ya utilizados.
+- El CRM muestra el estado de registro y permite reenviar la invitacion de clientes
+  `pending` mediante `POST /api/customers/:id/resend-invitation`.
+- Corregida la autorizacion del CRM: `@Authenticated()` se ejecuta antes de
+  `@PermissionRequired`, de forma que el guard recibe los claims del JWT. Un
+  administrador puede crear clientes y un tecnico sin `customers:manage` recibe
+  `403`.
+- Añadida la migracion incremental `AddCustomerRegistrationDetailsMigration` para
+  bases existentes: crea `registration_status` y los campos de facturacion sin
+  eliminar el volumen de PostgreSQL.
+- Flujo CRM de autorizacion y alta reverificado en Docker: `GET /api/customers`
+  responde `200` y `POST /api/customers` responde `201` usando un JWT valido de
+  administrador; la migracion de registro se ejecuta al iniciar la API.
+- `pnpm --filter @xtechjs/api typecheck` y `pnpm --filter @xtechjs/web build`
+  completados correctamente tras incorporar el frontend de autorregistro.
+- Primera iteracion de migracion frontend completada: Vue Router 4 y Pinia quedan
+  registrados en la aplicacion; el portal interno usa `AppLayout` y el portal de
+  cliente usa rutas y layout propios. Las rutas privadas aplican guards globales
+  por sesion y permiso.
+- El CRM de clientes abandona el patron mixto de listado y formulario lateral:
+  dispone de rutas para listado (`/clientes`), alta (`/clientes/nuevo`), detalle
+  (`/clientes/:id/general`) con subrutas de general, facturacion, reparaciones y
+  notas, y edicion (`/clientes/:id/editar`). La pestaña de reparaciones carga su
+  informacion solo al abrirse.
+- `pnpm --filter @xtechjs/web build` completado correctamente despues de añadir
+  las rutas, layouts y vistas de clientes separadas.
 
-## Cambios recientes (2026-09-11)
+## Cambios recientes (2026-09-13)
 
 - Ajuste del dominio y contrato del cliente para incluir `registrationStatus` y
   campos de facturacion en `Customer` y `CreateCustomerInput`.
@@ -221,9 +250,17 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   crear la entidad, con pruebas unitarias que cubren el requisito.
 - La infraestructura SMTP de la API queda configurada para MailHog y preparada para
   envio de invitaciones transaccionales.
-- Se ha dejado preparado el backend para la siguiente capa de frontend: validacion
-  publica de token, registro del cliente y reenvio de invitacion. La vista web de
-  autorregistro sigue pendiente en la UI.
+- Implementada la interfaz de autorregistro publico con validacion de token,
+  confirmacion de contraseña, datos fiscales y consentimiento obligatorio.
+- Implementado el reenvio de invitacion desde CRM para clientes pendientes.
+- Resuelto el `403 Forbidden` al crear clientes y la falta de columnas de onboarding
+  en bases de datos existentes mediante el orden correcto de guards y una migracion
+  incremental.
+- Iniciada la migracion de frontend indicada en
+  `04-frontend/frontend.md`: la feature Clientes ya usa navegacion real, URLs de
+  detalle y vistas independientes. Reparaciones, Almacen y TPV se mantienen como
+  siguientes iteraciones de migracion antes de volver a exponerlas en la navegacion
+  interna.
 
 ## Pendiente por area
 

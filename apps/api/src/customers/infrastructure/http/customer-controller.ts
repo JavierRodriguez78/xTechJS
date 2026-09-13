@@ -6,7 +6,7 @@ import { IsNull } from "typeorm";
 import { compare, hash } from "bcryptjs";
 import { z } from "zod";
 import type { CreateCustomerInput, UpdateCustomerInput } from "../../domain/customer.js";
-import { CreateCustomerCommand, GetCustomerQuery, ListCustomerRepairsQuery, ListCustomersQuery, UpdateCustomerCommand } from "../../application/cqrs/customer-messages.js";
+import { CreateCustomerCommand, GetCustomerQuery, ListCustomerRepairsQuery, ListCustomersQuery, ResendCustomerInvitationCommand, UpdateCustomerCommand } from "../../application/cqrs/customer-messages.js";
 import { PERMISSIONS } from "../../../users/domain/permission.js";
 import { PermissionRequired } from "../../../users/infrastructure/http/permission-guard.js";
 import { UserEntitySchema } from "../../../users/infrastructure/persistence/user-entity.js";
@@ -98,30 +98,30 @@ export class CustomerController {
   }
 
   @Get()
-  @Authenticated()
   @PermissionRequired(PERMISSIONS.customersRead)
+  @Authenticated()
   listCustomers(): Promise<unknown> {
     return this.queryBus.execute(new ListCustomersQuery());
   }
 
   @Get("/:id")
-  @Authenticated()
   @PermissionRequired(PERMISSIONS.customersRead)
+  @Authenticated()
   async getCustomer(@Param("id") id: string, @Res() reply: ControllerReply): Promise<unknown> {
     const customer = await this.queryBus.execute(new GetCustomerQuery(id));
     return customer ? customer : reply.code(404).send({ message: "Customer not found" });
   }
 
   @Get("/:id/repairs")
-  @Authenticated()
   @PermissionRequired(PERMISSIONS.customersRead)
+  @Authenticated()
   listCustomerRepairs(@Param("id") id: string): Promise<unknown> {
     return this.queryBus.execute(new ListCustomerRepairsQuery(id));
   }
 
   @Post()
-  @Authenticated()
   @PermissionRequired(PERMISSIONS.customersManage)
+  @Authenticated()
   async createCustomer(@Body() body: unknown, @Res() reply: ControllerReply): Promise<unknown> {
     const parsed = createCustomerSchema.safeParse(body);
     if (!parsed.success) {
@@ -132,8 +132,8 @@ export class CustomerController {
   }
 
   @Patch("/:id")
-  @Authenticated()
   @PermissionRequired(PERMISSIONS.customersManage)
+  @Authenticated()
   async updateCustomer(@Param("id") id: string, @Body() body: unknown, @Res() reply: ControllerReply): Promise<unknown> {
     const parsed = updateCustomerSchema.safeParse(body);
     if (!parsed.success) {
@@ -141,6 +141,25 @@ export class CustomerController {
     }
     const customer = await this.commandBus.execute(new UpdateCustomerCommand(id, parsed.data as UpdateCustomerInput));
     return customer ? customer : reply.code(404).send({ message: "Customer not found" });
+  }
+
+  @Post("/:id/resend-invitation")
+  @PermissionRequired(PERMISSIONS.customersManage)
+  @Authenticated()
+  async resendInvitation(@Param("id") id: string, @Res() reply: ControllerReply): Promise<unknown> {
+    try {
+      const customer = await this.commandBus.execute(new ResendCustomerInvitationCommand(id));
+      return reply.code(200).send({ message: "Invitation sent", customer });
+    } catch (error) {
+      const message = (error as Error).message;
+      if (message.includes("not found")) {
+        return reply.code(404).send({ message });
+      }
+      if (message.includes("email")) {
+        return reply.code(400).send({ message });
+      }
+      return reply.code(409).send({ message });
+    }
   }
 
   private async findValidRegistrationToken(token: string) {

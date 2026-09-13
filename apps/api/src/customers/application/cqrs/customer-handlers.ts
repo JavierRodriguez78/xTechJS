@@ -4,10 +4,11 @@ import type { Customer } from "../../domain/customer.js";
 import { CreateCustomer } from "../create-customer.js";
 import { GetCustomer } from "../get-customer.js";
 import { ListCustomers } from "../list-customers.js";
+import { ResendCustomerInvitation } from "../resend-customer-invitation.js";
 import { UpdateCustomer } from "../update-customer.js";
 import { ListCustomerRepairs } from "../../../repairs/application/list-customer-repairs.js";
 import type { RepairOrder } from "../../../repairs/domain/repair-order.js";
-import { CreateCustomerCommand, GetCustomerQuery, ListCustomerRepairsQuery, ListCustomersQuery, UpdateCustomerCommand } from "./customer-messages.js";
+import { CreateCustomerCommand, GetCustomerQuery, ListCustomerRepairsQuery, ListCustomersQuery, ResendCustomerInvitationCommand, UpdateCustomerCommand } from "./customer-messages.js";
 
 @Service()
 @CommandHandler(CreateCustomerCommand)
@@ -26,6 +27,16 @@ export class UpdateCustomerHandler implements ICommandHandler<UpdateCustomerComm
 
   execute(command: UpdateCustomerCommand): Promise<Customer | undefined> {
     return this.updateCustomer.execute(command.id, command.input);
+  }
+}
+
+@Service()
+@CommandHandler(ResendCustomerInvitationCommand)
+export class ResendCustomerInvitationHandler implements ICommandHandler<ResendCustomerInvitationCommand, Customer> {
+  constructor(private readonly resendCustomerInvitation: ResendCustomerInvitation) {}
+
+  execute(command: ResendCustomerInvitationCommand): Promise<Customer> {
+    return this.resendCustomerInvitation.execute(command.id);
   }
 }
 

@@ -21,7 +21,7 @@ export const CustomerRegistrationTokenEntitySchema = new EntitySchema<CustomerRe
     createdAt: { type: "timestamptz", name: "created_at", createDate: true }
   },
   indices: [
-    { columns: ["customer_id", "expires_at"], name: "IDX_customer_registration_tokens_customer_expires" },
-    { columns: ["token_hash"], unique: true, name: "UQ_customer_registration_tokens_token_hash" }
+    { columns: ["customerId", "expiresAt"], name: "IDX_customer_registration_tokens_customer_expires" },
+    { columns: ["tokenHash"], unique: true, name: "UQ_customer_registration_tokens_token_hash" }
   ]
 });
