@@ -5,9 +5,11 @@ import type { PaymentRepository } from "./payment-repository.js";
 
 export interface PaymentReceipt {
   receiptNumber: string;
+  invoiceSeries: string;
+  invoiceNumber: number;
   payment: Payment;
   repair: { id: string; deviceType: string; brand: string; model: string; reportedIssue: string };
-  customer: { displayName: string; email: string | null; taxId: string | null };
+  customer: { displayName: string; email: string | null; taxId: string | null; billingName: string | null; billingAddress: string | null; billingPostalCode: string | null; billingCity: string | null; billingProvince: string | null };
   issuedAt: Date;
 }
 
@@ -19,6 +21,9 @@ export class GetPaymentReceipt {
   async execute(id: string): Promise<PaymentReceipt | undefined> {
     const data = await this.repository.findReceiptData(id);
     if (!data) return undefined;
-    return { receiptNumber: `R-${data.payment.id.slice(0, 8).toUpperCase()}`, ...data, issuedAt: new Date() };
+    const invoiceSeries = data.payment.invoiceSeries ?? "B";
+    const invoiceNumber = data.payment.invoiceNumber ?? 0;
+    const invoiceLines = data.payment.invoiceLines?.length ? data.payment.invoiceLines : [{ concept: "Servicio de reparacion", quantity: 1, unitPriceCents: Math.round(data.payment.amountCents / 1.21), discountPercent: 0, taxRate: 21 }];
+    return { receiptNumber: `${invoiceSeries}-${String(invoiceNumber).padStart(6, "0")}`, invoiceSeries, invoiceNumber, ...data, payment: { ...data.payment, invoiceLines }, issuedAt: data.payment.createdAt };
   }
 }

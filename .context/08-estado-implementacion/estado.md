@@ -1,6 +1,6 @@
 # Estado de implementacion - xTechJS
 
-**Actualizado:** 2026-09-13
+**Actualizado:** 2026-09-14
 
 Este documento complementa la especificacion funcional. Describe exclusivamente lo que
 existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase.
@@ -261,6 +261,47 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   Ambas capacidades usan la API existente y respetan sus permisos de inventario y TPV.
 - `pnpm --filter @xtechjs/web build` completado correctamente despues de completar
   las pestañas de materiales y cobros de Reparaciones.
+- El PDF de TPV queda estructurado como factura: emisor configurable, serie y
+  numero persistentes, fecha de expedicion, destinatario con datos fiscales,
+  concepto de reparacion, base imponible, tipo y cuota de IVA, total y forma de
+  pago. La numeracion usa una secuencia PostgreSQL y no depende del UUID.
+- Añadida la migracion incremental `AddInvoiceNumberingMigration` para incorporar
+  serie y numero de factura a pagos existentes sin borrar el volumen PostgreSQL.
+- Añadidas variables `INVOICE_ISSUER_*`, `INVOICE_SERIES` e `INVOICE_VAT_RATE` a
+  la configuracion y Compose. Los valores por defecto del emisor son marcadores
+  pendientes y deben sustituirse por los datos fiscales reales.
+- Verificado en Docker que la migracion crea `payments.invoice_series` y
+  `payments.invoice_number`; API typecheck y frontend build completados.
+- Las facturas admiten lineas estructuradas con codigo, concepto, unidades, precio
+  unitario, descuento manual por linea y tipo de IVA. El total se calcula en backend
+  y se valida contra el cobro; pagos antiguos conservan una linea de servicio
+  compatible generada desde su importe existente.
+- La plantilla PDF muestra la tabla de lineas con columnas de codigo, concepto,
+  unidades, precio, descuento e importe, junto con base imponible, IVA y total.
+- Nuevo requisito documentado para la siguiente iteracion de TPV: al enviar una
+  factura desde el staff, adjuntar el PDF en un email al cliente mediante Mailer,
+  registrar el resultado de la notificacion y mostrar la factura dentro de la
+  reparacion en el portal cliente con descarga autenticada por JWT.
+- Implementado el envio de factura desde `POST /api/payments/:id/send-invoice`:
+  genera el mismo PDF fiscal, lo adjunta mediante `@xtaskjs/mailer` y registra
+  los estados `sent` o `failed` en `invoice_emails` junto con destinatario, error
+  y fecha.
+- Implementado el acceso de cliente a facturas: `GET /api/customer/repairs/:id/invoices`
+  lista solo documentos de reparaciones propiedad del cliente autenticado y
+  `GET /api/customer/repairs/:repairId/invoices/:paymentId/pdf` descarga el PDF
+  tras comprobar email, reparación y pago.
+- El TPV permite enviar la factura desde el detalle del cobro y el portal cliente
+  muestra las facturas asociadas a cada reparación con descarga autenticada por
+  JWT y `Blob`, sin abrir URLs protegidas con `window.open`.
+- Verificado: `pnpm --filter @xtechjs/api typecheck`, `pnpm --filter @xtechjs/web build`,
+  API Docker saludable y tabla `invoice_emails` creada por migración.
+
+- Corrección final de maquetación de factura: la tabla de líneas se ajusta a un
+  layout de columnas acotadas para evitar que los textos salgan del marco,
+  manteniendo el total, IVA y descuentos por línea dentro del documento PDF.
+- Corregida la migración de líneas de factura con el nombre de archivo/timestamp
+  inconsistente que impedía arrancar la API; la base queda con `invoice_lines`
+  disponible y la verificación de Docker se reejecuta con resultado saludable.
 
 ## Cambios recientes (2026-09-13)
 
@@ -331,11 +372,11 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   `GET`/`POST /api/inventory/purchase-orders` y
   `POST /api/inventory/purchase-orders/:id/receive`.
 - TPV: cobros y reembolsos asociados a reparaciones implementados con TypeORM,
-  CQRS, `PaymentController` y trazabilidad. Ticket simplificado implementado como
-  respuesta estructurada, resumen diario por método, cierre persistente de caja y
-  reporte por rango con desglose por técnico/dispositivo. El ticket simplificado
-  incluye cliente y reparación y dispone de descarga PDF; queda pendiente la
-  facturación fiscal formal y sus requisitos legales.
+  CQRS, `PaymentController` y trazabilidad. Incluye resumen diario, cierre
+  persistente de caja, reporte por rango y descarga PDF con estructura de factura.
+  La validacion legal definitiva, series fiscales reales, numeracion por ejercicio,
+  rectificativas, facturacion electronica y requisitos de IVA deben ser revisados
+  y configurados con asesoramiento fiscal antes de emitir documentos oficiales.
 - Chat y notificaciones en tiempo real.
 - Administracion: usuarios, roles, configuracion, auditoria y dashboards.
 
@@ -363,7 +404,8 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 
 ## Siguiente fase recomendada
 
-1. Completar TPV con PDF/facturas fiscales, manteniendo el patron DI/CQRS ya validado.
+1. Validar con asesoramiento fiscal la configuracion de la factura y completar
+  numeracion por ejercicio, rectificativas y facturacion electronica si aplica.
 
 Los cuatro modulos implementados (usuarios, CRM, reparaciones y almacen) usan el patron
 xTaskJS completo: servicios `@Service` con `@Qualifier`, comandos/queries con

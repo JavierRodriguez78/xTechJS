@@ -161,6 +161,25 @@ Makefile, `make mail-up`) en paralelo a Postgres/Redis.
 - No requiere volumen persistente: los correos capturados son solo para pruebas y
   se pierden al reiniciar el contenedor, lo cual es deseable en este caso.
 
+### 5.1. Envío de facturas y descarga desde el portal
+
+- Cuando el staff pulse la acción de enviar factura en el TPV, la API debe generar
+  el PDF con la factura, enviarlo al email fiscal del cliente como adjunto mediante
+  `@xtaskjs/mailer` y registrar la notificación enviada, su destinatario, fecha,
+  resultado y `correlationId`. Un fallo de SMTP debe quedar visible y no marcar la
+  factura como enviada.
+- La factura debe quedar asociada al pago y a la reparación. El portal de cliente
+  debe mostrarla dentro del detalle de la reparación y ofrecer una descarga
+  autenticada con JWT. El endpoint debe validar que el usuario autenticado es el
+  propietario de la reparación antes de devolver el PDF.
+- La descarga no debe construirse como una navegación directa a una URL protegida:
+  el frontend debe usar `fetch` con `Authorization: Bearer ...`, convertir la
+  respuesta en `Blob` y activar la descarga localmente.
+- El registro de la factura debe conservar como mínimo serie, número, fecha de
+  expedición, emisor, destinatario, concepto, base imponible, tipo/cuota de IVA,
+  total, forma de pago y estado de envío. La configuración fiscal del emisor y el
+  tratamiento de IVA requieren validación profesional antes de producción.
+
 ## 6. Frontend
 
 - Nueva ruta pública `/customer/register?token=...` (fuera del login de

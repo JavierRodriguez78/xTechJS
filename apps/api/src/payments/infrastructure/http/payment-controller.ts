@@ -6,15 +6,17 @@ import { CreatePaymentCommand, GetDailyPaymentSummaryQuery, GetPaymentPdfQuery, 
 import { CloseCashRegisterCommand, GetCashRegisterQuery, OpenCashRegisterCommand } from "../../application/cqrs/cash-register-messages.js";
 import { PERMISSIONS } from "../../../users/domain/permission.js";
 import { PermissionRequired } from "../../../users/infrastructure/http/permission-guard.js";
+import { SendPaymentInvoiceEmail } from "../../application/send-payment-invoice-email.js";
 
 type ControllerReply = { code(statusCode: number): { send(payload: unknown): unknown }; header(name: string, value: string): ControllerReply; send(payload: unknown): unknown };
-const paymentSchema = z.object({ repairOrderId: z.string().uuid(), amountCents: z.number().int().positive().max(100000000), method: z.enum(["cash", "card", "transfer"]), reference: z.string().trim().max(180).optional() });
+const invoiceLineSchema = z.object({ code: z.string().trim().max(80).optional(), concept: z.string().trim().min(1).max(500), quantity: z.number().positive().max(1000000), unitPriceCents: z.number().int().nonnegative().max(100000000), discountPercent: z.number().min(0).max(100).default(0), taxRate: z.number().min(0).max(100).default(21) });
+const paymentSchema = z.object({ repairOrderId: z.string().uuid(), amountCents: z.number().int().nonnegative().max(100000000), method: z.enum(["cash", "card", "transfer"]), reference: z.string().trim().max(180).optional(), invoiceLines: z.array(invoiceLineSchema).max(100).optional() });
 const businessDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 @Authenticated()
 @Controller("/api/payments")
 export class PaymentController {
-  constructor(@InjectCommandBus() private readonly commandBus: CommandBus, @InjectQueryBus() private readonly queryBus: QueryBus) {}
+  constructor(@InjectCommandBus() private readonly commandBus: CommandBus, @InjectQueryBus() private readonly queryBus: QueryBus, private readonly sendPaymentInvoiceEmail: SendPaymentInvoiceEmail) {}
 
   @Get()
   @PermissionRequired(PERMISSIONS.paymentsManage)
@@ -68,6 +70,19 @@ export class PaymentController {
     reply.header("content-type", "application/pdf");
     reply.header("content-disposition", `attachment; filename="receipt-${id.slice(0, 8)}.pdf"`);
     return reply.send(document);
+  }
+
+  @Post("/:id/send-invoice")
+  @PermissionRequired(PERMISSIONS.paymentsManage)
+  async sendInvoice(@Param("id") id: string, @Res() reply: ControllerReply): Promise<unknown> {
+    try {
+      return reply.code(200).send(await this.sendPaymentInvoiceEmail.execute(id));
+    } catch (error) {
+      const message = (error as Error).message;
+      if (message.includes("not found")) return reply.code(404).send({ message });
+      if (message.includes("email")) return reply.code(400).send({ message });
+      return reply.code(502).send({ message: "Invoice email could not be sent" });
+    }
   }
 
   @Post()

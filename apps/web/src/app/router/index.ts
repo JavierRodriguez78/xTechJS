@@ -54,6 +54,8 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({ history: createWebHistory(), routes });
 router.beforeEach((to) => {
   if (to.meta.customer) return customerSession.value ? true : { name: "customer.login" };
+  if (to.name === "staff.login" && staffSession.value) return { name: "customers.list" };
+  if (to.name === "customer.login" && customerSession.value) return { name: "customer.portal" };
   if (!to.meta.permission) return true;
   if (!staffSession.value) return { name: "staff.login", query: { redirect: to.fullPath } };
   const role = staffSession.value.user.role;

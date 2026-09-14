@@ -36,7 +36,14 @@
 ## TPV (punto de venta / cobros)
 - Registro de cobros asociados a reparaciones (a cuenta, presupuesto completo, venta de accesorios/repuestos sueltos).
 - Métodos de pago (efectivo, tarjeta, transferencia; extensible a pasarelas de pago online para el perfil cliente).
-- Emisión de tickets/facturas simplificadas.
+- Emisión de tickets/facturas simplificadas y facturas estructuradas con numeración por serie.
+- Al enviar/generar una factura desde el TPV, debe poder enviarse al email fiscal del
+  cliente mediante `@xtaskjs/mailer`, con registro de fecha, destinatario, resultado
+  y correlación de la notificación. El envío debe incluir el PDF como adjunto y no
+  debe exponer enlaces públicos sin autenticación.
+- El cliente debe poder consultar y descargar las facturas de sus reparaciones desde
+  el portal `/customer`, siempre tras validar la propiedad de la reparación y usando
+  una descarga autenticada con JWT.
 - Cierre de caja diario y reportes de facturación (por técnico, por periodo, por tipo de dispositivo).
 
 ## Gestión de almacén / stock

@@ -38,6 +38,8 @@ import "./inventory/infrastructure/persistence/postgres-purchase-order-repositor
 import "./payments/application/cqrs/payment-handlers.js";
 import "./payments/infrastructure/http/payment-controller.js";
 import "./payments/infrastructure/persistence/postgres-payment-repository.js";
+import "./payments/infrastructure/persistence/postgres-invoice-email-repository.js";
+import "./payments/application/send-payment-invoice-email.js";
 import "./payments/application/cqrs/cash-register-handlers.js";
 import "./payments/infrastructure/persistence/postgres-cash-register-repository.js";
 import { startTrace, traceOperation } from "./shared/infrastructure/observability/trace.js";

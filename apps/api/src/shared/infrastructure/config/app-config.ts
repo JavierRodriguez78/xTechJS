@@ -17,6 +17,11 @@ export const environmentSchema = z.object({
   SMTP_USER: z.string().optional().default(""),
   SMTP_PASSWORD: z.string().optional().default(""),
   MAIL_FROM: z.string().min(1).default("no-reply@xtechjs.local"),
+  INVOICE_ISSUER_NAME: z.string().min(1).default("xTechJS"),
+  INVOICE_ISSUER_TAX_ID: z.string().min(1).default("PENDIENTE_CONFIGURAR"),
+  INVOICE_ISSUER_ADDRESS: z.string().min(1).default("PENDIENTE_CONFIGURAR"),
+  INVOICE_SERIES: z.string().min(1).max(20).default("B"),
+  INVOICE_VAT_RATE: z.coerce.number().min(0).max(100).default(21),
   JWT_SECRET: z.string().min(32).default("development-only-secret-change-me-32"),
   JWT_EXPIRES_IN: z.string().min(1).default("8h")
 });

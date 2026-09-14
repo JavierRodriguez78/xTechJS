@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { signInCustomer } from "./session";
 
+const route = useRoute();
+const router = useRouter();
 const email = ref("");
 const password = ref("");
 const loading = ref(false);
@@ -10,7 +13,13 @@ const errorMessage = ref("");
 async function submit(): Promise<void> {
   loading.value = true;
   errorMessage.value = "";
-  try { await signInCustomer(email.value, password.value); }
+  try {
+    await signInCustomer(email.value, password.value);
+    const redirect = typeof route.query.redirect === "string" && route.query.redirect.startsWith("/customer")
+      ? route.query.redirect
+      : "/customer";
+    await router.replace(redirect);
+  }
   catch (error) { errorMessage.value = (error as Error).message; }
   finally { loading.value = false; }
 }

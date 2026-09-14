@@ -378,6 +378,13 @@ Ejemplo de definición para clientes:
 /reparaciones/:id/editar               edición
 ```
 
+En el portal `/customer`, cada reparación debe mostrar una sección de facturación
+cuando existan documentos emitidos. La descarga se realiza mediante una petición
+HTTP autenticada con el JWT del cliente y una respuesta `Blob`; no se debe usar
+`window.open` sobre una URL de API protegida porque perdería la cabecera
+`Authorization`. El backend debe comprobar que la factura pertenece a una
+reparación del cliente autenticado.
+
 ### Almacén
 ```
 /almacen                               listado de materiales con filtros

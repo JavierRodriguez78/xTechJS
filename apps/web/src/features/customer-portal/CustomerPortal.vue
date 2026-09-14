@@ -20,9 +20,11 @@ interface Quote {
   status: "draft" | "sent" | "approved" | "rejected";
   lines: { description: string; quantity: number; unitPriceCents: number }[];
 }
+interface Invoice { receiptNumber: string; issuedAt: string; payment: { id: string; amountCents: number; status: string }; }
 
 const repairs = ref<Repair[]>([]);
 const quotes = ref<Record<string, Quote>>({});
+const invoices = ref<Record<string, Invoice[]>>({});
 const loading = ref(true);
 const message = ref("");
 const errorMessage = ref("");
@@ -96,18 +98,29 @@ async function load(): Promise<void> {
     }
 
     const quoteMap: Record<string, Quote> = {};
+    const invoiceMap: Record<string, Invoice[]> = {};
     await Promise.all(repairs.value.map(async (repair) => {
       const quoteResponse = await fetch(`/api/customer/repairs/${repair.id}/quote`, { headers: headers() });
       if (quoteResponse.ok) {
         quoteMap[repair.id] = (await quoteResponse.json()) as Quote;
       }
+      const invoiceResponse = await fetch(`/api/customer/repairs/${repair.id}/invoices`, { headers: headers() });
+      if (invoiceResponse.ok) invoiceMap[repair.id] = await invoiceResponse.json() as Invoice[];
     }));
     quotes.value = quoteMap;
+    invoices.value = invoiceMap;
   } catch (error) {
     errorMessage.value = (error as Error).message;
   } finally {
     loading.value = false;
   }
+}
+
+async function downloadInvoice(repairId: string, paymentId: string, receiptNumber: string): Promise<void> {
+  const response = await fetch(`/api/customer/repairs/${repairId}/invoices/${paymentId}/pdf`, { headers: headers() });
+  if (!response.ok) { errorMessage.value = "No se pudo descargar la factura."; return; }
+  const url = URL.createObjectURL(await response.blob());
+  const anchor = document.createElement("a"); anchor.href = url; anchor.download = `factura-${receiptNumber}.pdf`; anchor.click(); URL.revokeObjectURL(url);
 }
 
 async function approve(repairId: string): Promise<void> {
@@ -220,6 +233,10 @@ onMounted(load);
         <div v-else class="quote-card empty-quote">
           <p class="eyebrow">Presupuesto</p>
           <p>Aún no hay un presupuesto asociado a esta reparación.</p>
+        </div>
+        <div class="quote-card" v-if="invoices[selectedRepair.id]?.length">
+          <p class="eyebrow">Facturas</p>
+          <ul class="quote-lines"><li v-for="invoice in invoices[selectedRepair.id]" :key="invoice.payment.id"><span>{{ invoice.receiptNumber }} - {{ money(invoice.payment.amountCents) }}</span><button type="button" class="secondary" @click="downloadInvoice(selectedRepair.id, invoice.payment.id, invoice.receiptNumber)">Descargar factura</button></li></ul>
         </div>
       </article>
     </section>

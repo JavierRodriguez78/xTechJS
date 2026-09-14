@@ -25,20 +25,25 @@ export class PostgresPaymentRepository implements PaymentRepository {
   async findReportRows(from: Date, to: Date): Promise<readonly PaymentReportRow[]> {
     const rows = await this.dataSource.query(`SELECT p.*, r.technician_id, r.device_type FROM payments p JOIN repair_orders r ON r.id = p.repair_order_id WHERE p.created_at BETWEEN $1 AND $2 ORDER BY p.created_at ASC`, [from, to]);
     return rows.map((row: Record<string, unknown>) => ({
-      payment: { id: String(row.id), repairOrderId: String(row.repair_order_id), amountCents: Number(row.amount_cents), method: row.method as Payment["method"], status: row.status as Payment["status"], reference: row.reference ? String(row.reference) : null, createdAt: new Date(String(row.created_at)) },
+      payment: { id: String(row.id), repairOrderId: String(row.repair_order_id), amountCents: Number(row.amount_cents), method: row.method as Payment["method"], status: row.status as Payment["status"], reference: row.reference ? String(row.reference) : null, invoiceSeries: String(row.invoice_series), invoiceNumber: Number(row.invoice_number), invoiceLines: (row.invoice_lines as Payment["invoiceLines"]) ?? [], createdAt: new Date(String(row.created_at)) },
       technicianId: row.technician_id ? String(row.technician_id) : null,
       deviceType: String(row.device_type)
     }));
   }
 
   async findReceiptData(id: string): Promise<PaymentReceiptData | undefined> {
-    const rows = await this.dataSource.query(`SELECT p.*, r.device_type, r.brand, r.model, r.reported_issue, c.display_name, c.email, c.tax_id FROM payments p JOIN repair_orders r ON r.id = p.repair_order_id JOIN customers c ON c.id = r.customer_id WHERE p.id = $1`, [id]);
+    const rows = await this.dataSource.query(`SELECT p.*, r.device_type, r.brand, r.model, r.reported_issue, c.display_name, c.email, c.tax_id, c.billing_name, c.billing_address, c.billing_postal_code, c.billing_city, c.billing_province FROM payments p JOIN repair_orders r ON r.id = p.repair_order_id JOIN customers c ON c.id = r.customer_id WHERE p.id = $1`, [id]);
     const row = rows[0] as Record<string, unknown> | undefined;
     if (!row) return undefined;
     return {
-      payment: { id: String(row.id), repairOrderId: String(row.repair_order_id), amountCents: Number(row.amount_cents), method: row.method as Payment["method"], status: row.status as Payment["status"], reference: row.reference ? String(row.reference) : null, createdAt: new Date(String(row.created_at)) },
+      payment: { id: String(row.id), repairOrderId: String(row.repair_order_id), amountCents: Number(row.amount_cents), method: row.method as Payment["method"], status: row.status as Payment["status"], reference: row.reference ? String(row.reference) : null, invoiceSeries: String(row.invoice_series), invoiceNumber: Number(row.invoice_number), invoiceLines: (row.invoice_lines as Payment["invoiceLines"]) ?? [], createdAt: new Date(String(row.created_at)) },
       repair: { id: String(row.repair_order_id), deviceType: String(row.device_type), brand: String(row.brand), model: String(row.model), reportedIssue: String(row.reported_issue) },
-      customer: { displayName: String(row.display_name), email: row.email ? String(row.email) : null, taxId: row.tax_id ? String(row.tax_id) : null }
+      customer: {
+        displayName: String(row.display_name), email: row.email ? String(row.email) : null, taxId: row.tax_id ? String(row.tax_id) : null,
+        billingName: row.billing_name ? String(row.billing_name) : null, billingAddress: row.billing_address ? String(row.billing_address) : null,
+        billingPostalCode: row.billing_postal_code ? String(row.billing_postal_code) : null, billingCity: row.billing_city ? String(row.billing_city) : null,
+        billingProvince: row.billing_province ? String(row.billing_province) : null
+      }
     };
   }
 }

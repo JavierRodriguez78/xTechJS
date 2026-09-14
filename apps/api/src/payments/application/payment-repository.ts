@@ -9,7 +9,7 @@ export interface PaymentReportRow {
 export interface PaymentReceiptData {
   payment: Payment;
   repair: { id: string; deviceType: string; brand: string; model: string; reportedIssue: string };
-  customer: { displayName: string; email: string | null; taxId: string | null };
+  customer: { displayName: string; email: string | null; taxId: string | null; billingName: string | null; billingAddress: string | null; billingPostalCode: string | null; billingCity: string | null; billingProvince: string | null };
 }
 
 export interface PaymentRepository {
