@@ -296,13 +296,6 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 - Verificado: `pnpm --filter @xtechjs/api typecheck`, `pnpm --filter @xtechjs/web build`,
   API Docker saludable y tabla `invoice_emails` creada por migración.
 
-- Corrección final de maquetación de factura: la tabla de líneas se ajusta a un
-  layout de columnas acotadas para evitar que los textos salgan del marco,
-  manteniendo el total, IVA y descuentos por línea dentro del documento PDF.
-- Corregida la migración de líneas de factura con el nombre de archivo/timestamp
-  inconsistente que impedía arrancar la API; la base queda con `invoice_lines`
-  disponible y la verificación de Docker se reejecuta con resultado saludable.
-
 ## Cambios recientes (2026-09-13)
 
 - Ajuste del dominio y contrato del cliente para incluir `registrationStatus` y

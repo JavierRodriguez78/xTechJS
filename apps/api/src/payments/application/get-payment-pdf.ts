@@ -48,23 +48,50 @@ export class GetPaymentPdf {
       document.text(`Descripcion: ${receipt.repair.reportedIssue}`);
       document.moveDown();
       const tableTop = document.y;
-      const columns = { code: 56, concept: 112, quantity: 360, price: 410, discount: 475, amount: 525 };
+      const tableLeft = 56;
+      const tableWidth = 483;
+      const columns = {
+        code: { x: 56, width: 52 },
+        concept: { x: 108, width: 190 },
+        quantity: { x: 298, width: 55 },
+        price: { x: 353, width: 60 },
+        discount: { x: 413, width: 58 },
+        amount: { x: 471, width: 68 }
+      };
       document.save().rect(56, tableTop - 4, 483, 24).fill("#087fc1").restore();
-      document.fillColor("white").fontSize(8).text("Codigo", columns.code, tableTop).text("Concepto", columns.concept, tableTop).text("Unidades", columns.quantity, tableTop).text("Precio", columns.price, tableTop).text("Dto.", columns.discount, tableTop).text("Importe", columns.amount, tableTop);
+      document.fillColor("white").fontSize(7)
+        .text("Codigo", columns.code.x, tableTop, { width: columns.code.width })
+        .text("Concepto", columns.concept.x, tableTop, { width: columns.concept.width })
+        .text("Unidades", columns.quantity.x, tableTop, { width: columns.quantity.width, align: "right" })
+        .text("Precio", columns.price.x, tableTop, { width: columns.price.width, align: "right" })
+        .text("Dto.", columns.discount.x, tableTop, { width: columns.discount.width, align: "right" })
+        .text("Importe", columns.amount.x, tableTop, { width: columns.amount.width, align: "right" });
       document.fillColor("black");
       let rowY = tableTop + 26;
       for (const line of lines) {
         const netCents = Math.round(line.quantity * line.unitPriceCents * (1 - line.discountPercent / 100));
-        document.fontSize(8).text(line.code || "", columns.code, rowY, { width: 52 }).text(line.concept, columns.concept, rowY, { width: 240 }).text(line.quantity.toFixed(2), columns.quantity, rowY, { width: 42, align: "right" }).text(`${(line.unitPriceCents / 100).toFixed(2)}`, columns.price, rowY, { width: 58, align: "right" }).text(`${line.discountPercent.toFixed(2)}%`, columns.discount, rowY, { width: 45, align: "right" }).text(`${(netCents / 100).toFixed(2)}`, columns.amount, rowY, { width: 55, align: "right" });
-        rowY += 20;
+        document.fontSize(8);
+        const conceptHeight = document.heightOfString(line.concept, { width: columns.concept.width });
+        document.fontSize(8)
+          .text(line.code || "", columns.code.x, rowY, { width: columns.code.width, ellipsis: true })
+          .text(line.concept, columns.concept.x, rowY, { width: columns.concept.width, height: 36, ellipsis: true })
+          .text(line.quantity.toFixed(2), columns.quantity.x, rowY, { width: columns.quantity.width, align: "right" })
+          .text(`${(line.unitPriceCents / 100).toFixed(2)}`, columns.price.x, rowY, { width: columns.price.width, align: "right" })
+          .text(`${line.discountPercent.toFixed(2)}%`, columns.discount.x, rowY, { width: columns.discount.width, align: "right" })
+          .text(`${(netCents / 100).toFixed(2)}`, columns.amount.x, rowY, { width: columns.amount.width, align: "right" });
+        rowY += Math.max(20, conceptHeight + 8);
       }
-      document.moveTo(56, rowY + 4).lineTo(539, rowY + 4).strokeColor("#087fc1").stroke();
-      document.fontSize(10).text("Base imponible", 370, rowY + 14).text(`${(baseCents / 100).toFixed(2)} EUR`, 475, rowY + 14, { width: 64, align: "right" });
+      document.moveTo(tableLeft, rowY + 4).lineTo(tableLeft + tableWidth, rowY + 4).strokeColor("#087fc1").stroke();
+      let totalsY = rowY + 14;
+      document.fontSize(10).text("Base imponible", 365, totalsY).text(`${(baseCents / 100).toFixed(2)} EUR`, 471, totalsY, { width: 68, align: "right" });
+      totalsY += 16;
       for (const [rate, amount] of vatByRate) {
-        document.fontSize(9).text(`IVA ${rate.toFixed(2)}%`, 370, document.y + 4).text(`${(amount / 100).toFixed(2)} EUR`, 475, document.y, { width: 64, align: "right" });
+        document.fontSize(9).text(`IVA ${rate.toFixed(2)}%`, 365, totalsY).text(`${(amount / 100).toFixed(2)} EUR`, 471, totalsY, { width: 68, align: "right" });
+        totalsY += 14;
       }
-      document.save().rect(330, document.y + 18, 209, 28).fill("#087fc1").restore();
-      document.fillColor("white").fontSize(13).text("Total factura", 340, document.y + 26).text(`${(totalCents / 100).toFixed(2)} EUR`, 455, document.y + 26, { width: 76, align: "right" });
+      const totalY = totalsY + 4;
+      document.save().rect(330, totalY, 209, 28).fill("#087fc1").restore();
+      document.fillColor("white").fontSize(13).text("Total factura", 340, totalY + 8).text(`${(totalCents / 100).toFixed(2)} EUR`, 455, totalY + 8, { width: 76, align: "right" });
       document.fillColor("black");
       document.fontSize(10).text(`Forma de pago: ${receipt.payment.method}`);
       if (receipt.payment.reference) document.text(`Referencia de pago: ${receipt.payment.reference}`);
