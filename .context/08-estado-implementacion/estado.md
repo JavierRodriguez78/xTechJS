@@ -295,6 +295,20 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   JWT y `Blob`, sin abrir URLs protegidas con `window.open`.
 - Verificado: `pnpm --filter @xtechjs/api typecheck`, `pnpm --filter @xtechjs/web build`,
   API Docker saludable y tabla `invoice_emails` creada por migración.
+- Primera iteracion de Administracion implementada: `/admin/usuarios` ofrece
+  listado filtrable por texto, rol y estado; `/admin/usuarios/:id/general` muestra
+  el detalle de la cuenta y `/admin/usuarios/:id/permisos` muestra sus permisos
+  efectivos por rol. La accion de suplantacion usa el endpoint existente de auth y
+  queda restringida al administrador.
+- `pnpm --filter @xtechjs/web build` completado correctamente tras añadir las vistas
+  de Administracion y sus rutas protegidas por `users:manage`.
+- Gestión de usuarios ampliada: `POST /api/users` y `PATCH /api/users/:id`
+  permiten alta y edición administrativa con roles, estado activo y cambio de
+  contraseña hasheada. La UI añade `/admin/usuarios/nuevo` y
+  `/admin/usuarios/:id/editar`, con formularios de una columna y navegación al
+  detalle tras guardar.
+- `pnpm --filter @xtechjs/api typecheck`, las 14 pruebas API y
+  `pnpm --filter @xtechjs/web build` completados correctamente tras esta iteración.
 
 ## Cambios recientes (2026-09-13)
 
@@ -372,6 +386,9 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   y configurados con asesoramiento fiscal antes de emitir documentos oficiales.
 - Chat y notificaciones en tiempo real.
 - Administracion: usuarios, roles, configuracion, auditoria y dashboards.
+- Administracion: usuarios, alta, edición, permisos efectivos y suplantación ya
+  están disponibles. Siguen pendientes auditoría consultable y configuración de
+  estados/dispositivos/plantillas.
 
 ### Frontend
 

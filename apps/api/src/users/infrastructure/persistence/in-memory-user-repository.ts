@@ -32,4 +32,11 @@ export class InMemoryUserRepository implements UserRepository {
     users.push(user);
     return user;
   }
+
+  async update(id: string, input: Partial<Pick<User, "email" | "displayName" | "role" | "active">> & { passwordHash?: string }): Promise<User | undefined> {
+    const user = users.find((item) => item.id === id);
+    if (!user) return undefined;
+    Object.assign(user, input);
+    return user;
+  }
 }

@@ -32,6 +32,13 @@ class TestUserRepository implements UserRepository {
     this.users.push(user);
     return user;
   }
+
+  async update(id: string, input: Partial<Pick<User, "email" | "displayName" | "role" | "active">> & { passwordHash?: string }): Promise<User | undefined> {
+    const user = this.users.find((item) => item.id === id);
+    if (!user) return undefined;
+    Object.assign(user, input);
+    return user;
+  }
 }
 
 test("bootstrap creates exactly one administrator with a password hash", async () => {

@@ -15,6 +15,7 @@ import "./shared/infrastructure/security/security-configuration.js";
 import "./users/application/cqrs/user-handlers.js";
 import "./users/infrastructure/http/auth-routes.js";
 import "./users/infrastructure/http/user-controller.js";
+import "./users/application/manage-user.js";
 import "./users/infrastructure/persistence/postgres-user-repository.js";
 import "./customers/application/cqrs/customer-handlers.js";
 import "./customers/application/send-customer-registration-email.js";

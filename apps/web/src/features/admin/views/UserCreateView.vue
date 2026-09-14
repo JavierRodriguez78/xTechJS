@@ -1,0 +1,8 @@
+<script setup lang="ts">
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { createUser, type AdminUser } from "../api";
+const router = useRouter(); const form = ref({ email: "", displayName: "", role: "technician" as AdminUser["role"], password: "" }); const error = ref("");
+async function save(): Promise<void> { try { const user = await createUser(form.value); void router.push({ name: "admin.users.detail.general", params: { id: user.id } }); } catch (reason) { error.value = (reason as Error).message; } }
+</script>
+<template><form class="entity-form" @submit.prevent="save"><header><div><p class="eyebrow">Administracion</p><h1>Nuevo usuario</h1></div></header><fieldset><legend>Cuenta</legend><label>Nombre<input v-model="form.displayName" required maxlength="160" /></label><label>Email<input v-model="form.email" type="email" required maxlength="320" /></label><label>Rol<select v-model="form.role"><option value="admin">Administrador</option><option value="technician">Tecnico</option><option value="customer">Cliente</option></select></label><label>Contraseña<input v-model="form.password" type="password" required minlength="12" autocomplete="new-password" /></label></fieldset><p v-if="error" class="feedback error">{{ error }}</p><footer><button class="secondary" type="button" @click="router.back()">Cancelar</button><button>Crear usuario</button></footer></form></template>

@@ -3,7 +3,7 @@ import { customerSession } from "../../features/customer-portal/session";
 import { staffSession } from "../../features/auth/session";
 
 declare module "vue-router" {
-  interface RouteMeta { permission?: "customers:read" | "customers:manage" | "repairs:read" | "repairs:manage" | "inventory:manage" | "payments:manage"; customer?: boolean }
+  interface RouteMeta { permission?: "customers:read" | "customers:manage" | "repairs:read" | "repairs:manage" | "inventory:manage" | "payments:manage" | "users:manage"; customer?: boolean }
 }
 
 const routes: RouteRecordRaw[] = [
@@ -46,7 +46,14 @@ const routes: RouteRecordRaw[] = [
       { path: "tpv/nuevo", name: "payments.create", component: () => import("../../features/payments/views/PaymentCreateView.vue"), meta: { permission: "payments:manage" } },
       { path: "tpv/caja", name: "payments.cash-register", component: () => import("../../features/payments/views/CashRegisterView.vue"), meta: { permission: "payments:manage" } },
       { path: "tpv/informes", name: "payments.reports", component: () => import("../../features/payments/views/PaymentReportView.vue"), meta: { permission: "payments:manage" } },
-      { path: "tpv/:id", name: "payments.detail", component: () => import("../../features/payments/views/PaymentDetailView.vue"), meta: { permission: "payments:manage" } }
+      { path: "tpv/:id", name: "payments.detail", component: () => import("../../features/payments/views/PaymentDetailView.vue"), meta: { permission: "payments:manage" } },
+      { path: "admin/usuarios", name: "admin.users.list", component: () => import("../../features/admin/views/UserListView.vue"), meta: { permission: "users:manage" } },
+      { path: "admin/usuarios/nuevo", name: "admin.users.create", component: () => import("../../features/admin/views/UserCreateView.vue"), meta: { permission: "users:manage" } },
+      { path: "admin/usuarios/:id/editar", name: "admin.users.edit", component: () => import("../../features/admin/views/UserEditView.vue"), meta: { permission: "users:manage" } },
+      { path: "admin/usuarios/:id", component: () => import("../../features/admin/views/UserDetailView.vue"), meta: { permission: "users:manage" }, redirect: { name: "admin.users.detail.general" }, children: [
+        { path: "general", name: "admin.users.detail.general", component: () => import("../../features/admin/views/tabs/UserGeneralTab.vue") },
+        { path: "permisos", name: "admin.users.detail.permissions", component: () => import("../../features/admin/views/tabs/UserPermissionsTab.vue") }
+      ] }
     ]
   }
 ];
@@ -60,6 +67,7 @@ router.beforeEach((to) => {
   if (!staffSession.value) return { name: "staff.login", query: { redirect: to.fullPath } };
   const role = staffSession.value.user.role;
   const canManage = role === "admin";
+  if (to.meta.permission === "users:manage" && !canManage) return { name: "customers.list" };
   const isReadPermission = to.meta.permission.endsWith(":read");
   const canAccess = canManage || (role === "technician" && (to.meta.permission === "customers:read" || to.meta.permission === "repairs:read" || to.meta.permission === "repairs:manage"));
   return isReadPermission || canAccess ? true : { name: "customers.list" };
