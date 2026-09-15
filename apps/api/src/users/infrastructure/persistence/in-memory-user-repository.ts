@@ -1,4 +1,4 @@
-import type { UserRepository } from "../../application/user-repository.js";
+import type { AuditLogEntry, UserRepository } from "../../application/user-repository.js";
 import type { User, UserCredentials } from "../../domain/user.js";
 
 const users: UserCredentials[] = [
@@ -38,5 +38,19 @@ export class InMemoryUserRepository implements UserRepository {
     if (!user) return undefined;
     Object.assign(user, input);
     return user;
+  }
+
+  async listAuditLogs(): Promise<readonly AuditLogEntry[]> {
+    return [
+      {
+        id: "audit-1",
+        action: "user.impersonated",
+        createdAt: new Date().toISOString(),
+        actorName: "Admin Taller",
+        actorEmail: "admin@xtechjs.local",
+        targetName: "Ana Tecnica",
+        targetEmail: "tecnico@xtechjs.local"
+      }
+    ];
   }
 }

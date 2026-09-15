@@ -27,6 +27,7 @@ class TestUserRepository implements UserRepository {
   async count(): Promise<number> { return 0; }
   async create(user: UserCredentials): Promise<User> { return user; }
   async update(id: string, input: Partial<Pick<User, "email" | "displayName" | "role" | "active">> & { passwordHash?: string }): Promise<User | undefined> { return this.findById(id).then((user) => user ? { ...user, ...input } : undefined); }
+  async listAuditLogs(): Promise<readonly { id: string; action: string; createdAt: string; actorName: string | null; actorEmail: string | null; targetName: string | null; targetEmail: string | null }[]> { return []; }
 }
 
 test("repair orders start received and normalize supplied device details", async () => {

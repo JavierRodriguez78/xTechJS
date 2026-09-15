@@ -2,7 +2,8 @@ import { Body, Controller, Get, Param, Patch, Post, Res } from "@xtaskjs/common"
 import { InjectCommandBus, InjectQueryBus, type CommandBus, type QueryBus } from "@xtaskjs/cqrs";
 import { Authenticated } from "@xtaskjs/security";
 import { z } from "zod";
-import { CreateUserCommand, ListTechniciansQuery, ListUsersQuery, UpdateUserCommand } from "../../application/cqrs/user-messages.js";
+import { REPAIR_STATUSES } from "../../../repairs/domain/repair-status.js";
+import { CreateUserCommand, ListAuditLogsQuery, ListTechniciansQuery, ListUsersQuery, UpdateUserCommand } from "../../application/cqrs/user-messages.js";
 import { PERMISSIONS } from "../../domain/permission.js";
 import { PermissionRequired } from "./permission-guard.js";
 
@@ -19,6 +20,12 @@ export class UserController {
   @PermissionRequired(PERMISSIONS.usersManage)
   listUsers(): Promise<unknown> {
     return this.queryBus.execute(new ListUsersQuery());
+  }
+
+  @Get("/users/audit")
+  @PermissionRequired(PERMISSIONS.usersManage)
+  listAuditLogs(): Promise<unknown> {
+    return this.queryBus.execute(new ListAuditLogsQuery());
   }
 
   @Post("/users")
@@ -39,6 +46,20 @@ export class UserController {
       const user = await this.commandBus.execute(new UpdateUserCommand(id, parsed.data));
       return user ? user : reply.code(404).send({ message: "User not found" });
     } catch (error) { return reply.code(409).send({ message: (error as Error).message }); }
+  }
+
+  @Get("/admin/config/repair-statuses")
+  @PermissionRequired(PERMISSIONS.usersManage)
+  listRepairStatuses(): { values: readonly string[] } {
+    return { values: REPAIR_STATUSES };
+  }
+
+  @Get("/admin/config/device-types")
+  @PermissionRequired(PERMISSIONS.usersManage)
+  listDeviceTypes(): { values: readonly string[] } {
+    return {
+      values: ["Consola", "Móvil", "Portátil", "Televisor", "Electrodoméstico", "Audio", "Accesorio", "Otros"]
+    };
   }
 
   @Get("/technicians")

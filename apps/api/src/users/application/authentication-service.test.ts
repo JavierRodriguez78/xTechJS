@@ -39,6 +39,10 @@ class TestUserRepository implements UserRepository {
     Object.assign(user, input);
     return user;
   }
+
+  async listAuditLogs(): Promise<readonly { id: string; action: string; createdAt: string; actorName: string | null; actorEmail: string | null; targetName: string | null; targetEmail: string | null }[]> {
+    return [];
+  }
 }
 
 test("bootstrap creates exactly one administrator with a password hash", async () => {

@@ -1,7 +1,7 @@
 import { Service } from "@xtaskjs/core";
 import { DataSource, InjectDataSource } from "@xtaskjs/typeorm";
 import { Traceable } from "../../../shared/infrastructure/observability/trace.js";
-import type { UserRepository } from "../../application/user-repository.js";
+import type { AuditLogEntry, UserRepository } from "../../application/user-repository.js";
 import type { User, UserCredentials } from "../../domain/user.js";
 import { UserEntitySchema } from "./user-entity.js";
 
@@ -49,5 +49,32 @@ export class PostgresUserRepository implements UserRepository {
     const saved = await repository.save(user);
     const { passwordHash: _, ...publicUser } = saved;
     return publicUser;
+  }
+
+  async listAuditLogs(): Promise<readonly AuditLogEntry[]> {
+    const rows = await this.dataSource.query(`
+      SELECT
+        a.id,
+        a.action,
+        a.created_at AS "createdAt",
+        actor.display_name AS "actorName",
+        actor.email AS "actorEmail",
+        target.display_name AS "targetName",
+        target.email AS "targetEmail"
+      FROM audit_logs a
+      LEFT JOIN users actor ON actor.id = a.actor_id
+      LEFT JOIN users target ON target.id = a.target_id
+      ORDER BY a.created_at DESC, a.id DESC
+    `);
+
+    return rows.map((row: any) => ({
+      id: row.id,
+      action: row.action,
+      createdAt: new Date(row.createdAt).toISOString(),
+      actorName: row.actorName ?? null,
+      actorEmail: row.actorEmail ?? null,
+      targetName: row.targetName ?? null,
+      targetEmail: row.targetEmail ?? null
+    }));
   }
 }

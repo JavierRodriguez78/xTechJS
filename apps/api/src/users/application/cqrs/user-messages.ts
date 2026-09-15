@@ -8,6 +8,8 @@ export class AuthenticateUserCommand {
 
 export class ListUsersQuery {}
 
+export class ListAuditLogsQuery {}
+
 export class ListTechniciansQuery {}
 
 export class FindActiveNonAdminUserQuery {
