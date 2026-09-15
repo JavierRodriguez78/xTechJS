@@ -11,6 +11,9 @@ export const listUsers = () => request<AdminUser[]>("/api/users");
 export const listAuditLogs = () => request<AuditLogEntry[]>("/api/users/audit");
 export const listRepairStatuses = () => request<{ values: string[] }>("/api/admin/config/repair-statuses");
 export const listDeviceTypes = () => request<{ values: string[] }>("/api/admin/config/device-types");
+export const listNotificationTemplates = () => request<{ values: string[] }>("/api/admin/config/notification-templates");
+export const addConfigValue = (kind: "repair-statuses" | "device-types" | "notification-templates", value: string) => request<{ values: string[] }>(`/api/admin/config/${kind}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ value }) });
+export const removeConfigValue = (kind: "repair-statuses" | "device-types" | "notification-templates", value: string) => request<{ values: string[] }>(`/api/admin/config/${kind}/remove`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ value }) });
 export const createUser = (input: { email: string; displayName: string; role: AdminUser["role"]; password: string }) => request<AdminUser>("/api/users", { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${staffSession.value?.accessToken ?? ""}` }, body: JSON.stringify(input) });
 export const updateUser = (id: string, input: { email?: string; displayName?: string; role?: AdminUser["role"]; active?: boolean; password?: string }) => request<AdminUser>(`/api/users/${id}`, { method: "PATCH", headers: { "content-type": "application/json", authorization: `Bearer ${staffSession.value?.accessToken ?? ""}` }, body: JSON.stringify(input) });
 

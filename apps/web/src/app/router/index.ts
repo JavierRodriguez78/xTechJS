@@ -53,6 +53,7 @@ const routes: RouteRecordRaw[] = [
       { path: "admin/auditoria", name: "admin.audit.list", component: () => import("../../features/admin/views/AuditLogView.vue"), meta: { permission: "users:manage" } },
       { path: "admin/configuracion/estados", name: "admin.config.statuses", component: () => import("../../features/admin/views/AdminStatusConfigView.vue"), meta: { permission: "users:manage" } },
       { path: "admin/configuracion/dispositivos", name: "admin.config.devices", component: () => import("../../features/admin/views/AdminDeviceConfigView.vue"), meta: { permission: "users:manage" } },
+      { path: "admin/configuracion/plantillas", name: "admin.config.templates", component: () => import("../../features/admin/views/AdminNotificationTemplateView.vue"), meta: { permission: "users:manage" } },
       { path: "admin/usuarios/:id", component: () => import("../../features/admin/views/UserDetailView.vue"), meta: { permission: "users:manage" }, redirect: { name: "admin.users.detail.general" }, children: [
         { path: "general", name: "admin.users.detail.general", component: () => import("../../features/admin/views/tabs/UserGeneralTab.vue") },
         { path: "permisos", name: "admin.users.detail.permissions", component: () => import("../../features/admin/views/tabs/UserPermissionsTab.vue") }

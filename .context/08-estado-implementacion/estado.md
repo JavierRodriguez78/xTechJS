@@ -1,6 +1,6 @@
 # Estado de implementacion - xTechJS
 
-**Actualizado:** 2026-09-14
+**Actualizado:** 2026-09-15
 
 Este documento complementa la especificacion funcional. Describe exclusivamente lo que
 existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase.
@@ -309,6 +309,20 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   detalle tras guardar.
 - `pnpm --filter @xtechjs/api typecheck`, las 14 pruebas API y
   `pnpm --filter @xtechjs/web build` completados correctamente tras esta iteración.
+- Configuración administrativa persistida: estados de reparación, tipos de
+  dispositivo y plantillas de notificación se almacenan en `admin_config_values`
+  mediante `AddAdminConfigMigration`; el servicio inicializa los valores por
+  defecto bajo demanda y conserva cambios durante reinicios de la API.
+- Los endpoints existentes de configuración administrativa ahora leen desde la
+  persistencia, y la prueba de configuración cubre altas y bajas de valores.
+- Validado en Docker: la migración se aplica y la API queda `healthy`; typecheck
+  y las pruebas administrativas pasan correctamente.
+- Configuración administrativa ampliada con edición persistente: los administradores
+  pueden añadir y eliminar estados de reparación, tipos de dispositivo y plantillas
+  de notificación mediante endpoints protegidos y controles en las tres vistas web.
+- Validación más reciente: 18 pruebas API relacionadas con administración,
+  autenticación, reparación y configuración superadas; `pnpm --filter
+  @xtechjs/web build` completado correctamente.
 
 ## Cambios recientes (2026-09-13)
 
@@ -331,8 +345,7 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   interna.
 - Las cuatro features internas implementadas (Clientes, Reparaciones, Almacen y
   TPV) ya usan rutas independientes y no exponen las consolas mixtas heredadas en
-  la navegacion. Chat, Administracion y las rutas restantes de adjuntos/materiales
-  siguen pendientes de desarrollo y migracion.
+  la navegacion. Chat y las rutas de adjuntos por reparación siguen pendientes.
 - Adjuntos y chat por reparacion continúan pendientes de API, persistencia y
   transporte WebSocket; no se han creado pantallas ficticias para esas capacidades.
 
@@ -386,9 +399,10 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   y configurados con asesoramiento fiscal antes de emitir documentos oficiales.
 - Chat y notificaciones en tiempo real.
 - Administracion: usuarios, roles, configuracion, auditoria y dashboards.
-- Administracion: usuarios, alta, edición, permisos efectivos y suplantación ya
-  están disponibles. Siguen pendientes auditoría consultable y configuración de
-  estados/dispositivos/plantillas.
+- Administracion: usuarios, alta, edición, permisos efectivos, suplantación,
+  auditoría consultable y configuración persistente y editable de estados,
+  dispositivos y plantillas ya están disponibles. La aplicación dinámica de
+  configuraciones personalizadas sobre todos los flujos queda como evolución futura.
 
 ### Frontend
 
@@ -414,8 +428,9 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 
 ## Siguiente fase recomendada
 
-1. Validar con asesoramiento fiscal la configuracion de la factura y completar
-  numeracion por ejercicio, rectificativas y facturacion electronica si aplica.
+1. Implementar el bounded context de chat y notificaciones en tiempo real, seguido
+  de adjuntos de reparación, usando Socket.IO, permisos y persistencia conforme al
+  contexto técnico.
 
 Los cuatro modulos implementados (usuarios, CRM, reparaciones y almacen) usan el patron
 xTaskJS completo: servicios `@Service` con `@Qualifier`, comandos/queries con
