@@ -53,3 +53,12 @@ button:hover { background: #c94831; }
 .chat-toast { background: #17252a; border: none; border-radius: 8px; color: #fff; cursor: pointer; display: grid; gap: 4px; padding: 14px 16px; text-align: left; }
 .chat-toast strong { font-size: 13px; }
 .chat-toast span { color: #cfe0dd; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.attachments-panel { display: grid; gap: 14px; }
+.attachments-upload { align-items: center; background: #f2f6f4; border: 1px dashed #9db3ab; border-radius: 8px; cursor: pointer; display: inline-flex; gap: 8px; padding: 10px 16px; width: fit-content; }
+.attachments-upload input { display: none; }
+.attachments-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); list-style: none; margin: 0; padding: 0; }
+.attachment-card { background: #fff; border: 1px solid #cbd7d0; border-radius: 8px; display: grid; gap: 6px; padding: 10px; text-align: center; }
+.attachment-preview { background: #f2f6f4; border: none; border-radius: 6px; cursor: pointer; font-size: 32px; padding: 18px 0; }
+.attachment-preview.video { background: #17252a; color: #fff; }
+.attachment-name { font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.attachment-meta { color: #698078; font-size: 11px; margin: 0; }

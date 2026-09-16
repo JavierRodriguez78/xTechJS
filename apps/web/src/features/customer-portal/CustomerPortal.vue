@@ -4,6 +4,7 @@ import { customerSession, signOutCustomer } from "./session";
 import ChatPanel from "../chat/ChatPanel.vue";
 import ChatToastStack from "../chat/ChatToastStack.vue";
 import { chatUnreadByRepair, startChatNotifications } from "../chat/notifications";
+import AttachmentsPanel from "../attachments/AttachmentsPanel.vue";
 
 interface Repair {
   id: string;
@@ -244,6 +245,11 @@ function openChat(repairOrderId: string): void { selectedRepairId.value = repair
         <div class="quote-card" v-if="invoices[selectedRepair.id]?.length">
           <p class="eyebrow">Facturas</p>
           <ul class="quote-lines"><li v-for="invoice in invoices[selectedRepair.id]" :key="invoice.payment.id"><span>{{ invoice.receiptNumber }} - {{ money(invoice.payment.amountCents) }}</span><button type="button" class="secondary" @click="downloadInvoice(selectedRepair.id, invoice.payment.id, invoice.receiptNumber)">Descargar factura</button></li></ul>
+        </div>
+
+        <div class="quote-card">
+          <p class="eyebrow">Fotos y vídeos</p>
+          <AttachmentsPanel :key="selectedRepair.id" :repair-id="selectedRepair.id" :token="customerSession?.accessToken ?? ''" :can-manage="false" mode="customer" />
         </div>
 
         <div class="quote-card">

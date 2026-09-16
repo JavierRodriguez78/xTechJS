@@ -20,6 +20,7 @@ WORKDIR /app
 COPY --from=build /opt/api ./
 RUN node scripts/prebuild-xtask-manifest.mjs
 RUN rm -rf /app/src
+RUN mkdir -p /app/uploads
 RUN chown -R node:node /app
 
 EXPOSE 3000

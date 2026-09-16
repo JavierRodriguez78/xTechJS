@@ -264,6 +264,33 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   cliente existente) contra la API en Docker: sin caída del proceso y ack
   coherente en `chat.join`. `pnpm --filter @xtechjs/api typecheck`/`test` (21/21)
   y `pnpm --filter @xtechjs/web build` en verde.
+- **(2026-09-16) Adjuntos de reparación (fotos/vídeos) implementados.** Nuevo
+  bounded context `attachments`: entidad `RepairAttachmentEntitySchema` (tabla
+  `repair_attachments`, FK a `repair_orders`), migración
+  `1738300000000-initial-repair-attachments.ts`, repositorio
+  `PostgresRepairAttachmentRepository` (`repairAttachmentRepository`) y
+  almacenamiento en disco `LocalDiskAttachmentStorage` (`attachmentStorage`,
+  directorio configurable por `UPLOADS_DIR`, con guarda contra path traversal),
+  ambos incluidos en el smoke check de `app.ts`. Subida con `@fastify/multipart`
+  (límite configurable por `ATTACHMENT_MAX_SIZE_BYTES`, 25 MB por defecto),
+  validación de tipo MIME contra una lista blanca de imágenes/vídeos. Endpoints:
+  `GET`/`POST`/`DELETE /api/repairs/:id/attachments[/:attachmentId]` (staff; solo
+  `repairs:manage` puede subir/eliminar, `repairs:read` puede listar/descargar) y
+  `GET /api/customer/repairs/:id/attachments[/:attachmentId]` (cliente, con
+  verificación de propiedad de la reparación, solo lectura). Las descargas se
+  devuelven como `Buffer` completo (no como stream) porque el adaptador HTTP de
+  xTaskJS no soporta `reply.send()` de streams sin buffering — devolvía `204 No
+  Content` con un stream, y `200` con el `Buffer`. Frontend:
+  `features/attachments/` (`api.ts` con descarga autenticada vía `Blob`,
+  `AttachmentsPanel.vue` reutilizable) integrado como pestaña "Adjuntos"
+  (`repairs.detail.attachments`) en el portal interno (con subida/borrado para
+  admin/técnico) y como sección de solo lectura en `CustomerPortal.vue`. Volumen
+  Docker `api-uploads` persistente montado en `/app/uploads`. Verificado de
+  extremo a extremo en Docker con peticiones reales: subida (`201`), listado,
+  descarga (`200` con el contenido correcto), rechazo de tipo no permitido
+  (`400`), borrado (`204`), y comprobación de propiedad cruzada entre clientes
+  (`404` para quien no es dueño de la reparación). `pnpm --filter @xtechjs/api
+  typecheck`/`test` (24/24) y `pnpm --filter @xtechjs/web build` en verde.
 - Nuevo flujo de alta de cliente: `email` obligatorio, `registrationStatus` con
   valor inicial `pending`, validacion de token de invitacion y endpoints publicos de
   registro para `/api/customers/register/:token` con confirmacion de contraseña,
@@ -423,9 +450,10 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   interna.
 - Las cuatro features internas implementadas (Clientes, Reparaciones, Almacen y
   TPV) ya usan rutas independientes y no exponen las consolas mixtas heredadas en
-  la navegacion. Chat y las rutas de adjuntos por reparación siguen pendientes.
-- Adjuntos y chat por reparacion continúan pendientes de API, persistencia y
-  transporte WebSocket; no se han creado pantallas ficticias para esas capacidades.
+  la navegacion. Chat y adjuntos por reparación ya tienen pestañas propias
+  (`repairs.detail.chat`, `repairs.detail.attachments`).
+- Adjuntos y chat por reparación ya están implementados (API, persistencia,
+  Socket.IO y almacenamiento en disco); ver entradas del 2026-09-16 más arriba.
 
 ## Pendiente por area
 
@@ -454,9 +482,9 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 
 - CRM: historial de interacciones y registro de notificaciones. Alta, listado,
   ficha, edicion, etiquetado e historial de reparaciones ya existen.
-- Reparaciones: adjuntos y consumo de materiales. Ordenes, equipo basico, estados,
-  timeline, diagnostico, asignacion, presupuesto interno y aprobacion desde portal
-  de cliente ya existen.
+- Reparaciones: consumo de materiales. Ordenes, equipo basico, estados,
+  timeline, diagnostico, asignacion, presupuesto interno, aprobacion desde portal
+  de cliente, adjuntos (fotos/vídeos) y chat ya existen.
 - Almacen: primer vertical implementado con catalogo de materiales, stock entero y
   movimientos auditados. Usa `@Service`, CQRS, `InventoryController` y migraciones
   `inventory_items`/`inventory_movements`. Expone `GET`/`POST /api/inventory`,
@@ -500,7 +528,9 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   simple por pathname y no un router Vue dedicado.
 - Vistas funcionales para admin, tecnico y cliente.
 - Formularios, validacion, estados de carga/error y conexion con API.
-- Carga y reproduccion segura de fotos y videos.
+- Carga y reproduccion segura de fotos y videos ya implementada (pestaña
+  "Adjuntos" en el portal interno, sección de solo lectura en el portal de
+  cliente, descargas autenticadas vía `Blob`).
 
 ### Infraestructura
 - Ejecutar la migracion inicial contra PostgreSQL y comprobar `GET /api/users` con
@@ -516,19 +546,21 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 
 ## Siguiente fase recomendada
 
-1. Añadir las vistas de chat (admin/técnico/cliente) sobre el backend ya
-  implementado (`chat_messages`, REST y Socket.IO namespace `/chat`), y a
-  continuación implementar adjuntos de reparación (fotos/vídeos), usando
-  permisos y persistencia conforme al contexto técnico.
+1. Con chat y adjuntos de reparación completos (backend + frontend), la
+  siguiente prioridad es revisar la deuda técnica de infraestructura pendiente
+  (migraciones en el pipeline de despliegue, secretos por entorno, CI de
+  typecheck/tests/build/imagenes Docker) y, en paralelo, completar el historial
+  de interacciones/notificaciones del CRM y evaluar Vitest para el frontend.
 
 Los cuatro modulos implementados (usuarios, CRM, reparaciones y almacen) usan el patron
 xTaskJS completo: servicios `@Service` con `@Qualifier`, comandos/queries con
 handlers `@CommandHandler`/`@QueryHandler`, controladores `@Controller` con guards
 y repositorios registrados como instancias nombradas en `main.ts`. No quedan rutas
-Fastify manuales. Patron a replicar en modulos futuros: almacen, TPV y chat.
+Fastify manuales. Patron a replicar en modulos futuros: almacen, TPV, chat y adjuntos.
 PostgreSQL contiene `users`, `audit_logs`, `customers`, `repair_orders`,
-`repair_status_events`, `repair_quotes`, `inventory_items` e
-`inventory_movements` tras ejecutar migraciones.
+`repair_status_events`, `repair_quotes`, `inventory_items`,
+`inventory_movements`, `chat_messages` y `repair_attachments` tras ejecutar
+migraciones.
 
 ## Criterio de actualizacion
 

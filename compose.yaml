@@ -24,8 +24,11 @@ services:
       INVOICE_ISSUER_ADDRESS: "${INVOICE_ISSUER_ADDRESS:-PENDIENTE_CONFIGURAR}"
       INVOICE_SERIES: "${INVOICE_SERIES:-B}"
       INVOICE_VAT_RATE: ${INVOICE_VAT_RATE:-21}
+      UPLOADS_DIR: /app/uploads
     ports:
       - "${API_PORT:-3000}:3000"
+    volumes:
+      - api-uploads:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -98,3 +101,4 @@ services:
 volumes:
   postgres-data:
   redis-data:
+  api-uploads:

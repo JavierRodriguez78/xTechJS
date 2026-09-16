@@ -23,7 +23,9 @@ export const environmentSchema = z.object({
   INVOICE_SERIES: z.string().min(1).max(20).default("B"),
   INVOICE_VAT_RATE: z.coerce.number().min(0).max(100).default(21),
   JWT_SECRET: z.string().min(32).default("development-only-secret-change-me-32"),
-  JWT_EXPIRES_IN: z.string().min(1).default("8h")
+  JWT_EXPIRES_IN: z.string().min(1).default("8h"),
+  UPLOADS_DIR: z.string().min(1).default("uploads"),
+  ATTACHMENT_MAX_SIZE_BYTES: z.coerce.number().int().min(1).default(25 * 1024 * 1024)
 });
 
 export type AppConfig = z.infer<typeof environmentSchema>;

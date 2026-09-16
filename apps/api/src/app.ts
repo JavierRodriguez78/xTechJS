@@ -1,4 +1,5 @@
 import jwt from "@fastify/jwt";
+import multipart from "@fastify/multipart";
 import Fastify from "fastify";
 import { randomUUID } from "node:crypto";
 import { CreateApplication, type Container, type XTaskHttpApplication } from "@xtaskjs/core";
@@ -49,6 +50,11 @@ import "./chat/infrastructure/http/chat-controller.js";
 import "./chat/infrastructure/http/customer-chat-controller.js";
 import "./chat/infrastructure/persistence/postgres-chat-message-repository.js";
 import "./chat/infrastructure/socket/chat-gateway.js";
+import "./attachments/application/cqrs/attachment-handlers.js";
+import "./attachments/infrastructure/http/attachment-controller.js";
+import "./attachments/infrastructure/http/customer-attachment-controller.js";
+import "./attachments/infrastructure/persistence/postgres-repair-attachment-repository.js";
+import "./attachments/infrastructure/persistence/local-disk-attachment-storage.js";
 import { startTrace, traceOperation } from "./shared/infrastructure/observability/trace.js";
 
 declare module "fastify" {
@@ -58,7 +64,7 @@ declare module "fastify" {
 }
 
 let application: XTaskHttpApplication | undefined;
-const requiredComponentNames = ["userRepository", "customerRepository", "repairOrderRepository", "repairQuoteRepository", "inventoryRepository", "supplierRepository", "purchaseOrderRepository", "paymentRepository", "cashRegisterRepository", "chatMessageRepository"] as const;
+const requiredComponentNames = ["userRepository", "customerRepository", "repairOrderRepository", "repairQuoteRepository", "inventoryRepository", "supplierRepository", "purchaseOrderRepository", "paymentRepository", "cashRegisterRepository", "chatMessageRepository", "repairAttachmentRepository", "attachmentStorage"] as const;
 
 function instrumentBus(bus: CommandBus | QueryBus, component: "CommandBus" | "QueryBus"): void {
   const execute = bus.execute.bind(bus);
@@ -87,6 +93,7 @@ export async function createApplication(): Promise<XTaskHttpApplication> {
     request.log.info({ correlationId: request.correlationId, statusCode: reply.statusCode }, "Request completed");
   });
   await fastify.register(jwt, { secret: config.get("JWT_SECRET"), sign: { expiresIn: config.get("JWT_EXPIRES_IN") } });
+  await fastify.register(multipart, { limits: { fileSize: config.get("ATTACHMENT_MAX_SIZE_BYTES") } });
   fastify.get("/health", async () => ({ status: "ok", service: "xtechjs-api", timestamp: new Date().toISOString() }));
 
   application = await CreateApplication({
