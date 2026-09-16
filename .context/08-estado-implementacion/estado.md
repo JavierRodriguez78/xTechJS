@@ -1,6 +1,6 @@
 # Estado de implementacion - xTechJS
 
-**Actualizado:** 2026-09-15
+**Actualizado:** 2026-09-16
 
 Este documento complementa la especificacion funcional. Describe exclusivamente lo que
 existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase.
@@ -216,6 +216,19 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   `/customer/register?token=<token>`: valida el enlace, solicita contraseña con
   confirmacion, datos de facturacion y consentimiento expreso; informa de tokens
   ausentes, invalidos, caducados o ya utilizados.
+- **(2026-09-16) Corregido: el consentimiento RGPD/LOPD se validaba pero no se
+  persistia.** `completeCustomerRegistration` exigia `consentAccepted`/`consentText`
+  por Zod pero nunca los guardaba, sin tabla ni columnas de auditoria. Se ha creado
+  la entidad `DataProtectionConsentEntitySchema` y la tabla `data_protection_consents`
+  (migracion `1738100000000-add-data-protection-consents.ts`, registrada en
+  `data-source.ts`): un registro **inmutable** por aceptacion (solo `INSERT`, nunca
+  `UPDATE`/`DELETE`) con `consent_text`, `consent_version` (hash SHA-256 del texto,
+  como version verificable), `accepted_at` e `ip_address` (de `request.ip`).
+  `completeCustomerRegistration` inserta este registro antes de invalidar el token.
+  Verificado con `pnpm --filter @xtechjs/api typecheck`, `pnpm --filter @xtechjs/api
+  test` (18/18 pruebas OK) y comprobacion directa de la tabla en PostgreSQL tras
+  reconstruir el contenedor `api` en Docker (`\d data_protection_consents`).
+  Documentado tambien en `.context/11-alta-clientes/registro-cliente.md`.
 - El CRM muestra el estado de registro y permite reenviar la invitacion de clientes
   `pending` mediante `POST /api/customers/:id/resend-invitation`.
 - Corregida la autorizacion del CRM: `@Authenticated()` se ejecuta antes de

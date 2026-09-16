@@ -1,9 +1,11 @@
-import { Body, Controller, Get, Param, Patch, Post, Res } from "@xtaskjs/common";
+import { Body, Controller, Get, Param, Patch, Post, Req, Res } from "@xtaskjs/common";
 import { InjectCommandBus, InjectQueryBus, type CommandBus, type QueryBus } from "@xtaskjs/cqrs";
 import { Authenticated } from "@xtaskjs/security";
 import { InjectDataSource, type DataSource } from "@xtaskjs/typeorm";
 import { IsNull } from "typeorm";
 import { compare, hash } from "bcryptjs";
+import { createHash, randomUUID } from "node:crypto";
+import type { FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { CreateCustomerInput, UpdateCustomerInput } from "../../domain/customer.js";
 import { CreateCustomerCommand, GetCustomerQuery, ListCustomerRepairsQuery, ListCustomersQuery, ResendCustomerInvitationCommand, UpdateCustomerCommand } from "../../application/cqrs/customer-messages.js";
@@ -12,6 +14,7 @@ import { PermissionRequired } from "../../../users/infrastructure/http/permissio
 import { UserEntitySchema } from "../../../users/infrastructure/persistence/user-entity.js";
 import { CustomerEntitySchema } from "../persistence/customer-entity.js";
 import { CustomerRegistrationTokenEntitySchema } from "../persistence/customer-registration-token-entity.js";
+import { DataProtectionConsentEntitySchema } from "../persistence/data-protection-consent-entity.js";
 
 const createCustomerSchema = z.object({
   displayName: z.string().trim().min(1).max(160),
@@ -57,7 +60,7 @@ export class CustomerController {
   }
 
   @Post("/register/:token")
-  async completeCustomerRegistration(@Param("token") token: string, @Body() body: unknown, @Res() reply: ControllerReply): Promise<unknown> {
+  async completeCustomerRegistration(@Param("token") token: string, @Body() body: unknown, @Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> {
     const parsed = completeRegistrationSchema.safeParse(body);
     if (!parsed.success) {
       return reply.code(400).send({ message: "Invalid registration data", issues: parsed.error.flatten() });
@@ -91,6 +94,15 @@ export class CustomerController {
       billingCity: parsed.data.billingCity,
       billingProvince: parsed.data.billingProvince,
       registrationStatus: "completed"
+    });
+
+    await this.dataSource.getRepository(DataProtectionConsentEntitySchema).save({
+      id: randomUUID(),
+      customerId: customer.id,
+      consentText: parsed.data.consentText,
+      consentVersion: createHash("sha256").update(parsed.data.consentText).digest("hex"),
+      acceptedAt: new Date(),
+      ipAddress: request.ip ?? null
     });
 
     await this.dataSource.getRepository(CustomerRegistrationTokenEntitySchema).update(tokenRecord.id, { usedAt: new Date() });

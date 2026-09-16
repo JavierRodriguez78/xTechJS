@@ -104,6 +104,19 @@ específico del negocio:
   de publicarse; este documento no proporciona ese texto, solo el mecanismo
   técnico para capturarlo y registrarlo.
 
+**Estado de implementación (2026-09-16):** persistencia del consentimiento
+implementada. `POST /api/customers/register/:token` (`completeCustomerRegistration`
+en `customer-controller.ts`) inserta ahora un registro **inmutable** (solo
+`INSERT`, sin `update`/`delete`) en la tabla `data_protection_consents`
+(entidad `DataProtectionConsentEntitySchema`, migración
+`1738100000000-add-data-protection-consents.ts`) con: `consent_text` (texto exacto
+aceptado), `consent_version` (hash SHA-256 del texto, como versión verificable),
+`accepted_at`, e `ip_address` (capturada de `request.ip`). Un cliente puede
+acumular varias filas si vuelve a aceptar en el futuro (p. ej. cambio de texto
+legal); nunca se sobrescribe una fila existente, cumpliendo el requisito de
+evidencia no revocable. Verificado con test suite completa de la API (18/18) y
+comprobación directa de la tabla en PostgreSQL vía Docker.
+
 ## 5. Infraestructura: MailHog para pruebas de email
 
 Para poder verificar en local y en Docker que los correos de invitación (y
