@@ -17,5 +17,6 @@ registerMailerTransport({
       ? { user: config.get("SMTP_USER") || undefined, pass: config.get("SMTP_PASSWORD") || undefined }
       : undefined
   },
-  verifyOnStart: true
+  // false: verifying here blocks CreateApplication() until SMTP responds, hanging boot if nothing listens on the port.
+  verifyOnStart: false
 });

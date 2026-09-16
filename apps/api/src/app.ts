@@ -10,6 +10,7 @@ import { loadConfig } from "./shared/infrastructure/config/app-config.js";
 import "./shared/infrastructure/cqrs/cqrs-configuration.js";
 import "./shared/infrastructure/http/observability-controller.js";
 import "./shared/infrastructure/mailer/mailer-config.js";
+import { verifyMailerTransportInBackground } from "./shared/infrastructure/mailer/mailer-startup-check.js";
 import "./shared/infrastructure/persistence/data-source.js";
 import "./shared/infrastructure/security/security-configuration.js";
 import "./users/application/cqrs/user-handlers.js";
@@ -43,6 +44,11 @@ import "./payments/infrastructure/persistence/postgres-invoice-email-repository.
 import "./payments/application/send-payment-invoice-email.js";
 import "./payments/application/cqrs/cash-register-handlers.js";
 import "./payments/infrastructure/persistence/postgres-cash-register-repository.js";
+import "./chat/application/cqrs/chat-handlers.js";
+import "./chat/infrastructure/http/chat-controller.js";
+import "./chat/infrastructure/http/customer-chat-controller.js";
+import "./chat/infrastructure/persistence/postgres-chat-message-repository.js";
+import "./chat/infrastructure/socket/chat-gateway.js";
 import { startTrace, traceOperation } from "./shared/infrastructure/observability/trace.js";
 
 declare module "fastify" {
@@ -52,7 +58,7 @@ declare module "fastify" {
 }
 
 let application: XTaskHttpApplication | undefined;
-const requiredComponentNames = ["userRepository", "customerRepository", "repairOrderRepository", "repairQuoteRepository", "inventoryRepository", "supplierRepository", "purchaseOrderRepository", "paymentRepository", "cashRegisterRepository"] as const;
+const requiredComponentNames = ["userRepository", "customerRepository", "repairOrderRepository", "repairQuoteRepository", "inventoryRepository", "supplierRepository", "purchaseOrderRepository", "paymentRepository", "cashRegisterRepository", "chatMessageRepository"] as const;
 
 function instrumentBus(bus: CommandBus | QueryBus, component: "CommandBus" | "QueryBus"): void {
   const execute = bus.execute.bind(bus);
@@ -100,6 +106,7 @@ export async function startApplication(): Promise<XTaskHttpApplication> {
   const current = await createApplication();
   const port = loadConfig().get("API_PORT");
   await current.listen({ port, host: "0.0.0.0" });
+  verifyMailerTransportInBackground();
   return current;
 }
 

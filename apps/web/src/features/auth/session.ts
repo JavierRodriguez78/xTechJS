@@ -1,4 +1,5 @@
 import { ref } from "vue";
+import { disconnectChatSocket } from "../chat/socket";
 
 export type StaffRole = "admin" | "technician";
 
@@ -47,4 +48,5 @@ export async function signIn(email: string, password: string): Promise<void> {
 export function signOut(): void {
   localStorage.removeItem(storageKey);
   staffSession.value = null;
+  disconnectChatSocket();
 }

@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { customerSession, signOutCustomer } from "./session";
+import ChatPanel from "../chat/ChatPanel.vue";
+import ChatToastStack from "../chat/ChatToastStack.vue";
+import { chatUnreadByRepair, startChatNotifications } from "../chat/notifications";
 
 interface Repair {
   id: string;
@@ -137,10 +140,13 @@ async function approve(repairId: string): Promise<void> {
 }
 
 onMounted(load);
+watch(customerSession, (session) => { if (session) startChatNotifications(session.accessToken, session.user.id); }, { immediate: true });
+function openChat(repairOrderId: string): void { selectedRepairId.value = repairOrderId; }
 </script>
 
 <template>
   <main class="customer-portal">
+    <ChatToastStack @select="openChat" />
     <header class="customer-portal-header">
       <div>
         <p class="eyebrow">Portal de cliente</p>
@@ -184,6 +190,7 @@ onMounted(load);
           <div class="customer-portal-repair-meta">
             <span>{{ formatDate(repair.createdAt) }}</span>
             <span :class="['status-pill', statusTone(repair.status)]">{{ statusLabel(repair.status) }}</span>
+            <span v-if="chatUnreadByRepair[repair.id]" class="chat-badge">{{ chatUnreadByRepair[repair.id] }}</span>
           </div>
         </article>
       </aside>
@@ -237,6 +244,17 @@ onMounted(load);
         <div class="quote-card" v-if="invoices[selectedRepair.id]?.length">
           <p class="eyebrow">Facturas</p>
           <ul class="quote-lines"><li v-for="invoice in invoices[selectedRepair.id]" :key="invoice.payment.id"><span>{{ invoice.receiptNumber }} - {{ money(invoice.payment.amountCents) }}</span><button type="button" class="secondary" @click="downloadInvoice(selectedRepair.id, invoice.payment.id, invoice.receiptNumber)">Descargar factura</button></li></ul>
+        </div>
+
+        <div class="quote-card">
+          <p class="eyebrow">Mensajes</p>
+          <ChatPanel
+            :key="selectedRepair.id"
+            :repair-id="selectedRepair.id"
+            :token="customerSession?.accessToken ?? ''"
+            :current-sender-id="customerSession?.user.id"
+            mode="customer"
+          />
         </div>
       </article>
     </section>

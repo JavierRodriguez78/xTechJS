@@ -1,4 +1,5 @@
 import { ref } from "vue";
+import { disconnectChatSocket } from "../chat/socket";
 
 export interface CustomerSession {
   accessToken: string;
@@ -29,4 +30,5 @@ export async function signInCustomer(email: string, password: string): Promise<v
 export function signOutCustomer(): void {
   localStorage.removeItem(storageKey);
   customerSession.value = null;
+  disconnectChatSocket();
 }

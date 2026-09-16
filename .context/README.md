@@ -15,6 +15,8 @@ Este paquete contiene el contexto técnico y funcional completo del proyecto **x
 - `08-estado-implementacion/estado.md` — Estado real, decisiones y trabajo pendiente
 - `05-infraestructura/infraestructura.md` — Incluye los comandos operativos del Makefile
 - `09-hallazgos-tecnicos/bug-arranque-userrepository.md` — Causa raíz confirmada del fallo de `make up` (`No component found with name: userRepository`) y fix recomendado
+- `09-hallazgos-tecnicos/bug-arranque-mailer-verify.md` — Causa raíz y fix de un arranque colgado (sin error ni log) cuando el SMTP no responde a `verifyOnStart` del mailer
+- `09-hallazgos-tecnicos/bug-arranque-socketgateway-constructor-injection.md` — Causa raíz y fix de un arranque roto al inyectar por constructor (en vez de por propiedad) repositorios TypeORM dentro de un `@SocketGateway()`
 - `10-referencia-xgestoria/patron-arranque.md` — Comparativa con el backend de xGestoria (mismo stack xtaskjs) como referencia de arquitectura de arranque y convenciones DI
 - `11-alta-clientes/registro-cliente.md` — Flujo de alta de cliente con email obligatorio, autorregistro (contraseña + datos de facturación), autorización LOPD/RGPD, y MailHog como SMTP de pruebas
 

@@ -31,7 +31,8 @@ const routes: RouteRecordRaw[] = [
         { path: "presupuesto", name: "repairs.detail.quote", component: () => import("../../features/repairs/views/tabs/RepairQuoteTab.vue"), meta: { permission: "repairs:manage" } },
         { path: "materiales", name: "repairs.detail.materials", component: () => import("../../features/repairs/views/tabs/RepairMaterialsTab.vue"), meta: { permission: "inventory:manage" } },
         { path: "historial", name: "repairs.detail.history", component: () => import("../../features/repairs/views/tabs/RepairHistoryTab.vue") },
-        { path: "cobros", name: "repairs.detail.payments", component: () => import("../../features/repairs/views/tabs/RepairPaymentsTab.vue"), meta: { permission: "payments:manage" } }
+        { path: "cobros", name: "repairs.detail.payments", component: () => import("../../features/repairs/views/tabs/RepairPaymentsTab.vue"), meta: { permission: "payments:manage" } },
+        { path: "mensajes", name: "repairs.detail.chat", component: () => import("../../features/repairs/views/tabs/RepairChatTab.vue") }
       ] },
       { path: "almacen", name: "inventory.list", component: () => import("../../features/inventory/views/InventoryListView.vue"), meta: { permission: "inventory:manage" } },
       { path: "almacen/nuevo", name: "inventory.create", component: () => import("../../features/inventory/views/InventoryCreateView.vue"), meta: { permission: "inventory:manage" } },

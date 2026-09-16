@@ -199,6 +199,71 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   de `SMTP_*`/`MAIL_FROM`, siguiendo el contrato oficial del paquete. El servicio
   `mailhog` ya queda declarado en `compose.yaml` y la API la usa como transporte de
   pruebas SMTP local, sin enviar correos reales.
+- **(2026-09-16) Corregido: riesgo de arranque colgado si el SMTP no está
+  disponible.** `mailer-config.ts` usaba `verifyOnStart: true`, que ejecuta
+  `transporter.verify()` de forma síncrona dentro de `CreateApplication()`, antes de
+  `fastify.listen(...)`. Si nada responde en el puerto SMTP (MailHog no levantado en
+  local, o un fallo temporal del SMTP real en producción), la API se queda colgada
+  sin loguear error y sin servir ninguna petición. Se cambia a `verifyOnStart: false`
+  y se añade `mailer-startup-check.ts` (`verifyMailerTransportInBackground()`), que
+  verifica el transporte en segundo plano tras `listen()`, con timeout explícito
+  (5s) y logging (`console.info`/`console.warn`), sin bloquear ni propagar el
+  fallo. Reproducido y verificado en Docker parando `mailhog`: `Server listening`
+  y `/health` (`200`) llegan de inmediato; la verificación falla en background con
+  warning tras el timeout. `pnpm --filter @xtechjs/api typecheck` y
+  `pnpm --filter @xtechjs/api test` (18/18) siguen en verde. Detalle completo en
+  `.context/09-hallazgos-tecnicos/bug-arranque-mailer-verify.md`.
+- **(2026-09-16) Chat en tiempo real cliente-técnico implementado.** Nuevo bounded
+  context `chat`: entidad `ChatMessageEntitySchema` (tabla `chat_messages`, FK a
+  `repair_orders`), migración `1738200000000-initial-chat-messages.ts`,
+  repositorio `PostgresChatMessageRepository` (`chatMessageRepository`, incluido
+  en el smoke check de `app.ts`). Casos de uso `SendChatMessage`/`ListChatMessages`
+  y variantes de cliente con verificación de propiedad de la reparación
+  (`SendOwnCustomerChatMessage`/`ListOwnCustomerChatMessages`), expuestos vía CQRS
+  y HTTP: `GET`/`POST /api/repairs/:id/messages` (staff, permiso `chat:use`) y
+  `GET`/`POST /api/customer/repairs/:id/messages` (cliente). Tiempo real con
+  `@xtaskjs/socket-io` (namespace `/chat`): el gateway verifica el JWT en el
+  handshake (mismo secreto que `@fastify/jwt`, vía `fast-jwt`), rechaza
+  conexiones sin `chat:use`, y solo permite unirse a la sala de una reparación
+  (`chat.join`) si el usuario tiene acceso; `SendChatMessage` emite `chat.message`
+  a la sala tras persistir. Se detectó y corrigió durante la implementación un
+  bug de arranque (inyección por constructor de repositorios TypeORM dentro de un
+  `@SocketGateway()` compite con el registro del datasource) — documentado en
+  `.context/09-hallazgos-tecnicos/bug-arranque-socketgateway-constructor-injection.md`.
+  Verificado: `pnpm --filter @xtechjs/api typecheck`, 21/21 pruebas (18 previas +
+  3 nuevas de `chat`), y arranque/migración/tabla comprobados en Docker.
+- **(2026-09-16) Frontend de chat y notificaciones de nuevos mensajes.** Componente
+  `ChatPanel.vue` (`features/chat/`, usa `socket.io-client`) integrado como pestaña
+  "Mensajes" en el detalle de reparación del portal interno (`repairs.detail.chat`)
+  y como sección del portal de cliente. Proxy de WebSocket `/socket.io/` añadido a
+  Vite (dev) y `nginx.conf` (prod). Se añaden notificaciones de mensajes nuevos
+  fuera de la pestaña de chat: el gateway une cada socket a una sala de
+  notificación por rol (`chat:staff` para admin/técnico, `chat:customer:<id>` para
+  cada cliente) y `SendChatMessage` emite un evento ligero `chat.notification`
+  (remitente, aviso, fecha) a esas salas además del mensaje completo a la sala de
+  la reparación. En el frontend, `features/chat/notifications.ts` mantiene un
+  contador de no leídos por reparación y una cola de toasts (auto-descartables,
+  navegables al hacer clic), mostrados en `AppLayout.vue` (badge junto a
+  "Reparaciones" y por fila en `RepairListView.vue`) y en `CustomerPortal.vue`
+  (badge por reparación). `ChatPanel.vue` marca como leído al abrir la pestaña y
+  al recibir un mensaje de la reparación abierta.
+  **Se corrigió además un segundo bug de arranque, más profundo que el anterior**:
+  cualquier dependencia respaldada por el datasource en un `@SocketGateway` revienta
+  igual sea inyectada por constructor o por propiedad (ambas rutas son eager en
+  `@xtaskjs/core`); y se descubrió que `@Qualifier` es un no-op silencioso cuando se
+  usa como decorador de propiedad (solo funciona en parámetros de constructor),
+  lo que había enmascarado el problema en el primer intento de fix. El fix final
+  resuelve los repositorios bajo demanda desde `context.container` dentro de cada
+  manejador de evento, sin ninguna dependencia gestionada por xtaskjs en la propia
+  clase. También se corrigió una condición de carrera cliente-servidor en la unión
+  a salas (`chat.join` con ack, reintento acotado y re-unión automática tras
+  reconexión). Documentado íntegramente (las tres iteraciones fallidas y la
+  correcta) en
+  `.context/09-hallazgos-tecnicos/bug-arranque-socketgateway-constructor-injection.md`.
+  Verificado con una conexión Socket.IO real (JWT firmado manualmente para un
+  cliente existente) contra la API en Docker: sin caída del proceso y ack
+  coherente en `chat.join`. `pnpm --filter @xtechjs/api typecheck`/`test` (21/21)
+  y `pnpm --filter @xtechjs/web build` en verde.
 - Nuevo flujo de alta de cliente: `email` obligatorio, `registrationStatus` con
   valor inicial `pending`, validacion de token de invitacion y endpoints publicos de
   registro para `/api/customers/register/:token` con confirmacion de contraseña,
@@ -410,7 +475,17 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   La validacion legal definitiva, series fiscales reales, numeracion por ejercicio,
   rectificativas, facturacion electronica y requisitos de IVA deben ser revisados
   y configurados con asesoramiento fiscal antes de emitir documentos oficiales.
-- Chat y notificaciones en tiempo real.
+- Chat: canal de mensajería por reparación implementado (backend y frontend).
+  API REST (`/api/repairs/:id/messages`, `/api/customer/repairs/:id/messages`)
+  con persistencia en `chat_messages` y tiempo real vía `@xtaskjs/socket-io`
+  (namespace `/chat`, autenticado con JWT). Frontend: componente reutilizable
+  `ChatPanel.vue` (`features/chat/`) usando `socket.io-client`, integrado como
+  pestaña "Mensajes" en el detalle de reparación del portal interno
+  (`repairs.detail.chat`) y como sección en el portal de cliente
+  (`CustomerPortal.vue`). El proxy de WebSocket (`/socket.io/`) se añadió tanto
+  al servidor de desarrollo de Vite como al `nginx.conf` de producción.
+  Verificado: `pnpm --filter @xtechjs/web build` y handshake de Socket.IO
+  comprobado en Docker a través de Nginx.
 - Administracion: usuarios, roles, configuracion, auditoria y dashboards.
 - Administracion: usuarios, alta, edición, permisos efectivos, suplantación,
   auditoría consultable y configuración persistente y editable de estados,
@@ -441,9 +516,10 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 
 ## Siguiente fase recomendada
 
-1. Implementar el bounded context de chat y notificaciones en tiempo real, seguido
-  de adjuntos de reparación, usando Socket.IO, permisos y persistencia conforme al
-  contexto técnico.
+1. Añadir las vistas de chat (admin/técnico/cliente) sobre el backend ya
+  implementado (`chat_messages`, REST y Socket.IO namespace `/chat`), y a
+  continuación implementar adjuntos de reparación (fotos/vídeos), usando
+  permisos y persistencia conforme al contexto técnico.
 
 Los cuatro modulos implementados (usuarios, CRM, reparaciones y almacen) usan el patron
 xTaskJS completo: servicios `@Service` con `@Qualifier`, comandos/queries con
