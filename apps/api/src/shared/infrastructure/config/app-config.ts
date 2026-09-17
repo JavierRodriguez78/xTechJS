@@ -26,6 +26,14 @@ export const environmentSchema = z.object({
   JWT_EXPIRES_IN: z.string().min(1).default("8h"),
   UPLOADS_DIR: z.string().min(1).default("uploads"),
   ATTACHMENT_MAX_SIZE_BYTES: z.coerce.number().int().min(1).default(25 * 1024 * 1024)
+}).superRefine((environment, context) => {
+  if (environment.NODE_ENV !== "production") return;
+  if (environment.JWT_SECRET === "development-only-secret-change-me-32") {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ["JWT_SECRET"], message: "JWT_SECRET must be replaced in production" });
+  }
+  if (environment.POSTGRES_PASSWORD === "change-me") {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ["POSTGRES_PASSWORD"], message: "POSTGRES_PASSWORD must be replaced in production" });
+  }
 });
 
 export type AppConfig = z.infer<typeof environmentSchema>;

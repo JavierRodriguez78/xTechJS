@@ -39,9 +39,11 @@ import "./inventory/application/cqrs/purchase-order-handlers.js";
 import "./inventory/infrastructure/http/purchase-order-controller.js";
 import "./inventory/infrastructure/persistence/postgres-purchase-order-repository.js";
 import "./payments/application/cqrs/payment-handlers.js";
+import "./payments/application/cqrs/invoice-draft-handlers.js";
 import "./payments/infrastructure/http/payment-controller.js";
 import "./payments/infrastructure/persistence/postgres-payment-repository.js";
 import "./payments/infrastructure/persistence/postgres-invoice-email-repository.js";
+import "./payments/infrastructure/persistence/postgres-invoice-draft-repository.js";
 import "./payments/application/send-payment-invoice-email.js";
 import "./payments/application/cqrs/cash-register-handlers.js";
 import "./payments/infrastructure/persistence/postgres-cash-register-repository.js";
@@ -64,7 +66,7 @@ declare module "fastify" {
 }
 
 let application: XTaskHttpApplication | undefined;
-const requiredComponentNames = ["userRepository", "customerRepository", "repairOrderRepository", "repairQuoteRepository", "inventoryRepository", "supplierRepository", "purchaseOrderRepository", "paymentRepository", "cashRegisterRepository", "chatMessageRepository", "repairAttachmentRepository", "attachmentStorage"] as const;
+const requiredComponentNames = ["userRepository", "customerRepository", "repairOrderRepository", "repairQuoteRepository", "inventoryRepository", "supplierRepository", "purchaseOrderRepository", "paymentRepository", "cashRegisterRepository", "chatMessageRepository", "repairAttachmentRepository", "attachmentStorage", "invoiceDraftRepository"] as const;
 
 function instrumentBus(bus: CommandBus | QueryBus, component: "CommandBus" | "QueryBus"): void {
   const execute = bus.execute.bind(bus);

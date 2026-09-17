@@ -24,6 +24,7 @@
 - Ficha técnica del equipo (marca, modelo, número de serie/identificador, tipo: consola actual, consola retro, móvil, electrodoméstico).
 - Adjuntos por reparación: fotografías y vídeos del proceso, subidos por el técnico, visibles para el cliente y el admin.
 - Registro de diagnóstico técnico, tiempo invertido, y materiales/repuestos consumidos (con vínculo directo al módulo de almacén).
+- **Facturación automática de piezas consumidas:** cada consumo de material vinculado a una reparación debe crear o actualizar automáticamente una línea de la factura o borrador asociado. La línea conservará material, cantidad, precio unitario fiscal vigente al consumo, descuento, IVA y referencia al movimiento de almacén. El mismo movimiento nunca podrá generar dos líneas; la operación debe ser idempotente y transaccional con el consumo de stock.
 - Generación de presupuestos y aprobación por parte del cliente (idealmente desde su propio perfil).
 - Historial completo y trazable de cada reparación (línea de tiempo de cambios de estado).
 
@@ -37,6 +38,7 @@
 - Registro de cobros asociados a reparaciones (a cuenta, presupuesto completo, venta de accesorios/repuestos sueltos).
 - Métodos de pago (efectivo, tarjeta, transferencia; extensible a pasarelas de pago online para el perfil cliente).
 - Emisión de tickets/facturas simplificadas y facturas estructuradas con numeración por serie.
+- Las piezas consumidas se incorporan automáticamente a la factura asociada y no se vuelven a introducir manualmente. Si todavía no existe factura, se acumulan en el borrador de la reparación. Si la factura ya está emitida, no se modifica físicamente: debe activarse el flujo fiscal de factura rectificativa o abono que corresponda.
 - Al enviar/generar una factura desde el TPV, debe poder enviarse al email fiscal del
   cliente mediante `@xtaskjs/mailer`, con registro de fecha, destinatario, resultado
   y correlación de la notificación. El envío debe incluir el PDF como adjunto y no

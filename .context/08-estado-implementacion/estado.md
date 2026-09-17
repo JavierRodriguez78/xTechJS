@@ -360,12 +360,12 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   rutas propias bajo `/tpv`.
 - `pnpm --filter @xtechjs/web build` completado correctamente tras migrar Almacen
   y TPV a las nuevas vistas enrutadas.
-- La ficha de Reparacion incorpora las pestañas enrutadas `materiales` y `cobros`.
-  Materiales consulta movimientos vinculados a la orden y registra consumos contra
-  el endpoint de inventario; Cobros lista los pagos de la orden y enlaza a su recibo.
-  Ambas capacidades usan la API existente y respetan sus permisos de inventario y TPV.
-- `pnpm --filter @xtechjs/web build` completado correctamente despues de completar
-  las pestañas de materiales y cobros de Reparaciones.
+ La ficha de Reparacion incorpora las pestañas enrutadas `materiales` y `cobros`.
+ Materiales consulta movimientos vinculados a la orden y registra consumos contra
+ el endpoint de inventario; Cobros lista los pagos de la orden y enlaza a su recibo.
+ `pnpm --filter @xtechjs/web build` completado correctamente después de completar
+ las pestañas de materiales y cobros de Reparaciones.
+ El PDF de TPV queda estructurado como factura: emisor configurable, serie y
 - El PDF de TPV queda estructurado como factura: emisor configurable, serie y
   numero persistentes, fecha de expedicion, destinatario con datos fiscales,
   concepto de reparacion, base imponible, tipo y cuota de IVA, total y forma de
@@ -503,6 +503,24 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   La validacion legal definitiva, series fiscales reales, numeracion por ejercicio,
   rectificativas, facturacion electronica y requisitos de IVA deben ser revisados
   y configurados con asesoramiento fiscal antes de emitir documentos oficiales.
+- **(2026-09-17) Facturación automática de piezas implementada.** Cada consumo
+  de almacén vinculado a una reparación se ejecuta en la misma transacción que
+  la creación del movimiento y añade una línea idempotente a `invoice_drafts`,
+  usando `sourceMovementId` como referencia única lógica. Las líneas congelan
+  SKU/concepto, cantidad, `salePriceCents`, descuento e IVA del material en el
+  momento del consumo. Se añadió la migración
+  `1738400000000-add-invoice-drafts-and-material-prices.ts`, campos fiscales al
+  catálogo (`sale_price_cents`, `tax_rate`), el endpoint protegido
+  `GET /api/payments/draft/repair/:repairOrderId` y la creación de pagos reutiliza
+  automáticamente el borrador cuando no se envían líneas manuales. La pestaña
+  `materiales` muestra las líneas generadas como "Factura automática en borrador"
+  y el alta de materiales permite configurar precio e IVA. La factura emitida
+  sigue sin mutarse directamente; la rectificativa queda como siguiente flujo
+  fiscal. Verificado: typecheck API, 24/24 tests API, build frontend y migración
+  Docker aplicada. Prueba end-to-end real: consumos de 2 y 1 unidades generaron
+  dos líneas con `sourceMovementId` distintos, precio de 1250 céntimos e IVA del
+  21%; después se limpiaron los datos temporales de la prueba. La rectificativa
+  fiscal sigue siendo un flujo posterior.
 - Chat: canal de mensajería por reparación implementado (backend y frontend).
   API REST (`/api/repairs/:id/messages`, `/api/customer/repairs/:id/messages`)
   con persistencia en `chat_messages` y tiempo real vía `@xtaskjs/socket-io`
@@ -543,14 +561,31 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   orquestacion, sin acoplar el codigo a ella.
 - Incorporar Vitest u otro runner al frontend; hasta entonces `make test-web` solo
   valida tipos del cliente.
+- **(2026-09-17) CI añadido en `.github/workflows/ci.yml`.** En cada push a
+  `main`/`master` y en cada pull request ejecuta instalación reproducible con
+  `pnpm-lock.yaml`, typecheck de API y frontend, los tests de API, los builds de
+  producción, `docker compose config --quiet` y la construcción de las imágenes
+  Docker de API y web. Validado localmente con los mismos comandos: typecheck
+  completo OK, 24/24 tests API OK, build completo OK, Compose válido y ambas
+  imágenes Docker construidas correctamente.
+- **(2026-09-17) Secretos de producción endurecidos.** Nuevo
+  `compose.production.yaml` como override separado: obliga a proporcionar las
+  credenciales de PostgreSQL, `JWT_SECRET`, configuración SMTP y remitente; no
+  cambia el flujo local de `make up`. La validación de configuración de la API
+  rechaza además `change-me` y `development-only-secret-change-me-32` cuando
+  `NODE_ENV=production`. Se añadieron `make prod-config` y `make prod-up`, se
+  documentó la operativa en `README.md` y el contexto de infraestructura, y CI
+  valida el override con valores efímeros de prueba sin registrar secretos.
+- **Corrección de compatibilidad local (2026-09-17):** `compose.yaml` ya no fuerza
+  `NODE_ENV=production` con credenciales de desarrollo; usa `development` por
+  defecto y `compose.production.yaml` mantiene explícitamente `production`.
 
 ## Siguiente fase recomendada
 
-1. Con chat y adjuntos de reparación completos (backend + frontend), la
-  siguiente prioridad es revisar la deuda técnica de infraestructura pendiente
-  (migraciones en el pipeline de despliegue, secretos por entorno, CI de
-  typecheck/tests/build/imagenes Docker) y, en paralelo, completar el historial
-  de interacciones/notificaciones del CRM y evaluar Vitest para el frontend.
+1. Con CI y secretos de producción ya cubiertos, la siguiente prioridad es
+  definir el pipeline de despliegue de migraciones. Después, completar el
+  historial de interacciones/notificaciones
+  del CRM y evaluar Vitest para el frontend.
 
 Los cuatro modulos implementados (usuarios, CRM, reparaciones y almacen) usan el patron
 xTaskJS completo: servicios `@Service` con `@Qualifier`, comandos/queries con

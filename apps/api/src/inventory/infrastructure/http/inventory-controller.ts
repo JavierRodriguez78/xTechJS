@@ -7,7 +7,7 @@ import { PERMISSIONS } from "../../../users/domain/permission.js";
 import { PermissionRequired } from "../../../users/infrastructure/http/permission-guard.js";
 
 type ControllerReply = { code(statusCode: number): { send(payload: unknown): unknown } };
-const createSchema = z.object({ sku: z.string().trim().min(1).max(80), name: z.string().trim().min(1).max(180), description: z.string().trim().max(2000).optional(), unit: z.string().trim().max(32).optional(), minimumStock: z.number().int().min(0).max(1000000).optional() });
+const createSchema = z.object({ sku: z.string().trim().min(1).max(80), name: z.string().trim().min(1).max(180), description: z.string().trim().max(2000).optional(), unit: z.string().trim().max(32).optional(), minimumStock: z.number().int().min(0).max(1000000).optional(), salePriceCents: z.number().int().min(0).max(100000000).optional(), taxRate: z.number().min(0).max(100).optional() });
 const adjustmentSchema = z.object({ quantity: z.number().int().min(-1000000).max(1000000).refine((value) => value !== 0), type: z.enum(["receipt", "adjustment", "consumption"]), note: z.string().trim().max(500).optional() });
 const consumptionSchema = z.object({ repairOrderId: z.string().uuid(), quantity: z.number().int().positive().max(1000000), note: z.string().trim().max(500).optional() });
 

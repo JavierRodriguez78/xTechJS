@@ -40,3 +40,14 @@ tests, typecheck y build.
 - `make migrate` ejecuta las migraciones dentro de la API Dockerizada.
 - `make test`, `make typecheck` y `make build` validan el workspace. Hasta incorporar un
 	runner de pruebas Vue, `make test-web` ejecuta el typecheck del frontend.
+
+## Produccion y secretos
+
+La configuracion de produccion se aplica con `compose.production.yaml` sobre
+`compose.yaml`. `make prod-config` valida el resultado sin arrancar servicios y
+`make prod-up` construye e inicia la pila. El override exige
+`POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `JWT_SECRET`, `SMTP_HOST`,
+`SMTP_PORT`, `SMTP_SECURE` y `MAIL_FROM`; la API tambien rechaza los valores de
+desarrollo `change-me` y `development-only-secret-change-me-32` cuando
+`NODE_ENV=production`. Los secretos deben proceder del entorno o de un gestor
+de secretos del despliegue, nunca de un archivo versionado.

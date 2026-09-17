@@ -8,6 +8,8 @@ export interface InventoryItem {
   unit: string;
   stock: number;
   minimumStock: number;
+  salePriceCents: number;
+  taxRate: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -18,6 +20,8 @@ export interface CreateInventoryItemInput {
   description?: string;
   unit?: string;
   minimumStock?: number;
+  salePriceCents?: number;
+  taxRate?: number;
 }
 
 export interface AdjustInventoryInput {

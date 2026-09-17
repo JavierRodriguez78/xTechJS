@@ -7,7 +7,7 @@ WEB_PACKAGE := @xtechjs/web
 
 .DEFAULT_GOAL := help
 
-.PHONY: help install dev db-up db-down up down rebuild ps logs logs-api logs-web trace shell-api shell-web shell-db shell-redis migrate test test-api test-web typecheck typecheck-api typecheck-web build build-api build-web clean
+.PHONY: help install dev db-up db-down up prod-config prod-up down rebuild ps logs logs-api logs-web trace shell-api shell-web shell-db shell-redis migrate test test-api test-web typecheck typecheck-api typecheck-web build build-api build-web clean
 
 help: ## Muestra los objetivos disponibles
 
@@ -27,6 +27,12 @@ db-down: ## Detiene PostgreSQL y Redis sin eliminar datos
 
 up: ## Construye e inicia la pila Docker completa
 	$(COMPOSE) up --build -d
+
+prod-config: ## Valida la configuracion de Compose de produccion (requiere secretos)
+	$(COMPOSE) -f compose.yaml -f compose.production.yaml config --quiet
+
+prod-up: ## Construye e inicia la pila con secretos de produccion
+	$(COMPOSE) -f compose.yaml -f compose.production.yaml up --build -d
 
 down: ## Detiene la pila Docker y conserva los volumenes
 	$(COMPOSE) down

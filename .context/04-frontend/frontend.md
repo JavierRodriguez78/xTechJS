@@ -370,13 +370,15 @@ Ejemplo de definición para clientes:
 /reparaciones/:id/general              equipo, cliente, avería, accesorios
 /reparaciones/:id/diagnostico          diagnóstico técnico y tiempo invertido
 /reparaciones/:id/presupuesto          líneas de presupuesto y aprobación
-/reparaciones/:id/materiales           repuestos consumidos (enlace a almacén)
+/reparaciones/:id/materiales           repuestos consumidos (enlace a almacén y líneas automáticas de factura)
 /reparaciones/:id/adjuntos             fotos y vídeos del proceso
 /reparaciones/:id/historial            línea de tiempo de cambios de estado
 /reparaciones/:id/chat                 conversación con el cliente
 /reparaciones/:id/cobros               pagos asociados a esta orden
 /reparaciones/:id/editar               edición
 ```
+
+En la pestaña `materiales`, cada consumo confirmado debe mostrar que su línea fiscal se ha incorporado automáticamente al borrador de factura asociado. La UI no debe ofrecer una segunda acción manual para añadir la misma pieza. Si la factura ya está emitida, debe mostrar el estado bloqueado y dirigir al flujo de rectificación, nunca editar silenciosamente el documento emitido.
 
 En el portal `/customer`, cada reparación debe mostrar una sección de facturación
 cuando existan documentos emitidos. La descarga se realiza mediante una petición

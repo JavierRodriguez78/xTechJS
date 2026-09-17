@@ -37,6 +37,8 @@ import { InitialChatMessagesMigration } from "../../../chat/infrastructure/persi
 import { ChatMessageEntitySchema } from "../../../chat/infrastructure/persistence/chat-message-entity.js";
 import { InitialRepairAttachmentsMigration } from "../../../attachments/infrastructure/persistence/migrations/1738300000000-initial-repair-attachments.js";
 import { RepairAttachmentEntitySchema } from "../../../attachments/infrastructure/persistence/repair-attachment-entity.js";
+import { AddInvoiceDraftsAndMaterialPricesMigration } from "../../../payments/infrastructure/persistence/migrations/1738400000000-add-invoice-drafts-and-material-prices.js";
+import { InvoiceDraftEntitySchema } from "../../../payments/infrastructure/persistence/invoice-draft-entity.js";
 
 const config = loadConfig();
 
@@ -48,8 +50,8 @@ const dataSourceOptions: XTaskTypeOrmDataSourceOptions = {
   database: config.get("POSTGRES_DB"),
   username: config.get("POSTGRES_USER"),
   password: config.get("POSTGRES_PASSWORD"),
-  entities: [UserEntitySchema, CustomerEntitySchema, CustomerRegistrationTokenEntitySchema, RepairOrderEntitySchema, RepairStatusEventEntitySchema, RepairQuoteEntitySchema, InventoryItemEntitySchema, InventoryMovementEntitySchema, SupplierEntitySchema, PurchaseOrderEntitySchema, PaymentEntitySchema, CashRegisterEntitySchema, InvoiceEmailEntitySchema, AdminConfigEntitySchema, DataProtectionConsentEntitySchema, ChatMessageEntitySchema, RepairAttachmentEntitySchema],
-  migrations: [InitialUsersMigration, InitialCustomersMigration, AddUserPasswordHashMigration, AddCustomerRegistrationTokensMigration, AddCustomerRegistrationDetailsMigration, InitialRepairOrdersMigration, AddRepairTechnicalDetailsMigration, InitialRepairQuotesMigration, InitialInventoryMigration, AddRepairToInventoryMovementsMigration, InitialSuppliersMigration, InitialPurchaseOrdersMigration, InitialPaymentsMigration, InitialCashRegistersMigration, AddInvoiceNumberingMigration, AddInvoiceEmailsMigration, AddInvoiceLinesMigration, AddAdminConfigMigration, AddDataProtectionConsentsMigration, InitialChatMessagesMigration, InitialRepairAttachmentsMigration],
+  entities: [UserEntitySchema, CustomerEntitySchema, CustomerRegistrationTokenEntitySchema, RepairOrderEntitySchema, RepairStatusEventEntitySchema, RepairQuoteEntitySchema, InventoryItemEntitySchema, InventoryMovementEntitySchema, SupplierEntitySchema, PurchaseOrderEntitySchema, PaymentEntitySchema, CashRegisterEntitySchema, InvoiceEmailEntitySchema, AdminConfigEntitySchema, DataProtectionConsentEntitySchema, ChatMessageEntitySchema, RepairAttachmentEntitySchema, InvoiceDraftEntitySchema],
+  migrations: [InitialUsersMigration, InitialCustomersMigration, AddUserPasswordHashMigration, AddCustomerRegistrationTokensMigration, AddCustomerRegistrationDetailsMigration, InitialRepairOrdersMigration, AddRepairTechnicalDetailsMigration, InitialRepairQuotesMigration, InitialInventoryMigration, AddRepairToInventoryMovementsMigration, InitialSuppliersMigration, InitialPurchaseOrdersMigration, InitialPaymentsMigration, InitialCashRegistersMigration, AddInvoiceNumberingMigration, AddInvoiceEmailsMigration, AddInvoiceLinesMigration, AddAdminConfigMigration, AddDataProtectionConsentsMigration, InitialChatMessagesMigration, InitialRepairAttachmentsMigration, AddInvoiceDraftsAndMaterialPricesMigration],
   synchronize: false,
   initializeOnServerStart: true,
   runMigrationsOnServerStart: true

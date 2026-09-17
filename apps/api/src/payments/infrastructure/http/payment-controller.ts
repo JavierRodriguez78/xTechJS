@@ -3,13 +3,15 @@ import { InjectCommandBus, InjectQueryBus, type CommandBus, type QueryBus } from
 import { Authenticated } from "@xtaskjs/security";
 import { z } from "zod";
 import { CreatePaymentCommand, GetDailyPaymentSummaryQuery, GetPaymentPdfQuery, GetPaymentReceiptQuery, GetPaymentReportQuery, ListPaymentsQuery, ListRepairPaymentsQuery, RefundPaymentCommand } from "../../application/cqrs/payment-messages.js";
+import { GetInvoiceDraftQuery } from "../../application/cqrs/invoice-draft-messages.js";
+import type { AutomaticInvoiceLine } from "../../domain/invoice-draft.js";
 import { CloseCashRegisterCommand, GetCashRegisterQuery, OpenCashRegisterCommand } from "../../application/cqrs/cash-register-messages.js";
 import { PERMISSIONS } from "../../../users/domain/permission.js";
 import { PermissionRequired } from "../../../users/infrastructure/http/permission-guard.js";
 import { SendPaymentInvoiceEmail } from "../../application/send-payment-invoice-email.js";
 
 type ControllerReply = { code(statusCode: number): { send(payload: unknown): unknown }; header(name: string, value: string): ControllerReply; send(payload: unknown): unknown };
-const invoiceLineSchema = z.object({ code: z.string().trim().max(80).optional(), concept: z.string().trim().min(1).max(500), quantity: z.number().positive().max(1000000), unitPriceCents: z.number().int().nonnegative().max(100000000), discountPercent: z.number().min(0).max(100).default(0), taxRate: z.number().min(0).max(100).default(21) });
+const invoiceLineSchema = z.object({ sourceMovementId: z.string().uuid().optional(), code: z.string().trim().max(80).optional(), concept: z.string().trim().min(1).max(500), quantity: z.number().positive().max(1000000), unitPriceCents: z.number().int().nonnegative().max(100000000), discountPercent: z.number().min(0).max(100).default(0), taxRate: z.number().min(0).max(100).default(21) });
 const paymentSchema = z.object({ repairOrderId: z.string().uuid(), amountCents: z.number().int().nonnegative().max(100000000), method: z.enum(["cash", "card", "transfer"]), reference: z.string().trim().max(180).optional(), invoiceLines: z.array(invoiceLineSchema).max(100).optional() });
 const businessDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
@@ -55,6 +57,10 @@ export class PaymentController {
   @PermissionRequired(PERMISSIONS.paymentsManage)
   listRepair(@Param("repairOrderId") id: string): Promise<unknown> { return this.queryBus.execute(new ListRepairPaymentsQuery(id)); }
 
+  @Get("/draft/repair/:repairOrderId")
+  @PermissionRequired(PERMISSIONS.paymentsManage)
+  invoiceDraft(@Param("repairOrderId") id: string): Promise<unknown> { return this.queryBus.execute(new GetInvoiceDraftQuery(id)); }
+
   @Get("/:id/receipt")
   @PermissionRequired(PERMISSIONS.paymentsManage)
   async receipt(@Param("id") id: string, @Res() reply: ControllerReply): Promise<unknown> {
@@ -90,7 +96,9 @@ export class PaymentController {
   async create(@Body() body: unknown, @Res() reply: ControllerReply): Promise<unknown> {
     const parsed = paymentSchema.safeParse(body);
     if (!parsed.success) return reply.code(400).send({ message: "Invalid payment", issues: parsed.error.flatten() });
-    return reply.code(201).send(await this.commandBus.execute(new CreatePaymentCommand(parsed.data)));
+    const draft = parsed.data.invoiceLines?.length ? undefined : await this.queryBus.execute(new GetInvoiceDraftQuery(parsed.data.repairOrderId));
+    const invoiceLines = draft?.lines?.map((line: AutomaticInvoiceLine) => ({ ...line })) ?? parsed.data.invoiceLines;
+    return reply.code(201).send(await this.commandBus.execute(new CreatePaymentCommand({ ...parsed.data, invoiceLines })));
   }
 
   @Post("/:id/refund")

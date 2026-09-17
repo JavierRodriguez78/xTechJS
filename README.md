@@ -19,6 +19,7 @@ ver el listado completo.
 | `make dev` | Inicia API y frontend en desarrollo local. |
 | `make db-up` / `make db-down` | Inicia o detiene PostgreSQL y Redis para desarrollo local. |
 | `make up` / `make down` | Construye e inicia, o detiene, toda la pila Docker. |
+| `make prod-config` / `make prod-up` | Valida o inicia la pila de producción con secretos obligatorios. |
 | `make ps`, `make logs`, `make logs-api` | Consulta el estado o los logs de los contenedores. |
 | `make shell-api`, `make shell-web`, `make shell-db`, `make shell-redis` | Abre una consola en el servicio elegido. |
 | `make migrate` | Ejecuta las migraciones dentro del contenedor de API. |
@@ -76,3 +77,20 @@ Para detener la pila y conservar los datos:
 ```bash
 make down
 ```
+
+## Producción
+
+No uses el `make up` de desarrollo para producción. Define en el entorno o en el
+gestor de secretos, como mínimo, `POSTGRES_DB`, `POSTGRES_USER`,
+`POSTGRES_PASSWORD`, `JWT_SECRET` (mínimo 32 caracteres), `SMTP_HOST`,
+`SMTP_PORT`, `SMTP_SECURE` y `MAIL_FROM`. Comprueba primero la configuración y
+después arranca la pila:
+
+```bash
+make prod-config
+make prod-up
+```
+
+La API rechaza en producción los valores `change-me` y
+`development-only-secret-change-me-32`. No guardes secretos reales en `.env` bajo
+control de versiones; `.env.example` solo contiene marcadores y valores locales.

@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { Service } from "@xtaskjs/core";
 import { DataSource, InjectDataSource } from "@xtaskjs/typeorm";
 import { Traceable } from "../../../shared/infrastructure/observability/trace.js";
+import { InvoiceDraftEntitySchema } from "../../../payments/infrastructure/persistence/invoice-draft-entity.js";
 import type { AdjustInventoryInput, CreateInventoryItemInput, InventoryItem, InventoryMovement } from "../../domain/inventory-item.js";
 import type { InventoryRepository } from "../../application/inventory-repository.js";
 import { InventoryItemEntitySchema, InventoryMovementEntitySchema } from "./inventory-entity.js";
@@ -37,7 +38,29 @@ export class PostgresInventoryRepository implements InventoryRepository {
       if (nextStock < 0) throw new Error("Inventory stock cannot be negative");
       item.stock = nextStock;
       const saved = await repository.save(item);
-      await manager.getRepository(InventoryMovementEntitySchema).save({ id: randomUUID(), inventoryItemId: id, repairOrderId: input.repairOrderId || null, quantity: input.quantity, type: input.type, note: input.note || null });
+      const movement = await manager.getRepository(InventoryMovementEntitySchema).save({ id: randomUUID(), inventoryItemId: id, repairOrderId: input.repairOrderId || null, quantity: input.quantity, type: input.type, note: input.note || null });
+      if (input.type === "consumption" && input.repairOrderId) {
+        const draftRepository = manager.getRepository(InvoiceDraftEntitySchema);
+        const draft = await draftRepository.findOneBy({ repairOrderId: input.repairOrderId });
+        const lines = draft?.lines ?? [];
+        if (!lines.some((line: { sourceMovementId?: string }) => line.sourceMovementId === movement.id)) {
+          lines.push({
+            sourceMovementId: movement.id,
+            code: item.sku,
+            concept: item.name,
+            quantity: Math.abs(input.quantity),
+            unitPriceCents: item.salePriceCents,
+            discountPercent: 0,
+            taxRate: item.taxRate
+          });
+          await draftRepository.save(draft ?? {
+            id: randomUUID(),
+            repairOrderId: input.repairOrderId,
+            lines,
+            status: "draft"
+          });
+        }
+      }
       return saved;
     });
   }

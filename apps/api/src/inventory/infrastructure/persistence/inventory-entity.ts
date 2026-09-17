@@ -12,6 +12,8 @@ export const InventoryItemEntitySchema = new EntitySchema<InventoryItem>({
     unit: { type: String, default: "unidad" },
     stock: { type: Number, default: 0 },
     minimumStock: { type: Number, name: "minimum_stock", default: 0 },
+    salePriceCents: { type: Number, name: "sale_price_cents", default: 0 },
+    taxRate: { type: "numeric", name: "tax_rate", default: 21 },
     createdAt: { type: "timestamptz", name: "created_at", createDate: true },
     updatedAt: { type: "timestamptz", name: "updated_at", updateDate: true }
   }

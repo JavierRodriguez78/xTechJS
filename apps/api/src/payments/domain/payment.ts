@@ -2,6 +2,7 @@ export type PaymentMethod = "cash" | "card" | "transfer";
 export type PaymentStatus = "paid" | "refunded";
 
 export interface InvoiceLine {
+  sourceMovementId?: string;
   code?: string;
   concept: string;
   quantity: number;

@@ -17,7 +17,9 @@ export class CreateInventoryItem {
       name: input.name.trim(),
       description: input.description?.trim(),
       unit: input.unit?.trim() || "unidad",
-      minimumStock: input.minimumStock ?? 0
+      minimumStock: input.minimumStock ?? 0,
+      salePriceCents: input.salePriceCents ?? 0,
+      taxRate: input.taxRate ?? 21
     });
   }
 }
