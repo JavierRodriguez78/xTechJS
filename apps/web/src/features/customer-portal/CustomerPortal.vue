@@ -24,7 +24,7 @@ interface Quote {
   status: "draft" | "sent" | "approved" | "rejected";
   lines: { description: string; quantity: number; unitPriceCents: number }[];
 }
-interface Invoice { receiptNumber: string; issuedAt: string; payment: { id: string; amountCents: number; status: string }; }
+interface Invoice { receiptNumber: string; issuedAt: string; payment: { id: string; amountCents: number; status: string; documentType?: "invoice" | "rectification" }; }
 
 const repairs = ref<Repair[]>([]);
 const quotes = ref<Record<string, Quote>>({});
@@ -244,7 +244,7 @@ function openChat(repairOrderId: string): void { selectedRepairId.value = repair
         </div>
         <div class="quote-card" v-if="invoices[selectedRepair.id]?.length">
           <p class="eyebrow">Facturas</p>
-          <ul class="quote-lines"><li v-for="invoice in invoices[selectedRepair.id]" :key="invoice.payment.id"><span>{{ invoice.receiptNumber }} - {{ money(invoice.payment.amountCents) }}</span><button type="button" class="secondary" @click="downloadInvoice(selectedRepair.id, invoice.payment.id, invoice.receiptNumber)">Descargar factura</button></li></ul>
+          <ul class="quote-lines"><li v-for="invoice in invoices[selectedRepair.id]" :key="invoice.payment.id"><span>{{ invoice.receiptNumber }} - {{ money(invoice.payment.documentType === "rectification" ? -invoice.payment.amountCents : invoice.payment.amountCents) }}</span><button type="button" class="secondary" @click="downloadInvoice(selectedRepair.id, invoice.payment.id, invoice.receiptNumber)">Descargar {{ invoice.payment.documentType === "rectification" ? "rectificativa" : "factura" }}</button></li></ul>
         </div>
 
         <div class="quote-card">

@@ -13,19 +13,35 @@ export class PostgresPaymentRepository implements PaymentRepository {
   create(input: CreatePaymentInput & { id: string }): Promise<Payment> { return this.dataSource.getRepository(PaymentEntitySchema).save({ ...input, status: "paid" }); }
   findAll(): Promise<readonly Payment[]> { return this.dataSource.getRepository(PaymentEntitySchema).find({ order: { createdAt: "DESC" } }); }
   findByRepairOrderId(repairOrderId: string): Promise<readonly Payment[]> { return this.dataSource.getRepository(PaymentEntitySchema).find({ where: { repairOrderId }, order: { createdAt: "DESC" } }); }
-  async refund(id: string): Promise<Payment | undefined> {
-    const repository = this.dataSource.getRepository(PaymentEntitySchema);
-    const payment = await repository.findOneBy({ id });
-    if (!payment) return undefined;
-    if (payment.status === "refunded") throw new Error("Payment is already refunded");
-    payment.status = "refunded";
-    return repository.save(payment);
+  async createRectification(originalPaymentId: string, input: { id: string; reason: string }): Promise<Payment | undefined> {
+    return this.dataSource.transaction(async (manager) => {
+      const repository = manager.getRepository(PaymentEntitySchema);
+      const original = await repository.findOne({ where: { id: originalPaymentId }, lock: { mode: "pessimistic_write" } });
+      if (!original) return undefined;
+      if (original.documentType === "rectification") throw new Error("A rectification cannot be rectified");
+      if (await repository.findOneBy({ originalPaymentId })) throw new Error("Payment is already rectified");
+      const [{ nextval }] = await manager.query(`SELECT nextval('rectification_invoice_number_seq') AS nextval`) as [{ nextval: string }];
+      return repository.save({
+        id: input.id,
+        repairOrderId: original.repairOrderId,
+        amountCents: original.amountCents,
+        method: original.method,
+        status: "refunded",
+        reference: original.reference,
+        invoiceSeries: "R",
+        invoiceNumber: Number(nextval),
+        invoiceLines: original.invoiceLines?.map((line) => ({ ...line, quantity: -Math.abs(line.quantity) })) ?? [],
+        documentType: "rectification",
+        originalPaymentId,
+        rectificationReason: input.reason
+      });
+    });
   }
 
   async findReportRows(from: Date, to: Date): Promise<readonly PaymentReportRow[]> {
     const rows = await this.dataSource.query(`SELECT p.*, r.technician_id, r.device_type FROM payments p JOIN repair_orders r ON r.id = p.repair_order_id WHERE p.created_at BETWEEN $1 AND $2 ORDER BY p.created_at ASC`, [from, to]);
     return rows.map((row: Record<string, unknown>) => ({
-      payment: { id: String(row.id), repairOrderId: String(row.repair_order_id), amountCents: Number(row.amount_cents), method: row.method as Payment["method"], status: row.status as Payment["status"], reference: row.reference ? String(row.reference) : null, invoiceSeries: String(row.invoice_series), invoiceNumber: Number(row.invoice_number), invoiceLines: (row.invoice_lines as Payment["invoiceLines"]) ?? [], createdAt: new Date(String(row.created_at)) },
+      payment: this.mapPayment(row),
       technicianId: row.technician_id ? String(row.technician_id) : null,
       deviceType: String(row.device_type)
     }));
@@ -36,7 +52,7 @@ export class PostgresPaymentRepository implements PaymentRepository {
     const row = rows[0] as Record<string, unknown> | undefined;
     if (!row) return undefined;
     return {
-      payment: { id: String(row.id), repairOrderId: String(row.repair_order_id), amountCents: Number(row.amount_cents), method: row.method as Payment["method"], status: row.status as Payment["status"], reference: row.reference ? String(row.reference) : null, invoiceSeries: String(row.invoice_series), invoiceNumber: Number(row.invoice_number), invoiceLines: (row.invoice_lines as Payment["invoiceLines"]) ?? [], createdAt: new Date(String(row.created_at)) },
+      payment: this.mapPayment(row),
       repair: { id: String(row.repair_order_id), deviceType: String(row.device_type), brand: String(row.brand), model: String(row.model), reportedIssue: String(row.reported_issue) },
       customer: {
         displayName: String(row.display_name), email: row.email ? String(row.email) : null, taxId: row.tax_id ? String(row.tax_id) : null,
@@ -44,6 +60,16 @@ export class PostgresPaymentRepository implements PaymentRepository {
         billingPostalCode: row.billing_postal_code ? String(row.billing_postal_code) : null, billingCity: row.billing_city ? String(row.billing_city) : null,
         billingProvince: row.billing_province ? String(row.billing_province) : null
       }
+    };
+  }
+
+  private mapPayment(row: Record<string, unknown>): Payment {
+    return {
+      id: String(row.id), repairOrderId: String(row.repair_order_id), amountCents: Number(row.amount_cents),
+      method: row.method as Payment["method"], status: row.status as Payment["status"], reference: row.reference ? String(row.reference) : null,
+      invoiceSeries: String(row.invoice_series), invoiceNumber: Number(row.invoice_number), invoiceLines: (row.invoice_lines as Payment["invoiceLines"]) ?? [],
+      documentType: (row.document_type as Payment["documentType"]) ?? "invoice", originalPaymentId: row.original_payment_id ? String(row.original_payment_id) : null,
+      rectificationReason: row.rectification_reason ? String(row.rectification_reason) : null, createdAt: new Date(String(row.created_at))
     };
   }
 }

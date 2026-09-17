@@ -1,5 +1,6 @@
 export type PaymentMethod = "cash" | "card" | "transfer";
 export type PaymentStatus = "paid" | "refunded";
+export type InvoiceDocumentType = "invoice" | "rectification";
 
 export interface InvoiceLine {
   sourceMovementId?: string;
@@ -21,6 +22,9 @@ export interface Payment {
   invoiceSeries?: string;
   invoiceNumber?: number;
   invoiceLines?: InvoiceLine[];
+  documentType?: InvoiceDocumentType;
+  originalPaymentId?: string | null;
+  rectificationReason?: string | null;
   createdAt: Date;
 }
 

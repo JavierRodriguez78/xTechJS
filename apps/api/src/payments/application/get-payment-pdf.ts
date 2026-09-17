@@ -18,7 +18,7 @@ export class GetPaymentPdf {
   private render(receipt: PaymentReceipt): Promise<Buffer> {
     return new Promise((resolve, reject) => {
       const config = loadConfig();
-      const totalCents = receipt.payment.amountCents;
+      const totalCents = receipt.payment.documentType === "rectification" ? -receipt.payment.amountCents : receipt.payment.amountCents;
       const lines = receipt.payment.invoiceLines ?? [];
       const baseCents = lines.reduce((total, line) => total + Math.round(line.quantity * line.unitPriceCents * (1 - line.discountPercent / 100)), 0);
       const vatByRate = new Map<number, number>();
@@ -35,9 +35,11 @@ export class GetPaymentPdf {
       document.fontSize(20).text(config.get("INVOICE_ISSUER_NAME"));
       document.fontSize(9).text(`NIF: ${config.get("INVOICE_ISSUER_TAX_ID")}`);
       document.text(`Domicilio: ${config.get("INVOICE_ISSUER_ADDRESS")}`);
-      document.moveDown().fontSize(16).text("FACTURA");
+      document.moveDown().fontSize(16).text(receipt.payment.documentType === "rectification" ? "FACTURA RECTIFICATIVA" : "FACTURA");
       document.fontSize(10).text(`Serie y numero: ${receipt.receiptNumber}`);
       document.text(`Fecha de expedicion: ${receipt.issuedAt.toLocaleDateString("es-ES")}`);
+      if (receipt.payment.originalPaymentId) document.text(`Factura rectificada: ${receipt.payment.originalPaymentId}`);
+      if (receipt.payment.rectificationReason) document.text(`Motivo: ${receipt.payment.rectificationReason}`);
       document.moveDown().fontSize(11).text("Destinatario");
       document.fontSize(10).text(receipt.customer.billingName || receipt.customer.displayName);
       if (receipt.customer.taxId) document.text(`NIF/CIF: ${receipt.customer.taxId}`);

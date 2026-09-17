@@ -23,7 +23,8 @@ export class GetPaymentReceipt {
     if (!data) return undefined;
     const invoiceSeries = data.payment.invoiceSeries ?? "B";
     const invoiceNumber = data.payment.invoiceNumber ?? 0;
-    const invoiceLines = data.payment.invoiceLines?.length ? data.payment.invoiceLines : [{ concept: "Servicio de reparacion", quantity: 1, unitPriceCents: Math.round(data.payment.amountCents / 1.21), discountPercent: 0, taxRate: 21 }];
+    const quantity = data.payment.documentType === "rectification" ? -1 : 1;
+    const invoiceLines = data.payment.invoiceLines?.length ? data.payment.invoiceLines : [{ concept: "Servicio de reparacion", quantity, unitPriceCents: Math.round(data.payment.amountCents / 1.21), discountPercent: 0, taxRate: 21 }];
     return { receiptNumber: `${invoiceSeries}-${String(invoiceNumber).padStart(6, "0")}`, invoiceSeries, invoiceNumber, ...data, payment: { ...data.payment, invoiceLines }, issuedAt: data.payment.createdAt };
   }
 }

@@ -36,7 +36,7 @@ export class ListRepairPaymentsHandler implements IQueryHandler<ListRepairPaymen
 @CommandHandler(RefundPaymentCommand)
 export class RefundPaymentHandler implements ICommandHandler<RefundPaymentCommand, Payment | undefined> {
   constructor(private readonly useCase: RefundPayment) {}
-  execute(command: RefundPaymentCommand): Promise<Payment | undefined> { return this.useCase.execute(command.id); }
+  execute(command: RefundPaymentCommand): Promise<Payment | undefined> { return this.useCase.execute(command.id, command.reason); }
 }
 
 @Service()

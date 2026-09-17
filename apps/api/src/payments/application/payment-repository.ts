@@ -16,7 +16,7 @@ export interface PaymentRepository {
   create(input: CreatePaymentInput & { id: string }): Promise<Payment>;
   findAll(): Promise<readonly Payment[]>;
   findByRepairOrderId(repairOrderId: string): Promise<readonly Payment[]>;
-  refund(id: string): Promise<Payment | undefined>;
+  createRectification(originalPaymentId: string, input: { id: string; reason: string }): Promise<Payment | undefined>;
   findReportRows(from: Date, to: Date): Promise<readonly PaymentReportRow[]>;
   findReceiptData(id: string): Promise<PaymentReceiptData | undefined>;
 }

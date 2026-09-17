@@ -13,6 +13,7 @@ import { SendPaymentInvoiceEmail } from "../../application/send-payment-invoice-
 type ControllerReply = { code(statusCode: number): { send(payload: unknown): unknown }; header(name: string, value: string): ControllerReply; send(payload: unknown): unknown };
 const invoiceLineSchema = z.object({ sourceMovementId: z.string().uuid().optional(), code: z.string().trim().max(80).optional(), concept: z.string().trim().min(1).max(500), quantity: z.number().positive().max(1000000), unitPriceCents: z.number().int().nonnegative().max(100000000), discountPercent: z.number().min(0).max(100).default(0), taxRate: z.number().min(0).max(100).default(21) });
 const paymentSchema = z.object({ repairOrderId: z.string().uuid(), amountCents: z.number().int().nonnegative().max(100000000), method: z.enum(["cash", "card", "transfer"]), reference: z.string().trim().max(180).optional(), invoiceLines: z.array(invoiceLineSchema).max(100).optional() });
+const rectificationSchema = z.object({ reason: z.string().trim().min(3).max(500) });
 const businessDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 @Authenticated()
@@ -103,9 +104,11 @@ export class PaymentController {
 
   @Post("/:id/refund")
   @PermissionRequired(PERMISSIONS.paymentsManage)
-  async refund(@Param("id") id: string, @Res() reply: ControllerReply): Promise<unknown> {
+  async refund(@Param("id") id: string, @Body() body: unknown, @Res() reply: ControllerReply): Promise<unknown> {
+    const parsed = rectificationSchema.safeParse(body);
+    if (!parsed.success) return reply.code(400).send({ message: "Rectification reason is required", issues: parsed.error.flatten() });
     try {
-      const payment = await this.commandBus.execute(new RefundPaymentCommand(id));
+      const payment = await this.commandBus.execute(new RefundPaymentCommand(id, parsed.data.reason));
       return payment ? payment : reply.code(404).send({ message: "Payment not found" });
     } catch (error) { return reply.code(409).send({ message: (error as Error).message }); }
   }

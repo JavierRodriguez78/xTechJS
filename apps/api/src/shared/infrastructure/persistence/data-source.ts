@@ -39,6 +39,7 @@ import { InitialRepairAttachmentsMigration } from "../../../attachments/infrastr
 import { RepairAttachmentEntitySchema } from "../../../attachments/infrastructure/persistence/repair-attachment-entity.js";
 import { AddInvoiceDraftsAndMaterialPricesMigration } from "../../../payments/infrastructure/persistence/migrations/1738400000000-add-invoice-drafts-and-material-prices.js";
 import { InvoiceDraftEntitySchema } from "../../../payments/infrastructure/persistence/invoice-draft-entity.js";
+import { AddInvoiceRectificationsMigration } from "../../../payments/infrastructure/persistence/migrations/1738500000000-add-invoice-rectifications.js";
 
 const config = loadConfig();
 
@@ -51,7 +52,7 @@ const dataSourceOptions: XTaskTypeOrmDataSourceOptions = {
   username: config.get("POSTGRES_USER"),
   password: config.get("POSTGRES_PASSWORD"),
   entities: [UserEntitySchema, CustomerEntitySchema, CustomerRegistrationTokenEntitySchema, RepairOrderEntitySchema, RepairStatusEventEntitySchema, RepairQuoteEntitySchema, InventoryItemEntitySchema, InventoryMovementEntitySchema, SupplierEntitySchema, PurchaseOrderEntitySchema, PaymentEntitySchema, CashRegisterEntitySchema, InvoiceEmailEntitySchema, AdminConfigEntitySchema, DataProtectionConsentEntitySchema, ChatMessageEntitySchema, RepairAttachmentEntitySchema, InvoiceDraftEntitySchema],
-  migrations: [InitialUsersMigration, InitialCustomersMigration, AddUserPasswordHashMigration, AddCustomerRegistrationTokensMigration, AddCustomerRegistrationDetailsMigration, InitialRepairOrdersMigration, AddRepairTechnicalDetailsMigration, InitialRepairQuotesMigration, InitialInventoryMigration, AddRepairToInventoryMovementsMigration, InitialSuppliersMigration, InitialPurchaseOrdersMigration, InitialPaymentsMigration, InitialCashRegistersMigration, AddInvoiceNumberingMigration, AddInvoiceEmailsMigration, AddInvoiceLinesMigration, AddAdminConfigMigration, AddDataProtectionConsentsMigration, InitialChatMessagesMigration, InitialRepairAttachmentsMigration, AddInvoiceDraftsAndMaterialPricesMigration],
+  migrations: [InitialUsersMigration, InitialCustomersMigration, AddUserPasswordHashMigration, AddCustomerRegistrationTokensMigration, AddCustomerRegistrationDetailsMigration, InitialRepairOrdersMigration, AddRepairTechnicalDetailsMigration, InitialRepairQuotesMigration, InitialInventoryMigration, AddRepairToInventoryMovementsMigration, InitialSuppliersMigration, InitialPurchaseOrdersMigration, InitialPaymentsMigration, InitialCashRegistersMigration, AddInvoiceNumberingMigration, AddInvoiceEmailsMigration, AddInvoiceLinesMigration, AddAdminConfigMigration, AddDataProtectionConsentsMigration, InitialChatMessagesMigration, InitialRepairAttachmentsMigration, AddInvoiceDraftsAndMaterialPricesMigration, AddInvoiceRectificationsMigration],
   synchronize: false,
   initializeOnServerStart: true,
   runMigrationsOnServerStart: true

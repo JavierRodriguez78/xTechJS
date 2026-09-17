@@ -56,12 +56,12 @@ onMounted(async () => {
 
 <template>
 	<section v-if="receipt" class="customer-detail">
-		<p class="breadcrumb"><RouterLink :to="{ name: 'payments.list' }">TPV</RouterLink> / Factura</p>
+		<p class="breadcrumb"><RouterLink :to="{ name: 'payments.list' }">TPV</RouterLink> / {{ receipt.payment.documentType === "rectification" ? "Rectificativa" : "Factura" }}</p>
 		<header>
 			<div>
-				<p class="eyebrow">Factura</p>
-				<h1>{{ money(receipt.payment.amountCents) }}</h1>
-				<span class="status-pill">{{ receipt.payment.status }}</span>
+				<p class="eyebrow">{{ receipt.payment.documentType === "rectification" ? "Factura rectificativa" : "Factura" }}</p>
+				<h1>{{ money(receipt.payment.documentType === "rectification" ? -receipt.payment.amountCents : receipt.payment.amountCents) }}</h1>
+				<span class="status-pill">{{ receipt.payment.documentType === "rectification" ? "Serie R" : "Emitida" }}</span>
 			</div>
 			<div class="form-actions"><button :disabled="downloading" @click="download">{{ downloading ? "Descargando" : "Descargar PDF" }}</button><button class="secondary" :disabled="sending" @click="send">{{ sending ? "Enviando" : "Enviar por email" }}</button></div>
 		</header>
@@ -73,6 +73,8 @@ onMounted(async () => {
 				<dt>Reparacion</dt><dd>{{ receipt.repair.brand }} {{ receipt.repair.model }}</dd>
 				<dt>Metodo</dt><dd>{{ receipt.payment.method }}</dd>
 				<dt>Referencia</dt><dd>{{ receipt.payment.reference || "Sin referencia" }}</dd>
+				<template v-if="receipt.payment.originalPaymentId"><dt>Factura original</dt><dd><RouterLink :to="{ name: 'payments.detail', params: { id: receipt.payment.originalPaymentId } }">Ver documento original</RouterLink></dd></template>
+				<template v-if="receipt.payment.rectificationReason"><dt>Motivo</dt><dd>{{ receipt.payment.rectificationReason }}</dd></template>
 			</dl>
 		</section>
 	</section>
