@@ -1,6 +1,6 @@
 import { Service } from "@xtaskjs/core";
 import { InjectDataSource, type DataSource } from "@xtaskjs/typeorm";
-import { REPAIR_STATUSES } from "../../repairs/domain/repair-status.js";
+import { AUTOMATED_REPAIR_STATUSES, REPAIR_STATUSES } from "../../repairs/domain/repair-status.js";
 import { AdminConfigEntitySchema } from "../infrastructure/persistence/admin-config-entity.js";
 
 const defaultDeviceTypes = [
@@ -14,70 +14,76 @@ const defaultDeviceTypes = [
   "Otros"
 ] as const;
 
+type ConfigKey = "repairStatuses" | "deviceTypes";
+
+export class ProtectedConfigValueError extends Error {
+  constructor(readonly value: string, reason: string) {
+    super(reason);
+    this.name = "ProtectedConfigValueError";
+  }
+}
+
 @Service()
 export class AdminConfigService {
   @InjectDataSource()
   private readonly dataSource?: DataSource;
-  private repairStatuses: string[] = [...REPAIR_STATUSES];
-  private deviceTypes: string[] = [...defaultDeviceTypes];
-  private notificationTemplates: string[] = ["repair.completed", "repair.quoted", "repair.delivered"];
+  private readonly fallback: Record<ConfigKey, string[]> = {
+    repairStatuses: [...REPAIR_STATUSES],
+    deviceTypes: [...defaultDeviceTypes]
+  };
 
-  async listRepairStatuses(): Promise<readonly string[]> {
-    return this.read("repairStatuses", this.repairStatuses);
+  listRepairStatuses(): Promise<readonly string[]> {
+    return this.read("repairStatuses");
   }
 
-  async addRepairStatus(value: string): Promise<void> {
-    const normalized = value.trim();
-    if (!normalized) return;
-    await this.write("repairStatuses", [...(await this.listRepairStatuses()), ...(await this.listRepairStatuses()).includes(normalized) ? [] : [normalized]]);
+  addRepairStatus(value: string): Promise<void> {
+    return this.add("repairStatuses", value);
   }
 
   async removeRepairStatus(value: string): Promise<void> {
-    await this.write("repairStatuses", (await this.listRepairStatuses()).filter((status) => status !== value));
+    if (AUTOMATED_REPAIR_STATUSES.includes(value as (typeof AUTOMATED_REPAIR_STATUSES)[number])) {
+      throw new ProtectedConfigValueError(value, `El estado "${value}" lo usan los flujos automaticos de presupuesto y no puede eliminarse.`);
+    }
+    return this.remove("repairStatuses", value);
   }
 
-  async listDeviceTypes(): Promise<readonly string[]> {
-    return this.read("deviceTypes", this.deviceTypes);
+  listDeviceTypes(): Promise<readonly string[]> {
+    return this.read("deviceTypes");
   }
 
-  async addDeviceType(value: string): Promise<void> {
+  addDeviceType(value: string): Promise<void> {
+    return this.add("deviceTypes", value);
+  }
+
+  removeDeviceType(value: string): Promise<void> {
+    return this.remove("deviceTypes", value);
+  }
+
+  private async add(key: ConfigKey, value: string): Promise<void> {
     const normalized = value.trim();
     if (!normalized) return;
-    await this.write("deviceTypes", [...(await this.listDeviceTypes()), ...(await this.listDeviceTypes()).includes(normalized) ? [] : [normalized]]);
+    const current = await this.read(key);
+    if (current.includes(normalized)) return;
+    await this.write(key, [...current, normalized]);
   }
 
-  async removeDeviceType(value: string): Promise<void> {
-    await this.write("deviceTypes", (await this.listDeviceTypes()).filter((device) => device !== value));
+  private async remove(key: ConfigKey, value: string): Promise<void> {
+    const current = await this.read(key);
+    await this.write(key, current.filter((entry) => entry !== value));
   }
 
-  async listNotificationTemplates(): Promise<readonly string[]> {
-    return this.read("notificationTemplates", this.notificationTemplates);
-  }
-
-  async addNotificationTemplate(value: string): Promise<void> {
-    const normalized = value.trim();
-    if (!normalized) return;
-    await this.write("notificationTemplates", [...(await this.listNotificationTemplates()), ...(await this.listNotificationTemplates()).includes(normalized) ? [] : [normalized]]);
-  }
-
-  async removeNotificationTemplate(value: string): Promise<void> {
-    await this.write("notificationTemplates", (await this.listNotificationTemplates()).filter((template) => template !== value));
-  }
-
-  private async read(key: string, fallback: string[]): Promise<readonly string[]> {
-    if (!this.dataSource) return [...fallback];
+  private async read(key: ConfigKey): Promise<readonly string[]> {
+    if (!this.dataSource) return [...this.fallback[key]];
     const repository = this.dataSource.getRepository(AdminConfigEntitySchema);
     const record = await repository.findOneBy({ key });
     if (record) return record.values;
-    await repository.save({ key, values: fallback });
-    return [...fallback];
+    await repository.save({ key, values: this.fallback[key] });
+    return [...this.fallback[key]];
   }
 
-  private async write(key: string, values: string[]): Promise<void> {
+  private async write(key: ConfigKey, values: string[]): Promise<void> {
     if (!this.dataSource) {
-      if (key === "repairStatuses") this.repairStatuses = values;
-      if (key === "deviceTypes") this.deviceTypes = values;
-      if (key === "notificationTemplates") this.notificationTemplates = values;
+      this.fallback[key] = values;
       return;
     }
     await this.dataSource.getRepository(AdminConfigEntitySchema).save({ key, values });

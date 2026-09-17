@@ -5,9 +5,17 @@ import type { UserRepository } from "../../users/application/user-repository.js"
 import type { RepairOrderRepository, NewRepairOrderRecord } from "./repair-order-repository.js";
 import type { RepairOrder, RepairStatusEvent } from "../domain/repair-order.js";
 import type { RepairStatus } from "../domain/repair-status.js";
+import type { RepairWorkflowConfig } from "./repair-workflow-config.js";
 import { CreateRepairOrder } from "./create-repair-order.js";
 import { UpdateRepairTechnical } from "./update-repair-technical.js";
 import { canTransitionRepairStatus } from "../domain/repair-status.js";
+
+function workflowConfig(overrides: Partial<{ statuses: readonly string[]; deviceTypes: readonly string[] }> = {}): RepairWorkflowConfig {
+  return {
+    async listStatuses() { return overrides.statuses ?? []; },
+    async listDeviceTypes() { return overrides.deviceTypes ?? ["Consola", "Móvil"]; }
+  };
+}
 
 class TestRepairRepository implements RepairOrderRepository {
   async create(input: NewRepairOrderRecord): Promise<RepairOrder> { return { ...input, serialNumber: input.serialNumber ?? null, deliveredAccessories: input.deliveredAccessories ?? null, technicianId: null, diagnosis: null, status: "received", createdAt: new Date(), updatedAt: new Date() }; }
@@ -31,10 +39,30 @@ class TestUserRepository implements UserRepository {
 }
 
 test("repair orders start received and normalize supplied device details", async () => {
-  const repair = await new CreateRepairOrder(new TestRepairRepository()).execute({ customerId: "customer-1", deviceType: " Consola ", brand: " Sony ", model: " PS5 ", reportedIssue: " No enciende " });
+  const repair = await new CreateRepairOrder(new TestRepairRepository(), workflowConfig()).execute({ customerId: "customer-1", deviceType: " Consola ", brand: " Sony ", model: " PS5 ", reportedIssue: " No enciende " });
   assert.equal(repair.status, "received");
   assert.equal(repair.brand, "Sony");
   assert.equal(repair.reportedIssue, "No enciende");
+});
+
+test("a repair order rejects a device type that the administrator has not configured", async () => {
+  const service = new CreateRepairOrder(new TestRepairRepository(), workflowConfig({ deviceTypes: ["Consola"] }));
+  await assert.rejects(
+    () => service.execute({ customerId: "customer-1", deviceType: "Dron", brand: "DJI", model: "Mini", reportedIssue: "No despega" }),
+    /Device type Dron is not configured/
+  );
+});
+
+test("a repair order accepts a device type added by the administrator", async () => {
+  const service = new CreateRepairOrder(new TestRepairRepository(), workflowConfig({ deviceTypes: ["Consola", "Dron"] }));
+  const repair = await service.execute({ customerId: "customer-1", deviceType: "Dron", brand: "DJI", model: "Mini", reportedIssue: "No despega" });
+  assert.equal(repair.deviceType, "Dron");
+});
+
+test("an empty device type configuration does not block receiving equipment", async () => {
+  const service = new CreateRepairOrder(new TestRepairRepository(), workflowConfig({ deviceTypes: [] }));
+  const repair = await service.execute({ customerId: "customer-1", deviceType: "Cualquiera", brand: "Generica", model: "X", reportedIssue: "Revision" });
+  assert.equal(repair.deviceType, "Cualquiera");
 });
 
 test("repair status changes follow the workshop workflow", () => {

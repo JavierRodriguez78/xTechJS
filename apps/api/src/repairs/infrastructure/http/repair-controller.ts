@@ -11,16 +11,20 @@ import {
   CreateRepairOrderCommand,
   GetRepairQuoteQuery,
   GetRepairStatusHistoryQuery,
+  GetRepairWorkflowConfigQuery,
   ListRepairOrdersQuery,
   SaveRepairQuoteCommand,
   UpdateRepairTechnicalCommand
 } from "../../application/cqrs/repair-messages.js";
-import { REPAIR_STATUSES } from "../../domain/repair-status.js";
+import { DeviceTypeNotConfiguredError } from "../../domain/device-type.js";
+import { RepairStatusNotConfiguredError } from "../../domain/repair-status.js";
 import { PERMISSIONS } from "../../../users/domain/permission.js";
 import { PermissionRequired } from "../../../users/infrastructure/http/permission-guard.js";
 
 const createSchema = z.object({ customerId: z.string().uuid(), deviceType: z.string().trim().min(1).max(100), brand: z.string().trim().min(1).max(100), model: z.string().trim().min(1).max(160), serialNumber: z.string().trim().max(160).optional(), reportedIssue: z.string().trim().min(1).max(5000), deliveredAccessories: z.string().trim().max(2000).optional() });
-const statusSchema = z.object({ status: z.enum(REPAIR_STATUSES), note: z.string().trim().max(2000).optional() });
+// El estado no se valida contra una lista fija: los estados activos los define la
+// configuracion administrativa y el caso de uso los comprueba contra ella.
+const statusSchema = z.object({ status: z.string().trim().min(1).max(160), note: z.string().trim().max(2000).optional() });
 const technicalSchema = z.object({ technicianId: z.string().uuid().optional(), diagnosis: z.string().trim().max(5000).optional() }).refine((input) => Object.keys(input).length > 0, "At least one technical field is required");
 const quoteSchema = z.object({ status: z.enum(["draft", "sent"]), lines: z.array(z.object({ description: z.string().trim().min(1).max(500), quantity: z.number().int().min(1).max(1000), unitPriceCents: z.number().int().min(0).max(100000000) })).min(1).max(50) });
 
@@ -40,6 +44,12 @@ export class RepairController {
     return this.queryBus.execute(new ListRepairOrdersQuery());
   }
 
+  @Get("/config")
+  @PermissionRequired(PERMISSIONS.repairsRead)
+  getWorkflowConfig(): Promise<unknown> {
+    return this.queryBus.execute(new GetRepairWorkflowConfigQuery());
+  }
+
   @Get("/:id/history")
   @PermissionRequired(PERMISSIONS.repairsRead)
   async getHistory(@Param("id") id: string, @Res() reply: ControllerReply): Promise<unknown> {
@@ -52,7 +62,12 @@ export class RepairController {
   async createRepair(@Body() body: unknown, @Res() reply: ControllerReply): Promise<unknown> {
     const parsed = createSchema.safeParse(body);
     if (!parsed.success) return reply.code(400).send({ message: "Invalid repair order", issues: parsed.error.flatten() });
-    return reply.code(201).send(await this.commandBus.execute(new CreateRepairOrderCommand(parsed.data as CreateRepairOrderInput)));
+    try {
+      return reply.code(201).send(await this.commandBus.execute(new CreateRepairOrderCommand(parsed.data as CreateRepairOrderInput)));
+    } catch (error) {
+      if (error instanceof DeviceTypeNotConfiguredError) return reply.code(400).send({ message: `El tipo de dispositivo "${error.deviceType}" no esta configurado.` });
+      throw error;
+    }
   }
 
   @Patch("/:id/status")
@@ -64,6 +79,7 @@ export class RepairController {
       const repair = await this.commandBus.execute(new ChangeRepairStatusCommand(id, parsed.data.status as RepairStatus, parsed.data.note));
       return repair ?? reply.code(404).send({ message: "Repair order not found" });
     } catch (error) {
+      if (error instanceof RepairStatusNotConfiguredError) return reply.code(400).send({ message: `El estado "${error.status}" no esta configurado.` });
       return reply.code(409).send({ message: (error as Error).message });
     }
   }

@@ -22,7 +22,7 @@ ver el listado completo.
 | `make prod-config` / `make prod-up` | Valida o inicia la pila de producción con secretos obligatorios. |
 | `make ps`, `make logs`, `make logs-api` | Consulta el estado o los logs de los contenedores. |
 | `make shell-api`, `make shell-web`, `make shell-db`, `make shell-redis` | Abre una consola en el servicio elegido. |
-| `make migrate` | Ejecuta las migraciones dentro del contenedor de API. |
+| `make migrate` | Construye la imagen API y ejecuta el migrador one-shot. |
 | `make test`, `make test-api`, `make test-web` | Ejecuta las pruebas disponibles. `test-web` ejecuta typecheck hasta incorporar un runner de tests. |
 | `make typecheck` / `make build` | Valida tipos o genera los artefactos de produccion. |
 
@@ -71,6 +71,8 @@ make up
 
 La aplicacion queda disponible en `http://localhost:8080`, con la API publicada en
 `http://localhost:3000`. El frontend reenvia las llamadas a `/api` hacia el servicio `api`.
+Antes de arrancar la API, Compose ejecuta el servicio `migrate` y exige que termine
+correctamente. Las migraciones no se ejecutan dentro de cada réplica de la API.
 
 Para detener la pila y conservar los datos:
 
@@ -90,6 +92,11 @@ después arranca la pila:
 make prod-config
 make prod-up
 ```
+
+El despliegue construye una única imagen `xtechjs-api`, ejecuta sus migraciones
+como tarea one-shot y solo después inicia la API. CI aplica dos veces el conjunto
+de migraciones sobre PostgreSQL vacío para verificar tanto el esquema como su
+idempotencia.
 
 La API rechaza en producción los valores `change-me` y
 `development-only-secret-change-me-32`. No guardes secretos reales en `.env` bajo

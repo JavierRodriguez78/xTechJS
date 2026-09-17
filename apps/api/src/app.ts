@@ -24,7 +24,9 @@ import "./customers/application/send-customer-registration-email.js";
 import "./customers/infrastructure/http/customer-controller.js";
 import "./customers/infrastructure/persistence/postgres-customer-registration-token-repository.js";
 import "./customers/infrastructure/persistence/postgres-customer-repository.js";
+import "./customers/infrastructure/persistence/postgres-customer-communication-repository.js";
 import "./repairs/application/cqrs/repair-handlers.js";
+import "./repairs/infrastructure/config/admin-repair-workflow-config.js";
 import "./repairs/infrastructure/http/repair-controller.js";
 import "./repairs/infrastructure/http/customer-repair-controller.js";
 import "./repairs/infrastructure/persistence/postgres-repair-order-repository.js";
@@ -57,6 +59,12 @@ import "./attachments/infrastructure/http/attachment-controller.js";
 import "./attachments/infrastructure/http/customer-attachment-controller.js";
 import "./attachments/infrastructure/persistence/postgres-repair-attachment-repository.js";
 import "./attachments/infrastructure/persistence/local-disk-attachment-storage.js";
+import "./notifications/application/cqrs/notification-handlers.js";
+import "./notifications/application/notify-repair-status-change.js";
+import "./notifications/infrastructure/http/notification-template-controller.js";
+import "./notifications/infrastructure/persistence/postgres-notification-template-repository.js";
+import "./notifications/infrastructure/persistence/postgres-customer-notification-repository.js";
+import "./notifications/infrastructure/repair-status-notifier-adapter.js";
 import { startTrace, traceOperation } from "./shared/infrastructure/observability/trace.js";
 
 declare module "fastify" {
@@ -66,7 +74,7 @@ declare module "fastify" {
 }
 
 let application: XTaskHttpApplication | undefined;
-const requiredComponentNames = ["userRepository", "customerRepository", "repairOrderRepository", "repairQuoteRepository", "inventoryRepository", "supplierRepository", "purchaseOrderRepository", "paymentRepository", "cashRegisterRepository", "chatMessageRepository", "repairAttachmentRepository", "attachmentStorage", "invoiceDraftRepository"] as const;
+const requiredComponentNames = ["userRepository", "customerRepository", "customerCommunicationRepository", "repairOrderRepository", "repairQuoteRepository", "inventoryRepository", "supplierRepository", "purchaseOrderRepository", "paymentRepository", "cashRegisterRepository", "chatMessageRepository", "repairAttachmentRepository", "attachmentStorage", "invoiceDraftRepository", "notificationTemplateRepository", "customerNotificationRepository", "repairWorkflowConfig", "repairStatusNotifier"] as const;
 
 function instrumentBus(bus: CommandBus | QueryBus, component: "CommandBus" | "QueryBus"): void {
   const execute = bus.execute.bind(bus);

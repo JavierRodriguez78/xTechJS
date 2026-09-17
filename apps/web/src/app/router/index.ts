@@ -21,6 +21,7 @@ const routes: RouteRecordRaw[] = [
         { path: "general", name: "customers.detail.general", component: () => import("../../features/customers/views/tabs/CustomerGeneralTab.vue") },
         { path: "facturacion", name: "customers.detail.billing", component: () => import("../../features/customers/views/tabs/CustomerBillingTab.vue") },
         { path: "reparaciones", name: "customers.detail.repairs", component: () => import("../../features/customers/views/tabs/CustomerRepairsTab.vue") },
+        { path: "comunicaciones", name: "customers.detail.communications", component: () => import("../../features/customers/views/tabs/CustomerCommsTab.vue") },
         { path: "notas", name: "customers.detail.notes", component: () => import("../../features/customers/views/tabs/CustomerNotesTab.vue") }
       ] },
       { path: "reparaciones", name: "repairs.list", component: () => import("../../features/repairs/views/RepairListView.vue"), meta: { permission: "repairs:read" } },

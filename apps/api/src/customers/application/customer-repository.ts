@@ -18,6 +18,8 @@ export interface CustomerRegistrationTokenRecord {
   tokenHash: string;
   expiresAt: Date;
   usedAt: Date | null;
+  deliveryStatus: "pending" | "sent" | "failed";
+  deliveryError: string | null;
   createdAt: Date;
 }
 
@@ -25,4 +27,5 @@ export interface CustomerRegistrationTokenRepository {
   createForCustomer(customerId: string, token: string, expiresAt: Date): Promise<CustomerRegistrationTokenRecord>;
   findValidByToken(token: string): Promise<CustomerRegistrationTokenRecord | undefined>;
   markUsed(id: string): Promise<void>;
+  markDelivery(id: string, status: "sent" | "failed", errorMessage?: string): Promise<void>;
 }

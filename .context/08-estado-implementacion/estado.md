@@ -1,6 +1,6 @@
 # Estado de implementacion - xTechJS
 
-**Actualizado:** 2026-09-16
+**Actualizado:** 2026-09-17
 
 Este documento complementa la especificacion funcional. Describe exclusivamente lo que
 existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase.
@@ -480,8 +480,8 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 
 ### Funcionalidad
 
-- CRM: historial de interacciones y registro de notificaciones. Alta, listado,
-  ficha, edicion, etiquetado e historial de reparaciones ya existen.
+- CRM: alta, listado, ficha, edicion, etiquetado, historial de reparaciones e
+  historial de comunicaciones ya implementados.
 - Reparaciones: consumo de materiales. Ordenes, equipo basico, estados,
   timeline, diagnostico, asignacion, presupuesto interno, aprobacion desde portal
   de cliente, adjuntos (fotos/vídeos) y chat ya existen.
@@ -501,7 +501,7 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   CQRS, `PaymentController` y trazabilidad. Incluye resumen diario, cierre
   persistente de caja, reporte por rango y descarga PDF con estructura de factura.
   La validacion legal definitiva, series fiscales reales, numeracion por ejercicio,
-  rectificativas, facturacion electronica y requisitos de IVA deben ser revisados
+  facturacion electronica y requisitos de IVA deben ser revisados
   y configurados con asesoramiento fiscal antes de emitir documentos oficiales.
 - **(2026-09-17) Facturación automática de piezas implementada.** Cada consumo
   de almacén vinculado a una reparación se ejecuta en la misma transacción que
@@ -514,13 +514,20 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   `GET /api/payments/draft/repair/:repairOrderId` y la creación de pagos reutiliza
   automáticamente el borrador cuando no se envían líneas manuales. La pestaña
   `materiales` muestra las líneas generadas como "Factura automática en borrador"
-  y el alta de materiales permite configurar precio e IVA. La factura emitida
-  sigue sin mutarse directamente; la rectificativa queda como siguiente flujo
-  fiscal. Verificado: typecheck API, 24/24 tests API, build frontend y migración
+  y el alta de materiales permite configurar precio e IVA. Verificado: typecheck
+  API, tests API, build frontend y migración
   Docker aplicada. Prueba end-to-end real: consumos de 2 y 1 unidades generaron
   dos líneas con `sourceMovementId` distintos, precio de 1250 céntimos e IVA del
-  21%; después se limpiaron los datos temporales de la prueba. La rectificativa
-  fiscal sigue siendo un flujo posterior.
+  21%; después se limpiaron los datos temporales de la prueba.
+- **(2026-09-17) Facturas rectificativas implementadas.** Una factura emitida
+  permanece inmutable y su rectificación crea un documento independiente con
+  serie `R`, líneas negativas, motivo obligatorio y vínculo a la factura original.
+  La operación es transaccional y el índice único sobre `original_payment_id`
+  impide emitir dos rectificativas para la misma factura. El PDF, TPV, ficha de
+  reparación y portal de cliente distinguen ambos documentos y muestran los
+  importes con su signo fiscal. La migración
+  `1738500000000-add-invoice-rectifications.ts` está aplicada en PostgreSQL;
+  verificados 26/26 tests API, build API, build frontend y contenedores saludables.
 - Chat: canal de mensajería por reparación implementado (backend y frontend).
   API REST (`/api/repairs/:id/messages`, `/api/customer/repairs/:id/messages`)
   con persistencia en `chat_messages` y tiempo real vía `@xtaskjs/socket-io`
@@ -535,8 +542,8 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 - Administracion: usuarios, roles, configuracion, auditoria y dashboards.
 - Administracion: usuarios, alta, edición, permisos efectivos, suplantación,
   auditoría consultable y configuración persistente y editable de estados,
-  dispositivos y plantillas ya están disponibles. La aplicación dinámica de
-  configuraciones personalizadas sobre todos los flujos queda como evolución futura.
+  dispositivos y plantillas ya están disponibles, y se aplican de verdad sobre
+  los flujos (ver entrada del 2026-09-17 sobre configuración dinámica).
 
 ### Frontend
 
@@ -551,16 +558,20 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   cliente, descargas autenticadas vía `Blob`).
 
 ### Infraestructura
-- Ejecutar la migracion inicial contra PostgreSQL y comprobar `GET /api/users` con
-  la base de datos levantada. Actualmente no hay datos semilla, por lo que devolvera
-  una lista vacia hasta crear usuarios.
-- Incorporar migraciones al proceso de despliegue de la API.
-- Definir secretos por entorno y configuracion de produccion.
-- Anadir CI para typecheck, tests, build e imagenes Docker.
 - Preparar manifiestos o valores de despliegue para una futura plataforma de
   orquestacion, sin acoplar el codigo a ella.
-- Incorporar Vitest u otro runner al frontend; hasta entonces `make test-web` solo
-  valida tipos del cliente.
+- **(2026-09-17) Vitest incorporado al frontend.** `apps/web` usa `vitest` con
+  entorno `jsdom` y `@vue/test-utils`, configurado en `vitest.config.ts`; el
+  fichero de preparación `src/test-setup.ts` limpia `localStorage` y dobla
+  `fetch` para que una prueba que salga a la red falle de forma explícita.
+  `make test-web` ejecuta typecheck y pruebas, `pnpm test` las lanza en todo el
+  workspace y CI añade el paso "Web tests". 30 pruebas en 6 ficheros:
+  propagación de `x-correlation-id` y ausencia de secretos en la traza del
+  frontend, sesión del portal interno, contadores y toasts de notificaciones de
+  chat, etiquetas de estado de reparación y dos suites de componente
+  (`RepairTechnicalTab`, `RepairCreateView`) sobre los desplegables dinámicos.
+  El `testTimeout` es de 30 s porque la primera prueba de cada fichero paga la
+  transformación del módulo, lenta sobre WSL con el repositorio en disco Windows.
 - **(2026-09-17) CI añadido en `.github/workflows/ci.yml`.** En cada push a
   `main`/`master` y en cada pull request ejecuta instalación reproducible con
   `pnpm-lock.yaml`, typecheck de API y frontend, los tests de API, los builds de
@@ -579,13 +590,91 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 - **Corrección de compatibilidad local (2026-09-17):** `compose.yaml` ya no fuerza
   `NODE_ENV=production` con credenciales de desarrollo; usa `development` por
   defecto y `compose.production.yaml` mantiene explícitamente `production`.
+- **(2026-09-17) Pipeline de migraciones implementado.** La imagen API arranca
+  únicamente el servidor y Compose reutiliza esa imagen en el servicio one-shot
+  `migrate`. La API espera `service_completed_successfully`, con
+  `RUN_MIGRATIONS_ON_STARTUP=false`, por lo que un fallo de esquema bloquea el
+  despliegue y las réplicas no compiten por migrar. CI ejecuta dos veces las
+  migraciones sobre PostgreSQL 17 vacío para comprobar aplicación e idempotencia.
+  Validado en Docker: migrador con salida 0, segunda ejecución correcta y API
+  saludable tras completar el paso.
+- **(2026-09-17) Historial de comunicaciones CRM implementado.** La subruta
+  `/clientes/:id/comunicaciones` carga bajo demanda invitaciones de registro y
+  envíos de factura, ordenados de más reciente a más antiguo, con destinatario,
+  estado, fecha, referencia fiscal y error de entrega cuando existe. El endpoint
+  protegido `GET /api/customers/:id/communications` usa CQRS y el repositorio
+  `customerCommunicationRepository`, sin exponer hashes ni tokens. Los intentos
+  nuevos de invitación registran `pending`, `sent` o `failed` y conservan el error
+  SMTP. Migración `1738600000000-add-invitation-delivery-status.ts` aplicada.
+  Verificados 29/29 tests API, typecheck/build API, build frontend, Docker
+  saludable y consulta autenticada con comunicaciones reales.
+- **(2026-09-17) Configuración administrativa aplicada de forma dinámica.**
+  Los estados de reparación, los tipos de dispositivo y las plantillas de
+  notificación dejan de ser listas decorativas y gobiernan los flujos:
+  - `repair-status.ts` conserva la matriz de transiciones del flujo base, pero
+    `canTransitionRepairStatus(from, to, configured)` acepta la lista activa:
+    entre dos estados base se aplica la matriz, y cuando alguno es un estado
+    personalizado se permite la transición salvo desde un estado base terminal
+    (`delivered`, `cancelled`), que debe seguir cerrando la orden. `RepairStatus`
+    pasa a ser `string` y el `z.enum` del controlador se sustituye por validación
+    contra la configuración: un estado no configurado devuelve `400`
+    (`RepairStatusNotConfiguredError`) y un salto no permitido sigue devolviendo
+    `409`.
+  - `quoted` y `approved` quedan protegidos frente a su eliminación
+    (`ProtectedConfigValueError`, `409`) porque `SaveRepairQuote` y
+    `ApproveRepairQuote` los escriben por su cuenta.
+  - `CreateRepairOrder` valida `deviceType` contra los tipos configurados y
+    devuelve `400` si no lo está; una lista vacía se interpreta como "sin
+    restricción" para no dejar el taller sin poder recepcionar equipos.
+  - Nuevo puerto `repairWorkflowConfig` (adaptador `AdminRepairWorkflowConfig`)
+    y `GET /api/repairs/config` con permiso `repairs:read`, para que un técnico
+    sin `users:manage` pueda rellenar los formularios. El frontend alimenta
+    desde ahí el filtro de estados del listado, el selector de estado de la
+    pestaña de diagnóstico y el selector de tipo de equipo del alta; el tipo de
+    equipo deja de ser texto libre.
+  - Las plantillas de notificación pasan de una lista de nombres en
+    `admin_config_values` a la tabla `notification_templates` con asunto, cuerpo,
+    activación y marcadores (`{{customerName}}`, `{{deviceBrand}}`,
+    `{{statusNote}}`, `{{portalUrl}}`…). Un marcador desconocido se elimina en
+    lugar de llegar al cliente como `{{...}}`. `ChangeRepairStatus` avisa al
+    cliente por el puerto `repairStatusNotifier`: si existe plantilla activa para
+    `repair.status.<estado>` se renderiza y se envía por `@xtaskjs/mailer`, y el
+    resultado (`pending`/`sent`/`failed` con su error SMTP) se guarda en
+    `customer_notifications`. Un fallo de correo nunca revierte el cambio de
+    estado: queda registrado y visible. El historial de comunicaciones del CRM
+    añade ese tercer origen como tipo `repair_notification`.
+  - `/admin/configuracion/plantillas` pasa de una lista de nombres a un editor
+    de asunto, cuerpo y activación por estado, con los marcadores disponibles a
+    la vista. Las etiquetas de estado se unifican en
+    `features/repairs/status-labels.ts` y se comparten con el portal de cliente,
+    donde además se corrigen tres claves obsoletas (`diagnosed`, `in_repair`,
+    `unrecoverable`) que mostraban el código interno en lugar del estado.
+  - Migración `1738700000000-add-notification-templates.ts` aplicada en Docker:
+    crea ambas tablas, siembra las plantillas de `quoted`, `repaired` y
+    `delivered`, y borra la clave `notificationTemplates` ya inaplicable.
+  - Verificado: 53/53 tests API (antes 29), 30/30 tests web, typecheck de API y
+    frontend, `pnpm build` completo, migración aplicada y API `healthy`.
+    Prueba real end-to-end contra Docker: estado `esperando-pieza` añadido y
+    asignado a una orden (`200`), estado inexistente rechazado (`400`), salto
+    ilegal rechazado (`409`), estado `approved` protegido (`409`), tipo
+    `Submarino` rechazado (`400`) y tipo `Dron` recién configurado aceptado
+    (`201`); plantilla propia guardada, correo recibido en MailHog con los
+    marcadores resueltos ("Esperamos una pieza para tu DJI Mini"), registro
+    `sent` en `customer_notifications`, aparición en
+    `GET /api/customers/:id/communications` y ausencia de aviso al desactivar la
+    plantilla. Los datos temporales de la prueba se eliminaron después.
 
 ## Siguiente fase recomendada
 
-1. Con CI y secretos de producción ya cubiertos, la siguiente prioridad es
-  definir el pipeline de despliegue de migraciones. Después, completar el
-  historial de interacciones/notificaciones
-  del CRM y evaluar Vitest para el frontend.
+1. Con Vitest y la aplicación dinámica de configuraciones cubiertas, la siguiente
+  prioridad es completar la especificación de listados de
+  `04-frontend/frontend.md` §3: paginación real en servidor
+  (`{ items, total, page, pageSize }`), filtros por faceta y ordenación
+  serializados en la query string, y los componentes compartidos
+  (`DataTable`, `FilterBar`, `AppPagination`) que hoy no existen. Las vistas
+  actuales filtran en cliente sobre la colección completa.
+2. Ampliar la cobertura de Vitest a las vistas de listado y formulario a medida
+  que se migren, empezando por Clientes.
 
 Los cuatro modulos implementados (usuarios, CRM, reparaciones y almacen) usan el patron
 xTaskJS completo: servicios `@Service` con `@Qualifier`, comandos/queries con
@@ -594,8 +683,8 @@ y repositorios registrados como instancias nombradas en `main.ts`. No quedan rut
 Fastify manuales. Patron a replicar en modulos futuros: almacen, TPV, chat y adjuntos.
 PostgreSQL contiene `users`, `audit_logs`, `customers`, `repair_orders`,
 `repair_status_events`, `repair_quotes`, `inventory_items`,
-`inventory_movements`, `chat_messages` y `repair_attachments` tras ejecutar
-migraciones.
+`inventory_movements`, `chat_messages`, `repair_attachments`,
+`notification_templates` y `customer_notifications` tras ejecutar migraciones.
 
 ## Criterio de actualizacion
 

@@ -6,6 +6,8 @@ export interface CustomerRegistrationTokenRecordEntity {
   tokenHash: string;
   expiresAt: Date;
   usedAt: Date | null;
+  deliveryStatus: "pending" | "sent" | "failed";
+  deliveryError: string | null;
   createdAt: Date;
 }
 
@@ -18,6 +20,8 @@ export const CustomerRegistrationTokenEntitySchema = new EntitySchema<CustomerRe
     tokenHash: { type: String, name: "token_hash" },
     expiresAt: { type: "timestamptz", name: "expires_at" },
     usedAt: { type: "timestamptz", name: "used_at", nullable: true },
+    deliveryStatus: { type: String, name: "delivery_status", default: "pending" },
+    deliveryError: { type: String, name: "delivery_error", nullable: true },
     createdAt: { type: "timestamptz", name: "created_at", createDate: true }
   },
   indices: [

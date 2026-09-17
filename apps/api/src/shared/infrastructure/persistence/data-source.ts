@@ -40,6 +40,10 @@ import { RepairAttachmentEntitySchema } from "../../../attachments/infrastructur
 import { AddInvoiceDraftsAndMaterialPricesMigration } from "../../../payments/infrastructure/persistence/migrations/1738400000000-add-invoice-drafts-and-material-prices.js";
 import { InvoiceDraftEntitySchema } from "../../../payments/infrastructure/persistence/invoice-draft-entity.js";
 import { AddInvoiceRectificationsMigration } from "../../../payments/infrastructure/persistence/migrations/1738500000000-add-invoice-rectifications.js";
+import { AddInvitationDeliveryStatusMigration } from "../../../customers/infrastructure/persistence/migrations/1738600000000-add-invitation-delivery-status.js";
+import { AddNotificationTemplatesMigration } from "../../../notifications/infrastructure/persistence/migrations/1738700000000-add-notification-templates.js";
+import { NotificationTemplateEntitySchema } from "../../../notifications/infrastructure/persistence/notification-template-entity.js";
+import { CustomerNotificationEntitySchema } from "../../../notifications/infrastructure/persistence/customer-notification-entity.js";
 
 const config = loadConfig();
 
@@ -51,11 +55,11 @@ const dataSourceOptions: XTaskTypeOrmDataSourceOptions = {
   database: config.get("POSTGRES_DB"),
   username: config.get("POSTGRES_USER"),
   password: config.get("POSTGRES_PASSWORD"),
-  entities: [UserEntitySchema, CustomerEntitySchema, CustomerRegistrationTokenEntitySchema, RepairOrderEntitySchema, RepairStatusEventEntitySchema, RepairQuoteEntitySchema, InventoryItemEntitySchema, InventoryMovementEntitySchema, SupplierEntitySchema, PurchaseOrderEntitySchema, PaymentEntitySchema, CashRegisterEntitySchema, InvoiceEmailEntitySchema, AdminConfigEntitySchema, DataProtectionConsentEntitySchema, ChatMessageEntitySchema, RepairAttachmentEntitySchema, InvoiceDraftEntitySchema],
-  migrations: [InitialUsersMigration, InitialCustomersMigration, AddUserPasswordHashMigration, AddCustomerRegistrationTokensMigration, AddCustomerRegistrationDetailsMigration, InitialRepairOrdersMigration, AddRepairTechnicalDetailsMigration, InitialRepairQuotesMigration, InitialInventoryMigration, AddRepairToInventoryMovementsMigration, InitialSuppliersMigration, InitialPurchaseOrdersMigration, InitialPaymentsMigration, InitialCashRegistersMigration, AddInvoiceNumberingMigration, AddInvoiceEmailsMigration, AddInvoiceLinesMigration, AddAdminConfigMigration, AddDataProtectionConsentsMigration, InitialChatMessagesMigration, InitialRepairAttachmentsMigration, AddInvoiceDraftsAndMaterialPricesMigration, AddInvoiceRectificationsMigration],
+  entities: [UserEntitySchema, CustomerEntitySchema, CustomerRegistrationTokenEntitySchema, RepairOrderEntitySchema, RepairStatusEventEntitySchema, RepairQuoteEntitySchema, InventoryItemEntitySchema, InventoryMovementEntitySchema, SupplierEntitySchema, PurchaseOrderEntitySchema, PaymentEntitySchema, CashRegisterEntitySchema, InvoiceEmailEntitySchema, AdminConfigEntitySchema, DataProtectionConsentEntitySchema, ChatMessageEntitySchema, RepairAttachmentEntitySchema, InvoiceDraftEntitySchema, NotificationTemplateEntitySchema, CustomerNotificationEntitySchema],
+  migrations: [InitialUsersMigration, InitialCustomersMigration, AddUserPasswordHashMigration, AddCustomerRegistrationTokensMigration, AddCustomerRegistrationDetailsMigration, InitialRepairOrdersMigration, AddRepairTechnicalDetailsMigration, InitialRepairQuotesMigration, InitialInventoryMigration, AddRepairToInventoryMovementsMigration, InitialSuppliersMigration, InitialPurchaseOrdersMigration, InitialPaymentsMigration, InitialCashRegistersMigration, AddInvoiceNumberingMigration, AddInvoiceEmailsMigration, AddInvoiceLinesMigration, AddAdminConfigMigration, AddDataProtectionConsentsMigration, InitialChatMessagesMigration, InitialRepairAttachmentsMigration, AddInvoiceDraftsAndMaterialPricesMigration, AddInvoiceRectificationsMigration, AddInvitationDeliveryStatusMigration, AddNotificationTemplatesMigration],
   synchronize: false,
   initializeOnServerStart: true,
-  runMigrationsOnServerStart: true
+  runMigrationsOnServerStart: config.get("RUN_MIGRATIONS_ON_STARTUP")
 };
 
 registerTypeOrmDataSource(dataSourceOptions);

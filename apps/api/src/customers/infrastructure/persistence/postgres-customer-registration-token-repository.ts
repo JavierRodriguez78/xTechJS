@@ -22,6 +22,8 @@ export class PostgresCustomerRegistrationTokenRepository implements CustomerRegi
       tokenHash,
       expiresAt,
       usedAt: null,
+      deliveryStatus: "pending",
+      deliveryError: null,
       createdAt: new Date()
     });
     return repository.save(record);
@@ -42,6 +44,10 @@ export class PostgresCustomerRegistrationTokenRepository implements CustomerRegi
 
   async markUsed(id: string): Promise<void> {
     await this.dataSource.getRepository(CustomerRegistrationTokenEntitySchema).update(id, { usedAt: new Date() });
+  }
+
+  async markDelivery(id: string, status: "sent" | "failed", errorMessage?: string): Promise<void> {
+    await this.dataSource.getRepository(CustomerRegistrationTokenEntitySchema).update(id, { deliveryStatus: status, deliveryError: errorMessage ?? null });
   }
 
   static toPublicRecord(record: CustomerRegistrationTokenRecordEntity): CustomerRegistrationTokenRecord {

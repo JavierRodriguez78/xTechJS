@@ -7,8 +7,10 @@ import { ListCustomers } from "../list-customers.js";
 import { ResendCustomerInvitation } from "../resend-customer-invitation.js";
 import { UpdateCustomer } from "../update-customer.js";
 import { ListCustomerRepairs } from "../../../repairs/application/list-customer-repairs.js";
+import { ListCustomerCommunications } from "../list-customer-communications.js";
 import type { RepairOrder } from "../../../repairs/domain/repair-order.js";
-import { CreateCustomerCommand, GetCustomerQuery, ListCustomerRepairsQuery, ListCustomersQuery, ResendCustomerInvitationCommand, UpdateCustomerCommand } from "./customer-messages.js";
+import type { CustomerCommunication } from "../../domain/customer-communication.js";
+import { CreateCustomerCommand, GetCustomerQuery, ListCustomerCommunicationsQuery, ListCustomerRepairsQuery, ListCustomersQuery, ResendCustomerInvitationCommand, UpdateCustomerCommand } from "./customer-messages.js";
 
 @Service()
 @CommandHandler(CreateCustomerCommand)
@@ -67,5 +69,15 @@ export class ListCustomerRepairsHandler implements IQueryHandler<ListCustomerRep
 
   execute(query: ListCustomerRepairsQuery): Promise<readonly RepairOrder[]> {
     return this.listCustomerRepairs.execute(query.customerId);
+  }
+}
+
+@Service()
+@QueryHandler(ListCustomerCommunicationsQuery)
+export class ListCustomerCommunicationsHandler implements IQueryHandler<ListCustomerCommunicationsQuery, readonly CustomerCommunication[]> {
+  constructor(private readonly listCustomerCommunications: ListCustomerCommunications) {}
+
+  execute(query: ListCustomerCommunicationsQuery): Promise<readonly CustomerCommunication[]> {
+    return this.listCustomerCommunications.execute(query.customerId);
   }
 }

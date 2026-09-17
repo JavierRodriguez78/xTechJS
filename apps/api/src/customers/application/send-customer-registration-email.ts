@@ -22,14 +22,20 @@ export class SendCustomerRegistrationEmail {
 
     const token = randomUUID().replace(/-/g, "");
     const expiresAt = new Date(Date.now() + REGISTRATION_TOKEN_TTL_HOURS * 60 * 60 * 1000);
-    await this.customerRegistrationTokenRepository.createForCustomer(customer.id, token, expiresAt);
+    const tokenRecord = await this.customerRegistrationTokenRepository.createForCustomer(customer.id, token, expiresAt);
 
     const url = `${process.env.WEB_PUBLIC_URL || "http://localhost:8080"}/customer/register?token=${token}`;
-    await this.mailer.sendMail({
-      to: customer.email,
-      subject: "Completa tu registro en xTechJS",
-      text: `Completa tu registro en xTechJS: ${url}\n\nEste enlace expira el ${expiresAt.toISOString()}.`,
-      html: `<p>Completa tu registro en xTechJS:</p><p><a href="${url}">${url}</a></p><p>Este enlace expira el ${expiresAt.toISOString()}.</p>`
-    });
+    try {
+      await this.mailer.sendMail({
+        to: customer.email,
+        subject: "Completa tu registro en xTechJS",
+        text: `Completa tu registro en xTechJS: ${url}\n\nEste enlace expira el ${expiresAt.toISOString()}.`,
+        html: `<p>Completa tu registro en xTechJS:</p><p><a href="${url}">${url}</a></p><p>Este enlace expira el ${expiresAt.toISOString()}.</p>`
+      });
+      await this.customerRegistrationTokenRepository.markDelivery(tokenRecord.id, "sent");
+    } catch (error) {
+      await this.customerRegistrationTokenRepository.markDelivery(tokenRecord.id, "failed", (error as Error).message);
+      throw error;
+    }
   }
 }

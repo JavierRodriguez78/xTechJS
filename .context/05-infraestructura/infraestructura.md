@@ -37,7 +37,7 @@ tests, typecheck y build.
 - `make dev` inicia API y frontend en local; `make db-up` inicia solo PostgreSQL y Redis.
 - `make up`, `make down`, `make rebuild`, `make ps` y `make logs` gestionan la pila Docker.
 - `make shell-api`, `make shell-web`, `make shell-db` y `make shell-redis` dan acceso a los servicios.
-- `make migrate` ejecuta las migraciones dentro de la API Dockerizada.
+- `make migrate` construye la imagen API y ejecuta el servicio one-shot `migrate`.
 - `make test`, `make typecheck` y `make build` validan el workspace. Hasta incorporar un
 	runner de pruebas Vue, `make test-web` ejecuta el typecheck del frontend.
 
@@ -51,3 +51,12 @@ La configuracion de produccion se aplica con `compose.production.yaml` sobre
 desarrollo `change-me` y `development-only-secret-change-me-32` cuando
 `NODE_ENV=production`. Los secretos deben proceder del entorno o de un gestor
 de secretos del despliegue, nunca de un archivo versionado.
+
+## Pipeline de migraciones
+
+La imagen de API no migra la base de datos durante su propio arranque. Compose
+reutiliza esa misma imagen en el servicio one-shot `migrate`; `api` depende de su
+finalización correcta mediante `condition: service_completed_successfully`. Esto
+evita que varias réplicas intenten migrar simultáneamente y bloquea el despliegue
+si una migración falla. CI ejecuta el migrador dos veces contra PostgreSQL 17 vacío
+para comprobar aplicación completa e idempotencia antes de construir las imágenes.

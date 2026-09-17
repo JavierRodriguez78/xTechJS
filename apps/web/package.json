@@ -6,6 +6,8 @@
   "scripts": {
     "build": "vue-tsc -b && vite build",
     "dev": "vite",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "typecheck": "vue-tsc --noEmit -p tsconfig.app.json"
   },
   "dependencies": {
@@ -17,8 +19,11 @@
     "vue-router": "^4.6.4"
   },
   "devDependencies": {
+    "@vue/test-utils": "^2.5.1",
     "@vue/tsconfig": "^0.7.0",
+    "jsdom": "^30.0.1",
     "typescript": "~5.8.3",
+    "vitest": "^3.2.7",
     "vue-tsc": "^2.2.10"
   }
 }

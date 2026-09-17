@@ -5,6 +5,9 @@ import ChatPanel from "../chat/ChatPanel.vue";
 import ChatToastStack from "../chat/ChatToastStack.vue";
 import { chatUnreadByRepair, startChatNotifications } from "../chat/notifications";
 import AttachmentsPanel from "../attachments/AttachmentsPanel.vue";
+// Las etiquetas de estado se comparten con el portal interno para que un estado
+// añadido por el administrador se muestre igual en los dos.
+import { repairStatusLabel as statusLabel, repairStatusTone as statusTone } from "../repairs/status-labels";
 
 interface Repair {
   id: string;
@@ -41,37 +44,6 @@ function money(cents: number): string {
   return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(cents / 100);
 }
 
-function statusLabel(status: string): string {
-  const labels: Record<string, string> = {
-    received: "Recibido",
-    diagnosed: "En diagnóstico",
-    quoted: "Presupuestado",
-    approved: "Aprobado",
-    in_repair: "En reparación",
-    testing: "En pruebas",
-    repaired: "Reparado",
-    delivered: "Entregado",
-    unrecoverable: "No reparable",
-    cancelled: "Cancelado"
-  };
-  return labels[status] ?? status;
-}
-
-function statusTone(status: string): string {
-  const tones: Record<string, string> = {
-    received: "neutral",
-    diagnosed: "amber",
-    quoted: "amber",
-    approved: "blue",
-    in_repair: "blue",
-    testing: "blue",
-    repaired: "green",
-    delivered: "green",
-    unrecoverable: "danger",
-    cancelled: "danger"
-  };
-  return tones[status] ?? "neutral";
-}
 
 function formatDate(value?: string): string {
   if (!value) return "Sin fecha";

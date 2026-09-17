@@ -10,6 +10,7 @@ import { ChangeRepairStatus } from "../change-repair-status.js";
 import { CreateRepairOrder } from "../create-repair-order.js";
 import { GetRepairQuote } from "../get-repair-quote.js";
 import { GetRepairStatusHistory } from "../get-repair-status-history.js";
+import { GetRepairWorkflowConfig, type RepairWorkflowConfigView } from "../get-repair-workflow-config.js";
 import { ListRepairOrders } from "../list-repair-orders.js";
 import { SaveRepairQuote } from "../save-repair-quote.js";
 import { UpdateRepairTechnical } from "../update-repair-technical.js";
@@ -21,6 +22,7 @@ import {
   GetRepairQuoteQuery,
   GetOwnCustomerQuoteQuery,
   GetRepairStatusHistoryQuery,
+  GetRepairWorkflowConfigQuery,
   ListRepairOrdersQuery,
   ListOwnCustomerRepairsQuery,
   SaveRepairQuoteCommand,
@@ -93,6 +95,16 @@ export class ListRepairOrdersHandler implements IQueryHandler<ListRepairOrdersQu
   constructor(private readonly useCase: ListRepairOrders) {}
 
   execute(): Promise<readonly RepairOrder[]> {
+    return this.useCase.execute();
+  }
+}
+
+@Service()
+@QueryHandler(GetRepairWorkflowConfigQuery)
+export class GetRepairWorkflowConfigHandler implements IQueryHandler<GetRepairWorkflowConfigQuery, RepairWorkflowConfigView> {
+  constructor(private readonly useCase: GetRepairWorkflowConfig) {}
+
+  execute(): Promise<RepairWorkflowConfigView> {
     return this.useCase.execute();
   }
 }

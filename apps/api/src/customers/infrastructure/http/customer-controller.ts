@@ -8,7 +8,7 @@ import { createHash, randomUUID } from "node:crypto";
 import type { FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { CreateCustomerInput, UpdateCustomerInput } from "../../domain/customer.js";
-import { CreateCustomerCommand, GetCustomerQuery, ListCustomerRepairsQuery, ListCustomersQuery, ResendCustomerInvitationCommand, UpdateCustomerCommand } from "../../application/cqrs/customer-messages.js";
+import { CreateCustomerCommand, GetCustomerQuery, ListCustomerCommunicationsQuery, ListCustomerRepairsQuery, ListCustomersQuery, ResendCustomerInvitationCommand, UpdateCustomerCommand } from "../../application/cqrs/customer-messages.js";
 import { PERMISSIONS } from "../../../users/domain/permission.js";
 import { PermissionRequired } from "../../../users/infrastructure/http/permission-guard.js";
 import { UserEntitySchema } from "../../../users/infrastructure/persistence/user-entity.js";
@@ -129,6 +129,13 @@ export class CustomerController {
   @Authenticated()
   listCustomerRepairs(@Param("id") id: string): Promise<unknown> {
     return this.queryBus.execute(new ListCustomerRepairsQuery(id));
+  }
+
+  @Get("/:id/communications")
+  @PermissionRequired(PERMISSIONS.customersRead)
+  @Authenticated()
+  listCustomerCommunications(@Param("id") id: string): Promise<unknown> {
+    return this.queryBus.execute(new ListCustomerCommunicationsQuery(id));
   }
 
   @Post()

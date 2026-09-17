@@ -25,4 +25,4 @@ RUN chown -R node:node /app
 
 EXPOSE 3000
 USER node
-CMD ["sh", "-c", "node dist/shared/infrastructure/persistence/data-source.js && node dist/main.js"]
+CMD ["node", "dist/main.js"]

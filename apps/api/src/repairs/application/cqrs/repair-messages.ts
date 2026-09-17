@@ -28,6 +28,8 @@ export class ApproveCustomerRepairQuoteCommand {
 
 export class ListRepairOrdersQuery {}
 
+export class GetRepairWorkflowConfigQuery {}
+
 export class GetRepairStatusHistoryQuery {
   constructor(public readonly id: string) {}
 }

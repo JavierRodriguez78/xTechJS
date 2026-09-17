@@ -9,6 +9,7 @@ export const environmentSchema = z.object({
   POSTGRES_DB: z.string().min(1).default("xtechjs"),
   POSTGRES_USER: z.string().min(1).default("xtechjs"),
   POSTGRES_PASSWORD: z.string().min(1).default("change-me"),
+  RUN_MIGRATIONS_ON_STARTUP: z.union([z.boolean(), z.enum(["true", "false"])]).transform((value) => value === true || value === "true").default(true),
   REDIS_HOST: z.string().min(1).default("localhost"),
   REDIS_PORT: z.coerce.number().int().min(1).max(65535).default(6379),
   SMTP_HOST: z.string().min(1).default("localhost"),

@@ -1,5 +1,21 @@
 services:
+  migrate:
+    image: xtechjs-api
+    command: ["node", "dist/shared/infrastructure/persistence/data-source.js"]
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-xtechjs}
+      POSTGRES_USER: ${POSTGRES_USER:-xtechjs}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
   api:
+    image: xtechjs-api
     build:
       context: .
       dockerfile: apps/api/Dockerfile
@@ -11,6 +27,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-xtechjs}
       POSTGRES_USER: ${POSTGRES_USER:-xtechjs}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      RUN_MIGRATIONS_ON_STARTUP: "false"
       REDIS_HOST: redis
       REDIS_PORT: 6379
       SMTP_HOST: mailhog
@@ -30,6 +47,8 @@ services:
     volumes:
       - api-uploads:/app/uploads
     depends_on:
+      migrate:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
       redis:

@@ -72,15 +72,17 @@ shell-redis: ## Abre redis-cli en Redis
 	$(COMPOSE) exec redis redis-cli
 
 migrate: ## Ejecuta las migraciones de la API en la pila Docker
-	$(COMPOSE) exec api node dist/shared/infrastructure/persistence/data-source.js
+	$(COMPOSE) build api
+	$(COMPOSE) run --rm migrate
 
 test: test-api test-web ## Ejecuta todas las verificaciones de pruebas
 
 test-api: ## Ejecuta las pruebas del backend
 	$(PNPM) --filter $(API_PACKAGE) test
 
-test-web: ## Ejecuta la comprobacion del frontend (no hay runner de tests aun)
+test-web: ## Ejecuta la comprobacion de tipos y las pruebas del frontend
 	$(PNPM) --filter $(WEB_PACKAGE) typecheck
+	$(PNPM) --filter $(WEB_PACKAGE) test
 
 typecheck: ## Ejecuta la comprobacion de tipos de todo el workspace
 	$(PNPM) typecheck
