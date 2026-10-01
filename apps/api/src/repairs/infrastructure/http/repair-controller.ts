@@ -11,6 +11,7 @@ import {
   AddRepairStepCommand,
   ChangeRepairStatusCommand,
   CreateRepairOrderCommand,
+  GetRepairOrderQuery,
   GetRepairQuoteQuery,
   GetRepairTechnicalReportQuery,
   GetRepairStatusHistoryQuery,
@@ -37,6 +38,18 @@ const technicalSchema = z.object({ technicianId: z.string().uuid().optional(), d
 const quoteSchema = z.object({ status: z.enum(["draft", "sent"]), lines: z.array(z.object({ description: z.string().trim().min(1).max(500), quantity: z.number().int().min(1).max(1000), unitPriceCents: z.number().int().min(0).max(100000000) })).min(1).max(50) });
 const repairStepSchema = z.object({ title: z.string().trim().min(1).max(200), description: z.string().trim().max(10000).optional(), performedAt: z.coerce.date().optional() });
 const repairStepUpdateSchema = repairStepSchema.partial().refine((input) => Object.keys(input).length > 0, "At least one repair step field is required");
+const listRepairsQuerySchema = z.object({
+  q: z.string().trim().min(1).max(160).optional(),
+  estado: z.string().trim().min(1).max(160).optional(),
+  tecnico: z.string().uuid().optional(),
+  tipo: z.string().trim().min(1).max(100).optional(),
+  cliente: z.string().uuid().optional(),
+  desde: z.string().date().optional(),
+  hasta: z.string().date().optional(),
+  orden: z.enum(["createdAt:asc", "createdAt:desc", "brand:asc", "brand:desc"]).default("createdAt:desc"),
+  pagina: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(25)
+});
 
 type ControllerReply = { code(statusCode: number): ControllerReply; header(name: string, value: string): ControllerReply; send(payload: unknown): unknown };
 
@@ -50,14 +63,37 @@ export class RepairController {
 
   @Get()
   @PermissionRequired(PERMISSIONS.repairsRead)
-  listRepairs(): Promise<unknown> {
-    return this.queryBus.execute(new ListRepairOrdersQuery());
+  async listRepairs(@Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> {
+    const parsed = listRepairsQuerySchema.safeParse(request.query);
+    if (!parsed.success) return reply.code(400).send({ message: "Invalid repair list query", issues: parsed.error.flatten() });
+    const { q, estado, tecnico, tipo, cliente, desde, hasta, orden, pagina, pageSize } = parsed.data;
+    const receivedTo = hasta ? new Date(`${hasta}T00:00:00.000Z`) : undefined;
+    if (receivedTo) receivedTo.setUTCDate(receivedTo.getUTCDate() + 1);
+    return this.queryBus.execute(new ListRepairOrdersQuery({
+      query: q,
+      status: estado,
+      technicianId: tecnico,
+      deviceType: tipo,
+      customerId: cliente,
+      receivedFrom: desde ? new Date(`${desde}T00:00:00.000Z`) : undefined,
+      receivedTo,
+      sort: orden,
+      page: pagina,
+      pageSize
+    }));
   }
 
   @Get("/config")
   @PermissionRequired(PERMISSIONS.repairsRead)
   getWorkflowConfig(): Promise<unknown> {
     return this.queryBus.execute(new GetRepairWorkflowConfigQuery());
+  }
+
+  @Get("/:id")
+  @PermissionRequired(PERMISSIONS.repairsRead)
+  async getRepair(@Param("id") id: string, @Res() reply: ControllerReply): Promise<unknown> {
+    const repair = await this.queryBus.execute(new GetRepairOrderQuery(id));
+    return repair ?? reply.code(404).send({ message: "Repair order not found" });
   }
 
   @Get("/:id/report")

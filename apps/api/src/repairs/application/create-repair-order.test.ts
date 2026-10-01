@@ -20,6 +20,7 @@ function workflowConfig(overrides: Partial<{ statuses: readonly string[]; device
 class TestRepairRepository implements RepairOrderRepository {
   async create(input: NewRepairOrderRecord): Promise<RepairOrder> { return { ...input, serialNumber: input.serialNumber ?? null, deliveredAccessories: input.deliveredAccessories ?? null, technicianId: null, diagnosis: null, status: "received", createdAt: new Date(), updatedAt: new Date() }; }
   async findAll(): Promise<readonly RepairOrder[]> { return []; }
+  async findPage() { return { items: [], total: 0, page: 1, pageSize: 25 }; }
   async findById(): Promise<RepairOrder | undefined> { return undefined; }
   async findByCustomerId(): Promise<readonly RepairOrder[]> { return []; }
   async changeStatus(_: string, __: RepairStatus): Promise<RepairOrder | undefined> { return undefined; }

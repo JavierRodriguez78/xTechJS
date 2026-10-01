@@ -1,5 +1,23 @@
 import type { CreateCustomerInput, Customer, UpdateCustomerInput } from "../domain/customer.js";
 
+export interface CustomerListOptions {
+  query?: string;
+  registrationStatus?: Customer["registrationStatus"];
+  tag?: string;
+  createdFrom?: Date;
+  createdTo?: Date;
+  sort: "displayName:asc" | "displayName:desc" | "createdAt:asc" | "createdAt:desc";
+  page: number;
+  pageSize: number;
+}
+
+export interface CustomerPage {
+  items: readonly Customer[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export interface NewCustomerRecord extends CreateCustomerInput {
   id: string;
 }
@@ -7,6 +25,7 @@ export interface NewCustomerRecord extends CreateCustomerInput {
 export interface CustomerRepository {
   create(input: NewCustomerRecord): Promise<Customer>;
   findAll(): Promise<readonly Customer[]>;
+  findPage(options: CustomerListOptions): Promise<CustomerPage>;
   findById(id: string): Promise<Customer | undefined>;
   findByEmail(email: string): Promise<Customer | undefined>;
   update(id: string, input: UpdateCustomerInput): Promise<Customer | undefined>;

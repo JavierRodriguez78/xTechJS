@@ -39,6 +39,16 @@ const completeRegistrationSchema = z.object({
 });
 
 const updateCustomerSchema = createCustomerSchema.partial().refine((input) => Object.keys(input).length > 0, "At least one field is required");
+const listCustomersQuerySchema = z.object({
+  q: z.string().trim().min(1).max(160).optional(),
+  estado: z.enum(["pending", "completed"]).optional(),
+  etiqueta: z.string().trim().min(1).max(64).optional(),
+  desde: z.string().date().optional(),
+  hasta: z.string().date().optional(),
+  orden: z.enum(["displayName:asc", "displayName:desc", "createdAt:asc", "createdAt:desc"]).default("createdAt:desc"),
+  pagina: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(25)
+});
 
 type ControllerReply = { code(statusCode: number): { send(payload: unknown): unknown } };
 
@@ -112,8 +122,22 @@ export class CustomerController {
   @Get()
   @PermissionRequired(PERMISSIONS.customersRead)
   @Authenticated()
-  listCustomers(): Promise<unknown> {
-    return this.queryBus.execute(new ListCustomersQuery());
+  async listCustomers(@Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> {
+    const parsed = listCustomersQuerySchema.safeParse(request.query);
+    if (!parsed.success) return reply.code(400).send({ message: "Invalid customer list query", issues: parsed.error.flatten() });
+    const { q, estado, etiqueta, desde, hasta, orden, pagina, pageSize } = parsed.data;
+    const createdTo = hasta ? new Date(`${hasta}T00:00:00.000Z`) : undefined;
+    if (createdTo) createdTo.setUTCDate(createdTo.getUTCDate() + 1);
+    return this.queryBus.execute(new ListCustomersQuery({
+      query: q,
+      registrationStatus: estado,
+      tag: etiqueta,
+      createdFrom: desde ? new Date(`${desde}T00:00:00.000Z`) : undefined,
+      createdTo,
+      sort: orden,
+      page: pagina,
+      pageSize
+    }));
   }
 
   @Get("/:id")

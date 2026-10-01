@@ -56,6 +56,13 @@
 - Gestión de proveedores y, opcionalmente, órdenes de compra.
 - Trazabilidad: qué reparación consumió qué material y en qué cantidad.
 
+## Tienda online (ecommerce) y compra de equipos a particulares
+- **Autorregistro público sin invitación previa**: cualquier visitante puede darse de alta por su cuenta (email, contraseña, aceptación LOPD/RGPD) para poder comprar, sin necesidad de que el staff lo haya dado de alta antes por una reparación. Reutiliza el mismo `Customer` y el mismo login de `/customer` ya existentes.
+- **Catálogo público de productos a la venta**: consolas, consolas retro, juegos, móviles reparados/reacondicionados y accesorios, con fotos, condición (nuevo/reacondicionado/usado) y precio. Carrito, checkout y pago online (con una pasarela a decidir; arranca en modo manual/transferencia hasta integrarla).
+- **Pedidos online**: historial de pedidos del cliente en su portal, descuento de stock al confirmar, factura generada y enviada automáticamente igual que en el TPV interno.
+- **"Vende tu equipo" (valoración de compra a particulares)**: el cliente envía fotos y documentación de una consola, móvil, tablet o juego que quiere vender; el staff revisa, envía una propuesta económica y el cliente la acepta o rechaza. Al completarse, se registra el pago al cliente y, opcionalmente, el equipo pasa a formar parte del catálogo de venta.
+- Especificación completa (modelo de datos, endpoints, decisiones abiertas sobre pasarela de pago y logística) en `13-ecommerce-compraventa/ecommerce.md`.
+
 ## Panel de administración
 - Gestión de usuarios y roles (alta, baja, edición, reseteo de credenciales).
 - Función de suplantación de usuario (ver `01-roles-permisos/roles.md`), con auditoría.

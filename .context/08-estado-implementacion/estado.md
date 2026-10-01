@@ -1,6 +1,6 @@
 # Estado de implementacion - xTechJS
 
-**Actualizado:** 2026-09-17
+**Actualizado:** 2026-10-01
 
 Este documento complementa la especificacion funcional. Describe exclusivamente lo que
 existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase.
@@ -681,17 +681,37 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
     `GET /api/customers/:id/communications` y ausencia de aviso al desactivar la
     plantilla. Los datos temporales de la prueba se eliminaron después.
 
+- **(2026-10-01) Primera migración de listados completada: Clientes.**
+  `GET /api/customers` acepta búsqueda de texto, estado de registro, etiqueta,
+  rango de alta, ordenación, página y tamaño de página, y devuelve
+  `{ items, total, page, pageSize }`. La consulta se ejecuta y pagina en
+  PostgreSQL. `CustomerListView` serializa filtros, orden, página y tamaño en
+  la query string, usa recarga server-side con debounce y diferencia entre una
+  lista vacía y filtros sin resultados. Se añadió `AppPagination.vue` como
+  componente compartido y la prueba Vitest del listado; el selector de cliente
+  al crear reparaciones consume el nuevo sobre paginado. Verificado con 57
+  pruebas API, 31 web y build completo.
+
+- **(2026-10-01) Segunda migración de listados completada: Reparaciones.**
+  `GET /api/repairs` acepta texto libre sobre equipo y avería, estado, técnico
+  asignado, tipo de dispositivo, cliente, rango de entrada, orden, página y
+  tamaño de página; PostgreSQL aplica los filtros y devuelve
+  `{ items, total, page, pageSize }`. `RepairListView` persiste todas las
+  facetas y la paginación en la URL, recarga en servidor con debounce, muestra
+  el total remoto y reutiliza `AppPagination`. Se añadió `GET /api/repairs/:id`
+  para que el detalle no dependa de descargar el listado, y el selector TPV
+  consume explícitamente una página de órdenes. Se mantienen pruebas del caso
+  de uso y de la vista. Verificado con typecheck de API y web, 58 pruebas API y
+  32 pruebas web.
+
 ## Siguiente fase recomendada
 
-1. Con Vitest y la aplicación dinámica de configuraciones cubiertas, la siguiente
-  prioridad es completar la especificación de listados de
-  `04-frontend/frontend.md` §3: paginación real en servidor
-  (`{ items, total, page, pageSize }`), filtros por faceta y ordenación
-  serializados en la query string, y los componentes compartidos
-  (`DataTable`, `FilterBar`, `AppPagination`) que hoy no existen. Las vistas
-  actuales filtran en cliente sobre la colección completa.
-2. Ampliar la cobertura de Vitest a las vistas de listado y formulario a medida
-  que se migren, empezando por Clientes.
+1. Aplicar el mismo contrato paginado, filtros y URL al listado de **Almacén**,
+  empezando por material, stock bajo, proveedor y rango de movimientos.
+2. Continuar con TPV y ampliar Vitest a cada listado y formulario migrado.
+3. Extraer `FilterBar` o `DataTable` solo cuando una tercera vista confirme una
+  estructura común estable; por ahora `AppPagination` cubre la pieza compartida
+  sin forzar una abstracción sobre filas de distinta naturaleza.
 
 Los cuatro modulos implementados (usuarios, CRM, reparaciones y almacen) usan el patron
 xTaskJS completo: servicios `@Service` con `@Qualifier`, comandos/queries con

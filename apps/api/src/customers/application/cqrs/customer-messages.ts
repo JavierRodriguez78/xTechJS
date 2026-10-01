@@ -1,4 +1,5 @@
 import type { CreateCustomerInput, UpdateCustomerInput } from "../../domain/customer.js";
+import type { CustomerListOptions } from "../customer-repository.js";
 
 export class CreateCustomerCommand {
   constructor(public readonly input: CreateCustomerInput) {}
@@ -12,7 +13,9 @@ export class ResendCustomerInvitationCommand {
   constructor(public readonly id: string) {}
 }
 
-export class ListCustomersQuery {}
+export class ListCustomersQuery {
+  constructor(public readonly options: CustomerListOptions) {}
+}
 
 export class GetCustomerQuery {
   constructor(public readonly id: string) {}

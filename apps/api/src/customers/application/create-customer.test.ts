@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { CreateCustomerInput, Customer, UpdateCustomerInput } from "../domain/customer.js";
-import type { CustomerRepository, NewCustomerRecord } from "./customer-repository.js";
+import type { CustomerListOptions, CustomerPage, CustomerRepository, NewCustomerRecord } from "./customer-repository.js";
 import { CreateCustomer } from "./create-customer.js";
 import { UpdateCustomer } from "./update-customer.js";
 
@@ -24,6 +24,10 @@ class TestCustomerRepository implements CustomerRepository {
 
   async findAll(): Promise<readonly Customer[]> {
     return [];
+  }
+
+  async findPage(options: CustomerListOptions): Promise<CustomerPage> {
+    return { items: [], total: 0, page: options.page, pageSize: options.pageSize };
   }
 
   async findById(): Promise<Customer | undefined> {

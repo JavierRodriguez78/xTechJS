@@ -3,6 +3,7 @@ import { CommandHandler, type ICommandHandler, type IQueryHandler, QueryHandler 
 import type { RepairOrder, RepairStatusEvent } from "../../domain/repair-order.js";
 import type { RepairQuote } from "../../domain/repair-quote.js";
 import type { RepairStep } from "../../domain/repair-step.js";
+import type { RepairOrderPage } from "../repair-order-repository.js";
 import { ApproveRepairQuote } from "../approve-repair-quote.js";
 import { ApproveCustomerRepairQuote } from "../approve-customer-repair-quote.js";
 import { ListOwnCustomerRepairs } from "../list-own-customer-repairs.js";
@@ -10,6 +11,7 @@ import { GetOwnCustomerQuote } from "../get-own-customer-quote.js";
 import { ChangeRepairStatus } from "../change-repair-status.js";
 import { CreateRepairOrder } from "../create-repair-order.js";
 import { GetRepairQuote } from "../get-repair-quote.js";
+import { GetRepairOrder } from "../get-repair-order.js";
 import { GetRepairStatusHistory } from "../get-repair-status-history.js";
 import { GetRepairWorkflowConfig, type RepairWorkflowConfigView } from "../get-repair-workflow-config.js";
 import { ListRepairOrders } from "../list-repair-orders.js";
@@ -27,6 +29,7 @@ import {
   DeleteRepairStepCommand,
   CreateRepairOrderCommand,
   GetRepairQuoteQuery,
+  GetRepairOrderQuery,
   GetOwnCustomerQuoteQuery,
   GetOwnCustomerRepairTechnicalReportQuery,
   GetRepairTechnicalReportQuery,
@@ -133,11 +136,21 @@ export class ApproveCustomerRepairQuoteHandler implements ICommandHandler<Approv
 
 @Service()
 @QueryHandler(ListRepairOrdersQuery)
-export class ListRepairOrdersHandler implements IQueryHandler<ListRepairOrdersQuery, readonly RepairOrder[]> {
+export class ListRepairOrdersHandler implements IQueryHandler<ListRepairOrdersQuery, RepairOrderPage> {
   constructor(private readonly useCase: ListRepairOrders) {}
 
-  execute(): Promise<readonly RepairOrder[]> {
-    return this.useCase.execute();
+  execute(query: ListRepairOrdersQuery): Promise<RepairOrderPage> {
+    return this.useCase.execute(query.options);
+  }
+}
+
+@Service()
+@QueryHandler(GetRepairOrderQuery)
+export class GetRepairOrderHandler implements IQueryHandler<GetRepairOrderQuery, RepairOrder | undefined> {
+  constructor(private readonly useCase: GetRepairOrder) {}
+
+  execute(query: GetRepairOrderQuery): Promise<RepairOrder | undefined> {
+    return this.useCase.execute(query.id);
   }
 }
 

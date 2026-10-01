@@ -3,6 +3,7 @@ import type { RepairStatus } from "../../domain/repair-status.js";
 import type { SaveRepairQuoteInput } from "../../domain/repair-quote.js";
 import type { CreateRepairStepInput, UpdateRepairStepInput } from "../../domain/repair-step.js";
 import type { UserRole } from "../../../shared/domain/user-role.js";
+import type { RepairOrderListOptions } from "../repair-order-repository.js";
 
 export class CreateRepairOrderCommand {
   constructor(public readonly input: CreateRepairOrderInput) {}
@@ -40,7 +41,13 @@ export class DeleteRepairStepCommand {
   constructor(public readonly repairOrderId: string, public readonly stepId: string, public readonly actorId: string, public readonly actorRole: UserRole) {}
 }
 
-export class ListRepairOrdersQuery {}
+export class ListRepairOrdersQuery {
+  constructor(public readonly options: RepairOrderListOptions) {}
+}
+
+export class GetRepairOrderQuery {
+  constructor(public readonly id: string) {}
+}
 
 export class GetRepairWorkflowConfigQuery {}
 

@@ -23,7 +23,7 @@ async function mountView() {
 
 describe("alta de reparacion", () => {
   beforeEach(() => {
-    listCustomers.mockResolvedValue([{ id: "customer-1", displayName: "Ada Lovelace" }]);
+    listCustomers.mockResolvedValue({ items: [{ id: "customer-1", displayName: "Ada Lovelace" }] });
     getWorkflowConfig.mockResolvedValue({ statuses: [], deviceTypes: ["Consola", "Dron"] });
     createRepair.mockResolvedValue({ id: "repair-1" });
   });

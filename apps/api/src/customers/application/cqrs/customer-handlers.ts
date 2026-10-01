@@ -1,6 +1,7 @@
 import { Service } from "@xtaskjs/core";
 import { CommandHandler, type ICommandHandler, type IQueryHandler, QueryHandler } from "@xtaskjs/cqrs";
 import type { Customer } from "../../domain/customer.js";
+import type { CustomerPage } from "../customer-repository.js";
 import { CreateCustomer } from "../create-customer.js";
 import { GetCustomer } from "../get-customer.js";
 import { ListCustomers } from "../list-customers.js";
@@ -44,11 +45,11 @@ export class ResendCustomerInvitationHandler implements ICommandHandler<ResendCu
 
 @Service()
 @QueryHandler(ListCustomersQuery)
-export class ListCustomersHandler implements IQueryHandler<ListCustomersQuery, readonly Customer[]> {
+export class ListCustomersHandler implements IQueryHandler<ListCustomersQuery, CustomerPage> {
   constructor(private readonly listCustomers: ListCustomers) {}
 
-  execute(): Promise<readonly Customer[]> {
-    return this.listCustomers.execute();
+  execute(query: ListCustomersQuery): Promise<CustomerPage> {
+    return this.listCustomers.execute(query.options);
   }
 }
 
