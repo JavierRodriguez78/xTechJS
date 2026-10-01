@@ -8,7 +8,8 @@ export class UploadRepairAttachmentCommand {
     public readonly uploaderRole: AttachmentUploaderRole,
     public readonly fileName: string,
     public readonly mimeType: string,
-    public readonly stream: Readable
+    public readonly stream: Readable,
+    public readonly repairStepId?: string
   ) {}
 }
 

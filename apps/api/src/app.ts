@@ -31,6 +31,7 @@ import "./repairs/infrastructure/http/repair-controller.js";
 import "./repairs/infrastructure/http/customer-repair-controller.js";
 import "./repairs/infrastructure/persistence/postgres-repair-order-repository.js";
 import "./repairs/infrastructure/persistence/postgres-repair-quote-repository.js";
+import "./repairs/infrastructure/persistence/postgres-repair-step-repository.js";
 import "./inventory/application/cqrs/inventory-handlers.js";
 import "./inventory/infrastructure/http/inventory-controller.js";
 import "./inventory/infrastructure/http/supplier-controller.js";
@@ -74,7 +75,7 @@ declare module "fastify" {
 }
 
 let application: XTaskHttpApplication | undefined;
-const requiredComponentNames = ["userRepository", "customerRepository", "customerCommunicationRepository", "repairOrderRepository", "repairQuoteRepository", "inventoryRepository", "supplierRepository", "purchaseOrderRepository", "paymentRepository", "cashRegisterRepository", "chatMessageRepository", "repairAttachmentRepository", "attachmentStorage", "invoiceDraftRepository", "notificationTemplateRepository", "customerNotificationRepository", "repairWorkflowConfig", "repairStatusNotifier"] as const;
+const requiredComponentNames = ["userRepository", "customerRepository", "customerCommunicationRepository", "repairOrderRepository", "repairQuoteRepository", "repairStepRepository", "inventoryRepository", "supplierRepository", "purchaseOrderRepository", "paymentRepository", "cashRegisterRepository", "chatMessageRepository", "repairAttachmentRepository", "attachmentStorage", "invoiceDraftRepository", "notificationTemplateRepository", "customerNotificationRepository", "repairWorkflowConfig", "repairStatusNotifier"] as const;
 
 function instrumentBus(bus: CommandBus | QueryBus, component: "CommandBus" | "QueryBus"): void {
   const execute = bus.execute.bind(bus);

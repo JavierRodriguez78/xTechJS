@@ -6,14 +6,17 @@ import RepairTechnicalTab from "./RepairTechnicalTab.vue";
 
 // `vi.mock` se eleva por encima del modulo, asi que sus dobles deben declararse
 // con `vi.hoisted` para existir cuando la fabrica se ejecuta.
-const { getWorkflowConfig, listTechnicians, updateStatus, updateTechnical } = vi.hoisted(() => ({
+const { addRepairStep, downloadTechnicalReport, getWorkflowConfig, listRepairSteps, listTechnicians, updateStatus, updateTechnical } = vi.hoisted(() => ({
+  addRepairStep: vi.fn(),
+  downloadTechnicalReport: vi.fn(),
   getWorkflowConfig: vi.fn(),
+  listRepairSteps: vi.fn(),
   listTechnicians: vi.fn(),
   updateStatus: vi.fn(),
   updateTechnical: vi.fn()
 }));
 
-vi.mock("../../api", () => ({ getWorkflowConfig, listTechnicians, updateStatus, updateTechnical }));
+vi.mock("../../api", () => ({ addRepairStep, downloadTechnicalReport, getWorkflowConfig, listRepairSteps, listTechnicians, updateStatus, updateTechnical }));
 
 function repair(status = "received"): Repair {
   return {
@@ -42,6 +45,7 @@ async function mountTab(status = "received") {
 describe("pestaña de diagnostico tecnico", () => {
   beforeEach(() => {
     listTechnicians.mockResolvedValue([]);
+    listRepairSteps.mockResolvedValue([]);
     getWorkflowConfig.mockResolvedValue({ statuses: ["received", "diagnosing", "awaiting-parts"], deviceTypes: [] });
     updateStatus.mockImplementation(async (_id: string, status: string) => repair(status));
   });

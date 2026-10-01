@@ -41,9 +41,13 @@ export class AttachmentController {
     if (!isAllowedAttachmentMimeType(upload.mimetype)) return reply.code(400).send({ message: "Unsupported file type" });
 
     const user = request.user as AuthTokenPayload;
+    const repairStepId = (upload.fields.repairStepId as { value?: unknown } | undefined)?.value;
+    if (repairStepId !== undefined && (typeof repairStepId !== "string" || !idSchema.safeParse(repairStepId).success)) {
+      return reply.code(400).send({ message: "Invalid repair step id" });
+    }
     try {
       const attachment = await this.commandBus.execute(
-        new UploadRepairAttachmentCommand(id, user.sub, user.role as AttachmentUploaderRole, upload.filename, upload.mimetype, upload.file)
+        new UploadRepairAttachmentCommand(id, user.sub, user.role as AttachmentUploaderRole, upload.filename, upload.mimetype, upload.file, repairStepId)
       );
       return attachment ? reply.code(201).send(attachment) : reply.code(404).send({ message: "Repair order not found" });
     } catch (error) {

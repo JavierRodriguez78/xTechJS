@@ -23,6 +23,10 @@ export class PostgresRepairAttachmentRepository implements RepairAttachmentRepos
     return this.dataSource.getRepository(RepairAttachmentEntitySchema).find({ where: { repairOrderId }, order: { createdAt: "DESC" } });
   }
 
+  listByRepairStep(repairStepId: string): Promise<readonly RepairAttachment[]> {
+    return this.dataSource.getRepository(RepairAttachmentEntitySchema).find({ where: { repairStepId }, order: { createdAt: "ASC" } });
+  }
+
   async delete(id: string): Promise<void> {
     await this.dataSource.getRepository(RepairAttachmentEntitySchema).delete({ id });
   }

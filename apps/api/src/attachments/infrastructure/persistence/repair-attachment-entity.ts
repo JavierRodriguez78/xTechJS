@@ -7,6 +7,7 @@ export const RepairAttachmentEntitySchema = new EntitySchema<RepairAttachment>({
   columns: {
     id: { type: "uuid", primary: true },
     repairOrderId: { type: "uuid", name: "repair_order_id" },
+    repairStepId: { type: "uuid", name: "repair_step_id", nullable: true },
     uploaderId: { type: "uuid", name: "uploader_id" },
     uploaderRole: { type: String, name: "uploader_role" },
     fileName: { type: String, name: "file_name" },

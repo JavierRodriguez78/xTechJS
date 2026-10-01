@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { inject, onMounted, ref, type Ref } from "vue";
-import { getWorkflowConfig, listTechnicians, updateStatus, updateTechnical, type Repair } from "../../api";
+import { addRepairStep, downloadTechnicalReport, getWorkflowConfig, listRepairSteps, listTechnicians, updateStatus, updateTechnical, type Repair, type RepairStep } from "../../api";
 import { repairStatusLabel } from "../../status-labels";
+import { staffSession } from "../../../auth/session";
+import AttachmentsPanel from "../../../attachments/AttachmentsPanel.vue";
 
 const repair = inject<Ref<Repair | null>>("repair");
 const technicians = ref<{ id: string; displayName: string }[]>([]);
@@ -9,14 +11,19 @@ const statuses = ref<string[]>([]);
 const diagnosis = ref("");
 const technicianId = ref("");
 const error = ref("");
+const steps = ref<RepairStep[]>([]);
+const stepTitle = ref("");
+const stepDescription = ref("");
+const stepDate = ref(new Date().toISOString().slice(0, 16));
 
 onMounted(async () => {
   diagnosis.value = repair?.value?.diagnosis ?? "";
   technicianId.value = repair?.value?.technicianId ?? "";
   try {
-    const [staff, config] = await Promise.all([listTechnicians(), getWorkflowConfig()]);
+    const [staff, config, repairSteps] = await Promise.all([listTechnicians(), getWorkflowConfig(), repair?.value ? listRepairSteps(repair.value.id) : Promise.resolve([])]);
     technicians.value = staff;
     statuses.value = config.statuses;
+    steps.value = repairSteps;
   } catch (reason) {
     error.value = (reason as Error).message;
   }
@@ -30,6 +37,25 @@ async function save(): Promise<void> {
   } catch (reason) {
     error.value = (reason as Error).message;
   }
+}
+
+async function addStep(): Promise<void> {
+  if (!repair?.value || !stepTitle.value.trim()) return;
+  error.value = "";
+  try {
+    const step = await addRepairStep(repair.value.id, { title: stepTitle.value, description: stepDescription.value || undefined, performedAt: new Date(stepDate.value).toISOString() });
+    steps.value = [...steps.value, step];
+    stepTitle.value = "";
+    stepDescription.value = "";
+  } catch (reason) { error.value = (reason as Error).message; }
+}
+
+async function downloadReport(): Promise<void> {
+  if (!repair?.value) return;
+  try {
+    const url = URL.createObjectURL(await downloadTechnicalReport(repair.value.id));
+    const anchor = document.createElement("a"); anchor.href = url; anchor.download = `informe-tecnico-${repair.value.id.slice(0, 8)}.pdf`; anchor.click(); URL.revokeObjectURL(url);
+  } catch (reason) { error.value = (reason as Error).message; }
 }
 
 // El backend puede rechazar la transicion (estado no configurado o salto no
@@ -58,4 +84,17 @@ async function changeStatus(event: Event): Promise<void> {
     <p v-if="error" class="feedback error">{{ error }}</p>
     <footer><button>Guardar diagnostico</button></footer>
   </form>
+  <section v-if="repair" class="detail-panel">
+    <header><h2>Bitácora técnica</h2><button type="button" class="secondary" @click="downloadReport">Descargar informe técnico (PDF)</button></header>
+    <form class="entity-form" @submit.prevent="addStep">
+      <label>Título<input v-model="stepTitle" maxlength="200" required /></label>
+      <label>Fecha y hora<input v-model="stepDate" type="datetime-local" required /></label>
+      <label>Descripción<textarea v-model="stepDescription" rows="3" /></label>
+      <footer><button>Añadir paso</button></footer>
+    </form>
+    <ol class="timeline-list">
+      <li v-for="step in steps" :key="step.id"><strong>{{ step.sequence }}. {{ step.title }}</strong><span>{{ new Date(step.performedAt).toLocaleString("es-ES") }}</span><p v-if="step.description">{{ step.description }}</p><AttachmentsPanel :repair-id="repair.id" :repair-step-id="step.id" :token="staffSession?.accessToken ?? ''" mode="staff" :can-manage="true" /></li>
+      <li v-if="!steps.length" class="empty">No se han registrado pasos técnicos.</li>
+    </ol>
+  </section>
 </template>

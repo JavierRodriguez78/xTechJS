@@ -10,6 +10,8 @@ import { InitialRepairOrdersMigration } from "../../../repairs/infrastructure/pe
 import { AddRepairTechnicalDetailsMigration } from "../../../repairs/infrastructure/persistence/migrations/1736208000000-add-repair-technical-details.js";
 import { InitialRepairQuotesMigration } from "../../../repairs/infrastructure/persistence/migrations/1736294400000-initial-repair-quotes.js";
 import { RepairOrderEntitySchema, RepairStatusEventEntitySchema } from "../../../repairs/infrastructure/persistence/repair-order-entity.js";
+import { RepairStepEntitySchema } from "../../../repairs/infrastructure/persistence/repair-step-entity.js";
+import { AddRepairStepsMigration } from "../../../repairs/infrastructure/persistence/migrations/1738800000000-add-repair-steps.js";
 import { RepairQuoteEntitySchema } from "../../../repairs/infrastructure/persistence/repair-quote-entity.js";
 import { AddUserPasswordHashMigration } from "../../../users/infrastructure/persistence/migrations/1736035200000-add-user-password-hash.js";
 import { InitialUsersMigration } from "../../../users/infrastructure/persistence/migrations/1735862400000-initial-users.js";
@@ -44,6 +46,7 @@ import { AddInvitationDeliveryStatusMigration } from "../../../customers/infrast
 import { AddNotificationTemplatesMigration } from "../../../notifications/infrastructure/persistence/migrations/1738700000000-add-notification-templates.js";
 import { NotificationTemplateEntitySchema } from "../../../notifications/infrastructure/persistence/notification-template-entity.js";
 import { CustomerNotificationEntitySchema } from "../../../notifications/infrastructure/persistence/customer-notification-entity.js";
+import { AddRepairStepToAttachmentsMigration } from "../../../attachments/infrastructure/persistence/migrations/1738900000000-add-repair-step-to-attachments.js";
 
 const config = loadConfig();
 
@@ -55,8 +58,8 @@ const dataSourceOptions: XTaskTypeOrmDataSourceOptions = {
   database: config.get("POSTGRES_DB"),
   username: config.get("POSTGRES_USER"),
   password: config.get("POSTGRES_PASSWORD"),
-  entities: [UserEntitySchema, CustomerEntitySchema, CustomerRegistrationTokenEntitySchema, RepairOrderEntitySchema, RepairStatusEventEntitySchema, RepairQuoteEntitySchema, InventoryItemEntitySchema, InventoryMovementEntitySchema, SupplierEntitySchema, PurchaseOrderEntitySchema, PaymentEntitySchema, CashRegisterEntitySchema, InvoiceEmailEntitySchema, AdminConfigEntitySchema, DataProtectionConsentEntitySchema, ChatMessageEntitySchema, RepairAttachmentEntitySchema, InvoiceDraftEntitySchema, NotificationTemplateEntitySchema, CustomerNotificationEntitySchema],
-  migrations: [InitialUsersMigration, InitialCustomersMigration, AddUserPasswordHashMigration, AddCustomerRegistrationTokensMigration, AddCustomerRegistrationDetailsMigration, InitialRepairOrdersMigration, AddRepairTechnicalDetailsMigration, InitialRepairQuotesMigration, InitialInventoryMigration, AddRepairToInventoryMovementsMigration, InitialSuppliersMigration, InitialPurchaseOrdersMigration, InitialPaymentsMigration, InitialCashRegistersMigration, AddInvoiceNumberingMigration, AddInvoiceEmailsMigration, AddInvoiceLinesMigration, AddAdminConfigMigration, AddDataProtectionConsentsMigration, InitialChatMessagesMigration, InitialRepairAttachmentsMigration, AddInvoiceDraftsAndMaterialPricesMigration, AddInvoiceRectificationsMigration, AddInvitationDeliveryStatusMigration, AddNotificationTemplatesMigration],
+  entities: [UserEntitySchema, CustomerEntitySchema, CustomerRegistrationTokenEntitySchema, RepairOrderEntitySchema, RepairStatusEventEntitySchema, RepairStepEntitySchema, RepairQuoteEntitySchema, InventoryItemEntitySchema, InventoryMovementEntitySchema, SupplierEntitySchema, PurchaseOrderEntitySchema, PaymentEntitySchema, CashRegisterEntitySchema, InvoiceEmailEntitySchema, AdminConfigEntitySchema, DataProtectionConsentEntitySchema, ChatMessageEntitySchema, RepairAttachmentEntitySchema, InvoiceDraftEntitySchema, NotificationTemplateEntitySchema, CustomerNotificationEntitySchema],
+  migrations: [InitialUsersMigration, InitialCustomersMigration, AddUserPasswordHashMigration, AddCustomerRegistrationTokensMigration, AddCustomerRegistrationDetailsMigration, InitialRepairOrdersMigration, AddRepairTechnicalDetailsMigration, InitialRepairQuotesMigration, InitialInventoryMigration, AddRepairToInventoryMovementsMigration, InitialSuppliersMigration, InitialPurchaseOrdersMigration, InitialPaymentsMigration, InitialCashRegistersMigration, AddInvoiceNumberingMigration, AddInvoiceEmailsMigration, AddInvoiceLinesMigration, AddAdminConfigMigration, AddDataProtectionConsentsMigration, InitialChatMessagesMigration, InitialRepairAttachmentsMigration, AddInvoiceDraftsAndMaterialPricesMigration, AddInvoiceRectificationsMigration, AddInvitationDeliveryStatusMigration, AddNotificationTemplatesMigration, AddRepairStepsMigration, AddRepairStepToAttachmentsMigration],
   synchronize: false,
   initializeOnServerStart: true,
   runMigrationsOnServerStart: config.get("RUN_MIGRATIONS_ON_STARTUP")

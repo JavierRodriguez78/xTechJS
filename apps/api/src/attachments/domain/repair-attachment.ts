@@ -3,6 +3,7 @@ export type AttachmentUploaderRole = "admin" | "technician";
 export interface RepairAttachment {
   id: string;
   repairOrderId: string;
+  repairStepId: string | null;
   uploaderId: string;
   uploaderRole: AttachmentUploaderRole;
   fileName: string;

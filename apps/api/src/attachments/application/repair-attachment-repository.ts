@@ -3,6 +3,7 @@ import type { RepairAttachment } from "../domain/repair-attachment.js";
 export interface NewRepairAttachmentRecord {
   id: string;
   repairOrderId: string;
+  repairStepId: string | null;
   uploaderId: string;
   uploaderRole: RepairAttachment["uploaderRole"];
   fileName: string;
@@ -15,5 +16,6 @@ export interface RepairAttachmentRepository {
   create(record: NewRepairAttachmentRecord): Promise<RepairAttachment>;
   findById(id: string): Promise<RepairAttachment | undefined>;
   listByRepairOrder(repairOrderId: string): Promise<readonly RepairAttachment[]>;
+  listByRepairStep(repairStepId: string): Promise<readonly RepairAttachment[]>;
   delete(id: string): Promise<void>;
 }

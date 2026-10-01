@@ -2,7 +2,7 @@ import type { FastifyRequest } from "fastify";
 import { Controller, Get, Param, Post, Req, Res } from "@xtaskjs/common";
 import { InjectCommandBus, InjectQueryBus, type CommandBus, type QueryBus } from "@xtaskjs/cqrs";
 import { Authenticated } from "@xtaskjs/security";
-import { ApproveCustomerRepairQuoteCommand, GetOwnCustomerQuoteQuery, ListOwnCustomerRepairsQuery } from "../../application/cqrs/repair-messages.js";
+import { ApproveCustomerRepairQuoteCommand, GetOwnCustomerQuoteQuery, GetOwnCustomerRepairTechnicalReportQuery, ListOwnCustomerRepairStepsQuery, ListOwnCustomerRepairsQuery } from "../../application/cqrs/repair-messages.js";
 import { GetPaymentPdfQuery, GetPaymentReceiptQuery, ListRepairPaymentsQuery } from "../../../payments/application/cqrs/payment-messages.js";
 import { PERMISSIONS } from "../../../users/domain/permission.js";
 import { PermissionRequired } from "../../../users/infrastructure/http/permission-guard.js";
@@ -28,6 +28,25 @@ export class CustomerRepairController {
     const user = request.user as AuthTokenPayload;
     const quote = await this.queryBus.execute(new GetOwnCustomerQuoteQuery(id, user.email ?? ""));
     return quote ? quote : reply.code(404).send({ message: "Repair quote not found" });
+  }
+
+  @Get("/:id/steps")
+  @PermissionRequired(PERMISSIONS.repairsRead)
+  async listOwnSteps(@Param("id") id: string, @Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> {
+    const user = request.user as AuthTokenPayload;
+    const steps = await this.queryBus.execute(new ListOwnCustomerRepairStepsQuery(id, user.email ?? ""));
+    return steps ?? reply.code(404).send({ message: "Repair order not found" });
+  }
+
+  @Get("/:id/report")
+  @PermissionRequired(PERMISSIONS.repairsRead)
+  async downloadOwnTechnicalReport(@Param("id") id: string, @Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> {
+    const user = request.user as AuthTokenPayload;
+    const document = await this.queryBus.execute(new GetOwnCustomerRepairTechnicalReportQuery(id, user.email ?? ""));
+    if (!document) return reply.code(404).send({ message: "Repair order not found" });
+    reply.header("content-type", "application/pdf");
+    reply.header("content-disposition", `attachment; filename="informe-tecnico-${id.slice(0, 8)}.pdf"`);
+    return reply.send(document);
   }
 
   @Get("/:repairId/invoices/:paymentId/pdf")

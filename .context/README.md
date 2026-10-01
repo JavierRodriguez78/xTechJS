@@ -19,6 +19,7 @@ Este paquete contiene el contexto técnico y funcional completo del proyecto **x
 - `09-hallazgos-tecnicos/bug-arranque-socketgateway-constructor-injection.md` — Causa raíz y fix de un arranque roto al inyectar por constructor (en vez de por propiedad) repositorios TypeORM dentro de un `@SocketGateway()`
 - `10-referencia-xgestoria/patron-arranque.md` — Comparativa con el backend de xGestoria (mismo stack xtaskjs) como referencia de arquitectura de arranque y convenciones DI
 - `11-alta-clientes/registro-cliente.md` — Flujo de alta de cliente con email obligatorio, autorregistro (contraseña + datos de facturación), autorización LOPD/RGPD, y MailHog como SMTP de pruebas
+- `12-informe-tecnico-reparacion/informe-tecnico.md` — Bitácora de pasos de reparación con soporte fotográfico (`RepairStep`), informe técnico en PDF descargable por staff y cliente, y nota de que la facturación automática de materiales consumidos (`ConsumeInventoryForRepair` → `InvoiceDraft`) **ya está implementada**
 
 ## Uso recomendado
 
@@ -28,8 +29,9 @@ Este paquete contiene el contexto técnico y funcional completo del proyecto **x
 4. **Antes de seguir añadiendo funcionalidad**, pega `09-hallazgos-tecnicos/bug-arranque-userrepository.md` — describe un bug de arranque en producción ya diagnosticado y reproducido, con el fix exacto a aplicar.
 5. `10-referencia-xgestoria/patron-arranque.md` sirve de guía de estilo para los próximos módulos (almacén, TPV, chat).
 6. Para implementar el autorregistro de clientes, pega `11-alta-clientes/registro-cliente.md` junto con `05-infraestructura/infraestructura.md` (MailHog) y `02-modulos-funcionales/modulos.md` (sección CRM actualizada).
-7. `07-entregables/entregables.md` sirve como guion de las peticiones concretas a hacer a ChatGPT.
-8. **Siempre que se pida generar, revisar o modificar cualquier pantalla, pega
+7. Para implementar la bitácora de pasos de reparación con fotos y el informe técnico en PDF, pega `12-informe-tecnico-reparacion/informe-tecnico.md` junto con `02-modulos-funcionales/modulos.md` (sección de gestión de equipos y reparaciones actualizada). Ese fichero deja explícito que la facturación automática de materiales ya está implementada, para que ChatGPT no la reconstruya.
+8. `07-entregables/entregables.md` sirve como guion de las peticiones concretas a hacer a ChatGPT.
+9. **Siempre que se pida generar, revisar o modificar cualquier pantalla, pega
    `04-frontend/frontend.md` completo.** Su sección 2 ("Regla de oro de la UI")
    es normativa: prohíbe el patrón de listado y ficha editable en la misma
    pantalla, y obliga a rutas separadas de listado/detalle/edición con pestañas

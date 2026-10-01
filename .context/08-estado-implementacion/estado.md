@@ -528,6 +528,23 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   importes con su signo fiscal. La migración
   `1738500000000-add-invoice-rectifications.ts` está aplicada en PostgreSQL;
   verificados 26/26 tests API, build API, build frontend y contenedores saludables.
+- **(2026-10-01) Bitácora técnica e informe de reparación implementados.** El
+  bounded context `repairs` incorpora `RepairStep`: cada paso guarda título,
+  descripción opcional, fecha realizada, técnico responsable y una secuencia
+  propia por reparación. Los casos CQRS permiten crear, listar, editar y borrar
+  pasos; solo el técnico autor o un administrador puede modificarlos. Los
+  adjuntos existentes admiten ahora `repairStepId` nullable, por lo que los
+  archivos anteriores conservan su comportamiento como adjuntos generales. Al
+  borrar un paso se eliminan explícitamente sus metadatos y ficheros asociados.
+  El informe técnico reutiliza `pdfkit`, reúne datos de cliente/equipo,
+  diagnóstico, pasos, imágenes compatibles, referencias a vídeos y los
+  materiales del borrador como trazabilidad no fiscal. Staff y cliente pueden
+  listar pasos y descargar el PDF tras sus controles de permiso o propiedad.
+  El portal interno añade la bitácora y subida de evidencias por paso en la
+  pestaña de diagnóstico; el portal cliente muestra los pasos y permite la
+  descarga autenticada. Los pasos no generan líneas facturables: la mano de
+  obra continúa gestionándose mediante presupuestos. Verificado con 56 pruebas
+  API, 30 pruebas web y build completo del workspace.
 - Chat: canal de mensajería por reparación implementado (backend y frontend).
   API REST (`/api/repairs/:id/messages`, `/api/customer/repairs/:id/messages`)
   con persistencia en `chat_messages` y tiempo real vía `@xtaskjs/socket-io`

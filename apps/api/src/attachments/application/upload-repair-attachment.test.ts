@@ -3,6 +3,7 @@ import { Readable } from "node:stream";
 import test from "node:test";
 import type { RepairAttachmentRepository } from "./repair-attachment-repository.js";
 import type { RepairOrderRepository } from "../../repairs/application/repair-order-repository.js";
+import type { RepairStepRepository } from "../../repairs/application/repair-step-repository.js";
 import type { AttachmentStorage } from "./attachment-storage.js";
 import { UploadRepairAttachment } from "./upload-repair-attachment.js";
 
@@ -14,17 +15,20 @@ function fakeStorage(bytesToReport = 3): AttachmentStorage {
   };
 }
 
+const repairSteps = { async findById() { return undefined; } } as unknown as RepairStepRepository;
+
 test("an attachment is stored and persisted when the repair order exists and the type is allowed", async () => {
   const saved: unknown[] = [];
   const attachments: RepairAttachmentRepository = {
     async create(record) { saved.push(record); return { ...record, createdAt: new Date() }; },
     async findById() { return undefined; },
     async listByRepairOrder() { return []; },
+    async listByRepairStep() { return []; },
     async delete() {}
   };
   const repairs = { async findById() { return { id: "repair-1" }; } } as unknown as RepairOrderRepository;
 
-  const attachment = await new UploadRepairAttachment(attachments, repairs, fakeStorage(42)).execute({
+  const attachment = await new UploadRepairAttachment(attachments, repairs, repairSteps, fakeStorage(42)).execute({
     repairOrderId: "repair-1",
     uploaderId: "tech-1",
     uploaderRole: "technician",
@@ -42,13 +46,14 @@ test("an unsupported file type is rejected before touching storage", async () =>
     async create() { throw new Error("must not persist"); },
     async findById() { return undefined; },
     async listByRepairOrder() { return []; },
+    async listByRepairStep() { return []; },
     async delete() {}
   };
   const repairs = { async findById() { return { id: "repair-1" }; } } as unknown as RepairOrderRepository;
   const storage: AttachmentStorage = { async save() { throw new Error("must not save"); }, read() { return Readable.from([]); }, async delete() {} };
 
   await assert.rejects(
-    () => new UploadRepairAttachment(attachments, repairs, storage).execute({
+    () => new UploadRepairAttachment(attachments, repairs, repairSteps, storage).execute({
       repairOrderId: "repair-1",
       uploaderId: "tech-1",
       uploaderRole: "technician",
@@ -65,11 +70,12 @@ test("an attachment upload is rejected when the repair order does not exist", as
     async create() { throw new Error("must not persist"); },
     async findById() { return undefined; },
     async listByRepairOrder() { return []; },
+    async listByRepairStep() { return []; },
     async delete() {}
   };
   const repairs = { async findById() { return undefined; } } as unknown as RepairOrderRepository;
 
-  const attachment = await new UploadRepairAttachment(attachments, repairs, fakeStorage()).execute({
+  const attachment = await new UploadRepairAttachment(attachments, repairs, repairSteps, fakeStorage()).execute({
     repairOrderId: "missing",
     uploaderId: "tech-1",
     uploaderRole: "technician",

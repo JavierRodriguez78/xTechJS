@@ -28,10 +28,12 @@ interface Quote {
   lines: { description: string; quantity: number; unitPriceCents: number }[];
 }
 interface Invoice { receiptNumber: string; issuedAt: string; payment: { id: string; amountCents: number; status: string; documentType?: "invoice" | "rectification" }; }
+interface RepairStep { id: string; sequence: number; title: string; description: string | null; performedAt: string; }
 
 const repairs = ref<Repair[]>([]);
 const quotes = ref<Record<string, Quote>>({});
 const invoices = ref<Record<string, Invoice[]>>({});
+const steps = ref<Record<string, RepairStep[]>>({});
 const loading = ref(true);
 const message = ref("");
 const errorMessage = ref("");
@@ -75,6 +77,7 @@ async function load(): Promise<void> {
 
     const quoteMap: Record<string, Quote> = {};
     const invoiceMap: Record<string, Invoice[]> = {};
+    const stepMap: Record<string, RepairStep[]> = {};
     await Promise.all(repairs.value.map(async (repair) => {
       const quoteResponse = await fetch(`/api/customer/repairs/${repair.id}/quote`, { headers: headers() });
       if (quoteResponse.ok) {
@@ -82,9 +85,12 @@ async function load(): Promise<void> {
       }
       const invoiceResponse = await fetch(`/api/customer/repairs/${repair.id}/invoices`, { headers: headers() });
       if (invoiceResponse.ok) invoiceMap[repair.id] = await invoiceResponse.json() as Invoice[];
+      const stepResponse = await fetch(`/api/customer/repairs/${repair.id}/steps`, { headers: headers() });
+      if (stepResponse.ok) stepMap[repair.id] = await stepResponse.json() as RepairStep[];
     }));
     quotes.value = quoteMap;
     invoices.value = invoiceMap;
+    steps.value = stepMap;
   } catch (error) {
     errorMessage.value = (error as Error).message;
   } finally {
@@ -97,6 +103,13 @@ async function downloadInvoice(repairId: string, paymentId: string, receiptNumbe
   if (!response.ok) { errorMessage.value = "No se pudo descargar la factura."; return; }
   const url = URL.createObjectURL(await response.blob());
   const anchor = document.createElement("a"); anchor.href = url; anchor.download = `factura-${receiptNumber}.pdf`; anchor.click(); URL.revokeObjectURL(url);
+}
+
+async function downloadTechnicalReport(repairId: string): Promise<void> {
+  const response = await fetch(`/api/customer/repairs/${repairId}/report`, { headers: headers() });
+  if (!response.ok) { errorMessage.value = "No se pudo descargar el informe técnico."; return; }
+  const url = URL.createObjectURL(await response.blob());
+  const anchor = document.createElement("a"); anchor.href = url; anchor.download = `informe-tecnico-${repairId.slice(0, 8)}.pdf`; anchor.click(); URL.revokeObjectURL(url);
 }
 
 async function approve(repairId: string): Promise<void> {
@@ -217,6 +230,12 @@ function openChat(repairOrderId: string): void { selectedRepairId.value = repair
         <div class="quote-card" v-if="invoices[selectedRepair.id]?.length">
           <p class="eyebrow">Facturas</p>
           <ul class="quote-lines"><li v-for="invoice in invoices[selectedRepair.id]" :key="invoice.payment.id"><span>{{ invoice.receiptNumber }} - {{ money(invoice.payment.documentType === "rectification" ? -invoice.payment.amountCents : invoice.payment.amountCents) }}</span><button type="button" class="secondary" @click="downloadInvoice(selectedRepair.id, invoice.payment.id, invoice.receiptNumber)">Descargar {{ invoice.payment.documentType === "rectification" ? "rectificativa" : "factura" }}</button></li></ul>
+        </div>
+
+        <div class="quote-card">
+          <div class="quote-card-header"><p class="eyebrow">Pasos técnicos</p><button type="button" class="secondary" @click="downloadTechnicalReport(selectedRepair.id)">Descargar informe técnico</button></div>
+          <ol v-if="steps[selectedRepair.id]?.length" class="quote-lines"><li v-for="step in steps[selectedRepair.id]" :key="step.id"><span>{{ step.sequence }}. {{ step.title }}<small v-if="step.description"> - {{ step.description }}</small></span><em>{{ formatDate(step.performedAt) }}</em></li></ol>
+          <p v-else class="empty">Todavía no hay pasos técnicos registrados.</p>
         </div>
 
         <div class="quote-card">

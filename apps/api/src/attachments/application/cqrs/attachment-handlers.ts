@@ -28,7 +28,8 @@ export class UploadRepairAttachmentHandler implements ICommandHandler<UploadRepa
       uploaderRole: command.uploaderRole,
       fileName: command.fileName,
       mimeType: command.mimeType,
-      stream: command.stream
+      stream: command.stream,
+      repairStepId: command.repairStepId
     });
   }
 }

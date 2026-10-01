@@ -2,6 +2,7 @@ import { Service } from "@xtaskjs/core";
 import { CommandHandler, type ICommandHandler, type IQueryHandler, QueryHandler } from "@xtaskjs/cqrs";
 import type { RepairOrder, RepairStatusEvent } from "../../domain/repair-order.js";
 import type { RepairQuote } from "../../domain/repair-quote.js";
+import type { RepairStep } from "../../domain/repair-step.js";
 import { ApproveRepairQuote } from "../approve-repair-quote.js";
 import { ApproveCustomerRepairQuote } from "../approve-customer-repair-quote.js";
 import { ListOwnCustomerRepairs } from "../list-own-customer-repairs.js";
@@ -14,20 +15,61 @@ import { GetRepairWorkflowConfig, type RepairWorkflowConfigView } from "../get-r
 import { ListRepairOrders } from "../list-repair-orders.js";
 import { SaveRepairQuote } from "../save-repair-quote.js";
 import { UpdateRepairTechnical } from "../update-repair-technical.js";
+import { AddRepairStep, DeleteRepairStep, ListRepairSteps, UpdateRepairStep } from "../manage-repair-step.js";
+import { ListOwnCustomerRepairSteps } from "../list-own-customer-repair-steps.js";
+import { GetRepairTechnicalReport } from "../get-repair-technical-report.js";
+import { GetOwnCustomerRepairTechnicalReport } from "../get-own-customer-repair-technical-report.js";
 import {
   ApproveRepairQuoteCommand,
   ApproveCustomerRepairQuoteCommand,
+  AddRepairStepCommand,
   ChangeRepairStatusCommand,
+  DeleteRepairStepCommand,
   CreateRepairOrderCommand,
   GetRepairQuoteQuery,
   GetOwnCustomerQuoteQuery,
+  GetOwnCustomerRepairTechnicalReportQuery,
+  GetRepairTechnicalReportQuery,
   GetRepairStatusHistoryQuery,
   GetRepairWorkflowConfigQuery,
   ListRepairOrdersQuery,
+  ListRepairStepsQuery,
   ListOwnCustomerRepairsQuery,
+  ListOwnCustomerRepairStepsQuery,
   SaveRepairQuoteCommand,
+  UpdateRepairStepCommand,
   UpdateRepairTechnicalCommand
 } from "./repair-messages.js";
+
+@Service()
+@CommandHandler(AddRepairStepCommand)
+export class AddRepairStepHandler implements ICommandHandler<AddRepairStepCommand, RepairStep | undefined> {
+  constructor(private readonly useCase: AddRepairStep) {}
+
+  execute(command: AddRepairStepCommand): Promise<RepairStep | undefined> {
+    return this.useCase.execute(command.repairOrderId, command.technicianId, command.input);
+  }
+}
+
+@Service()
+@CommandHandler(UpdateRepairStepCommand)
+export class UpdateRepairStepHandler implements ICommandHandler<UpdateRepairStepCommand, RepairStep | undefined> {
+  constructor(private readonly useCase: UpdateRepairStep) {}
+
+  execute(command: UpdateRepairStepCommand): Promise<RepairStep | undefined> {
+    return this.useCase.execute(command.repairOrderId, command.stepId, command.actorId, command.actorRole, command.input);
+  }
+}
+
+@Service()
+@CommandHandler(DeleteRepairStepCommand)
+export class DeleteRepairStepHandler implements ICommandHandler<DeleteRepairStepCommand, boolean> {
+  constructor(private readonly useCase: DeleteRepairStep) {}
+
+  execute(command: DeleteRepairStepCommand): Promise<boolean> {
+    return this.useCase.execute(command.repairOrderId, command.stepId, command.actorId, command.actorRole);
+  }
+}
 
 @Service()
 @CommandHandler(CreateRepairOrderCommand)
@@ -145,6 +187,46 @@ export class GetOwnCustomerQuoteHandler implements IQueryHandler<GetOwnCustomerQ
   constructor(private readonly useCase: GetOwnCustomerQuote) {}
 
   execute(query: GetOwnCustomerQuoteQuery): Promise<RepairQuote | undefined> {
+    return this.useCase.execute(query.repairOrderId, query.email);
+  }
+}
+
+@Service()
+@QueryHandler(ListRepairStepsQuery)
+export class ListRepairStepsHandler implements IQueryHandler<ListRepairStepsQuery, readonly RepairStep[] | undefined> {
+  constructor(private readonly useCase: ListRepairSteps) {}
+
+  execute(query: ListRepairStepsQuery): Promise<readonly RepairStep[] | undefined> {
+    return this.useCase.execute(query.repairOrderId);
+  }
+}
+
+@Service()
+@QueryHandler(ListOwnCustomerRepairStepsQuery)
+export class ListOwnCustomerRepairStepsHandler implements IQueryHandler<ListOwnCustomerRepairStepsQuery, readonly RepairStep[] | undefined> {
+  constructor(private readonly useCase: ListOwnCustomerRepairSteps) {}
+
+  execute(query: ListOwnCustomerRepairStepsQuery): Promise<readonly RepairStep[] | undefined> {
+    return this.useCase.execute(query.repairOrderId, query.email);
+  }
+}
+
+@Service()
+@QueryHandler(GetRepairTechnicalReportQuery)
+export class GetRepairTechnicalReportHandler implements IQueryHandler<GetRepairTechnicalReportQuery, Buffer | undefined> {
+  constructor(private readonly useCase: GetRepairTechnicalReport) {}
+
+  execute(query: GetRepairTechnicalReportQuery): Promise<Buffer | undefined> {
+    return this.useCase.execute(query.repairOrderId);
+  }
+}
+
+@Service()
+@QueryHandler(GetOwnCustomerRepairTechnicalReportQuery)
+export class GetOwnCustomerRepairTechnicalReportHandler implements IQueryHandler<GetOwnCustomerRepairTechnicalReportQuery, Buffer | undefined> {
+  constructor(private readonly useCase: GetOwnCustomerRepairTechnicalReport) {}
+
+  execute(query: GetOwnCustomerRepairTechnicalReportQuery): Promise<Buffer | undefined> {
     return this.useCase.execute(query.repairOrderId, query.email);
   }
 }

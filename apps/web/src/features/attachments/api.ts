@@ -3,6 +3,7 @@ export type AttachmentMode = "staff" | "customer";
 export interface RepairAttachmentRecord {
   id: string;
   repairOrderId: string;
+  repairStepId: string | null;
   uploaderId: string;
   uploaderRole: "admin" | "technician";
   fileName: string;
@@ -21,8 +22,9 @@ export async function listAttachments(mode: AttachmentMode, repairId: string, to
   return response.json() as Promise<RepairAttachmentRecord[]>;
 }
 
-export async function uploadAttachment(repairId: string, token: string, file: File): Promise<RepairAttachmentRecord> {
+export async function uploadAttachment(repairId: string, token: string, file: File, repairStepId?: string): Promise<RepairAttachmentRecord> {
   const formData = new FormData();
+  if (repairStepId) formData.append("repairStepId", repairStepId);
   formData.append("file", file);
   const response = await fetch(`/api/repairs/${repairId}/attachments`, { method: "POST", headers: { authorization: `Bearer ${token}` }, body: formData });
   if (!response.ok) throw new Error((await response.json().catch(() => ({ message: "No se pudo subir el archivo." }))).message);

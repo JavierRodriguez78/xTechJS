@@ -2,7 +2,7 @@
 import { onBeforeUnmount, onMounted, ref } from "vue";
 import { deleteAttachment, fetchAttachmentBlobUrl, listAttachments, uploadAttachment, type AttachmentMode, type RepairAttachmentRecord } from "./api";
 
-const props = defineProps<{ repairId: string; token: string; mode: AttachmentMode; canManage: boolean }>();
+const props = defineProps<{ repairId: string; token: string; mode: AttachmentMode; canManage: boolean; repairStepId?: string }>();
 
 const attachments = ref<RepairAttachmentRecord[]>([]);
 const loading = ref(true);
@@ -24,7 +24,8 @@ async function load(): Promise<void> {
   loading.value = true;
   errorMessage.value = "";
   try {
-    attachments.value = await listAttachments(props.mode, props.repairId, props.token);
+    const allAttachments = await listAttachments(props.mode, props.repairId, props.token);
+    attachments.value = props.repairStepId ? allAttachments.filter((attachment) => attachment.repairStepId === props.repairStepId) : allAttachments.filter((attachment) => !attachment.repairStepId);
   } catch (error) {
     errorMessage.value = (error as Error).message;
   } finally {
@@ -49,7 +50,7 @@ async function onFileSelected(event: Event): Promise<void> {
   uploading.value = true;
   errorMessage.value = "";
   try {
-    const attachment = await uploadAttachment(props.repairId, props.token, file);
+    const attachment = await uploadAttachment(props.repairId, props.token, file, props.repairStepId);
     attachments.value = [attachment, ...attachments.value];
   } catch (error) {
     errorMessage.value = (error as Error).message;

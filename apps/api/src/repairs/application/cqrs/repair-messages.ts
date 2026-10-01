@@ -1,6 +1,8 @@
 import type { CreateRepairOrderInput, UpdateRepairTechnicalInput } from "../../domain/repair-order.js";
 import type { RepairStatus } from "../../domain/repair-status.js";
 import type { SaveRepairQuoteInput } from "../../domain/repair-quote.js";
+import type { CreateRepairStepInput, UpdateRepairStepInput } from "../../domain/repair-step.js";
+import type { UserRole } from "../../../shared/domain/user-role.js";
 
 export class CreateRepairOrderCommand {
   constructor(public readonly input: CreateRepairOrderInput) {}
@@ -26,6 +28,18 @@ export class ApproveCustomerRepairQuoteCommand {
   constructor(public readonly repairOrderId: string, public readonly email: string) {}
 }
 
+export class AddRepairStepCommand {
+  constructor(public readonly repairOrderId: string, public readonly technicianId: string, public readonly input: CreateRepairStepInput) {}
+}
+
+export class UpdateRepairStepCommand {
+  constructor(public readonly repairOrderId: string, public readonly stepId: string, public readonly actorId: string, public readonly actorRole: UserRole, public readonly input: UpdateRepairStepInput) {}
+}
+
+export class DeleteRepairStepCommand {
+  constructor(public readonly repairOrderId: string, public readonly stepId: string, public readonly actorId: string, public readonly actorRole: UserRole) {}
+}
+
 export class ListRepairOrdersQuery {}
 
 export class GetRepairWorkflowConfigQuery {}
@@ -43,5 +57,21 @@ export class ListOwnCustomerRepairsQuery {
 }
 
 export class GetOwnCustomerQuoteQuery {
+  constructor(public readonly repairOrderId: string, public readonly email: string) {}
+}
+
+export class ListRepairStepsQuery {
+  constructor(public readonly repairOrderId: string) {}
+}
+
+export class ListOwnCustomerRepairStepsQuery {
+  constructor(public readonly repairOrderId: string, public readonly email: string) {}
+}
+
+export class GetRepairTechnicalReportQuery {
+  constructor(public readonly repairOrderId: string) {}
+}
+
+export class GetOwnCustomerRepairTechnicalReportQuery {
   constructor(public readonly repairOrderId: string, public readonly email: string) {}
 }
