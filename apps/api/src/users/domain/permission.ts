@@ -9,6 +9,7 @@ export const PERMISSIONS = {
   repairsManage: "repairs:manage",
   repairsApproveQuote: "repairs:approve-quote",
   inventoryManage: "inventory:manage",
+  inventoryTransfer: "inventory:transfer",
   paymentsManage: "payments:manage",
   ecommerceManage: "ecommerce:manage",
   tradeInManage: "tradein:manage",

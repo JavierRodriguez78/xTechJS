@@ -36,6 +36,7 @@ export interface InventoryMovement {
   storeId?: string;
   inventoryItemId: string;
   repairOrderId: string | null;
+  stockTransferOrderId: string | null;
   quantity: number;
   type: InventoryMovementType;
   note: string | null;

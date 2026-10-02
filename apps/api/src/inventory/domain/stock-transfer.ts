@@ -1,4 +1,4 @@
-export type StockTransferStatus = "draft" | "completed" | "cancelled";
+export type StockTransferStatus = "draft" | "in_transit" | "received" | "cancelled";
 
 export interface StockTransferLine {
   inventoryItemId: string;
@@ -13,5 +13,6 @@ export interface StockTransferOrder {
   note: string | null;
   createdByUserId: string;
   createdAt: Date;
-  completedAt: Date | null;
+  sentAt: Date | null;
+  receivedAt: Date | null;
 }

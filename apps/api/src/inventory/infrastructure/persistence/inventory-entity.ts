@@ -27,6 +27,7 @@ export const InventoryMovementEntitySchema = new EntitySchema<InventoryMovement>
     storeId: { type: "uuid", name: "store_id" },
     inventoryItemId: { type: "uuid", name: "inventory_item_id" },
     repairOrderId: { type: "uuid", name: "repair_order_id", nullable: true },
+    stockTransferOrderId: { type: "uuid", name: "stock_transfer_order_id", nullable: true },
     quantity: { type: Number },
     type: { type: String },
     note: { type: String, nullable: true },

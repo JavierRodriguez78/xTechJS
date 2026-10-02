@@ -14,7 +14,9 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 - `users.store_id` es nullable: administradores globales conservan `null`; los
   técnicos deben tener una tienda asignada, validación aplicada tanto al crear
   como al editar. `storeId` viaja en el JWT, la sesión staff y los formularios
-  administrativos de usuarios.
+  administrativos de usuarios. La navegación de administración incluye la
+  pantalla `Tiendas`; desde `Usuarios` se ve la tienda asignada y se configura
+  al crear o editar técnicos (o el alcance local/global de administradores).
 - `repair_orders.store_id` es obligatorio. La migración conserva el histórico
   asignándolo a una tienda existente o a `Tienda principal`. En alta, un
   técnico usa exclusivamente su tienda del token; un administrador global debe
@@ -28,8 +30,11 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   todas las tiendas activas y los movimientos llevan `store_id`. Los ajustes
   manuales operan contra el saldo de la tienda del usuario (o la indicada por
   un admin global); los consumos toman la tienda de la reparación. Se implementó
-  `POST /api/inventory/transfers`, transaccional, que descuenta origen,
-  incrementa destino y registra movimientos `transfer_out`/`transfer_in`.
+  traspasos con ciclo completo: se crean en `draft`, el envío los pasa a
+  `in_transit` descontando origen y registrando `transfer_out`, y la recepción
+  los deja en `received` incrementando destino y registrando `transfer_in`.
+  Solo un borrador puede cancelarse. Los movimientos guardan la referencia al
+  traspaso para conservar su trazabilidad.
 - Los clientes continúan compartidos y ahora guardan `originStoreId`
   informativo al ser creados por un empleado de tienda; altas externas y de
   administradores globales conservan `null`. No interviene en permisos ni en
@@ -37,8 +42,13 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 - Listado, alertas, detalle, ajuste y movimientos de almacén ya mantienen el
   `storeId`; los administradores globales seleccionan una tienda y los técnicos
   usan la suya automáticamente.
-- Aún pendiente: alcance de compras/TPV/cajas/facturación, fulfillment
-  ecommerce y dashboard agregado o filtrado por tienda.
+- El panel administrativo permite filtrar por tienda y periodo, y muestra
+  ventas TPV cobradas, clientes nuevos, alertas de stock, estados de
+  reparación, pedidos de compra y técnicos con más reparaciones mediante
+  gráficas de barras.
+- Aún pendiente: alcance de compras/TPV/cajas/facturación y fulfillment
+  ecommerce. Las cifras de pedidos de compra siguen siendo globales y el panel
+  aún no agrega ventas online.
 
 ## Base creada
 

@@ -64,7 +64,7 @@ export class InventoryController {
   }
 
   @Post("/transfers")
-  @PermissionRequired(PERMISSIONS.inventoryManage)
+  @PermissionRequired(PERMISSIONS.inventoryTransfer)
   async transfer(@Body() body: unknown, @Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> {
     const parsed = transferSchema.safeParse(body);
     if (!parsed.success) return reply.code(400).send({ message: "Invalid stock transfer", issues: parsed.error.flatten() });
@@ -73,6 +73,22 @@ export class InventoryController {
     try { return reply.code(201).send(await this.transferStock.execute(parsed.data, user.sub)); }
     catch (error) { return reply.code(409).send({ message: (error as Error).message }); }
   }
+
+  @Get("/transfers")
+  @PermissionRequired(PERMISSIONS.inventoryTransfer)
+  listTransfers(@Req() request: FastifyRequest): Promise<unknown> { const user = request.user as AuthTokenPayload; return this.transferStock.list(user.storeId ?? storeQuerySchema.parse(request.query).storeId ?? null); }
+
+  @Post("/transfers/:id/send")
+  @PermissionRequired(PERMISSIONS.inventoryTransfer)
+  async sendTransfer(@Param("id") id: string, @Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> { try { return await this.transferStock.send(id, (request.user as AuthTokenPayload).storeId); } catch (error) { return reply.code(409).send({ message: (error as Error).message }); } }
+
+  @Post("/transfers/:id/receive")
+  @PermissionRequired(PERMISSIONS.inventoryTransfer)
+  async receiveTransfer(@Param("id") id: string, @Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> { try { return await this.transferStock.receive(id, (request.user as AuthTokenPayload).storeId); } catch (error) { return reply.code(409).send({ message: (error as Error).message }); } }
+
+  @Post("/transfers/:id/cancel")
+  @PermissionRequired(PERMISSIONS.inventoryTransfer)
+  async cancelTransfer(@Param("id") id: string, @Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> { try { return await this.transferStock.cancel(id, (request.user as AuthTokenPayload).storeId); } catch (error) { return reply.code(409).send({ message: (error as Error).message }); } }
 
   @Get("/:id/movements")
   @PermissionRequired(PERMISSIONS.inventoryManage)
