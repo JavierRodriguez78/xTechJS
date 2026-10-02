@@ -1,4 +1,5 @@
 export type RegistrationStatus = "pending" | "completed";
+export type CustomerAcquisitionChannel = "staff" | "self_service";
 
 export interface CustomerBillingDetails {
   billingName?: string | null;
@@ -18,6 +19,7 @@ export interface Customer {
   taxId: string | null;
   internalNotes: string | null;
   registrationStatus: RegistrationStatus;
+  acquisitionChannel: CustomerAcquisitionChannel;
   billingName?: string | null;
   billingTaxId?: string | null;
   billingAddress?: string | null;
@@ -37,6 +39,7 @@ export interface CreateCustomerInput {
   taxId?: string;
   internalNotes?: string;
   registrationStatus?: RegistrationStatus;
+  acquisitionChannel?: CustomerAcquisitionChannel;
   billingName?: string;
   billingTaxId?: string;
   billingAddress?: string;

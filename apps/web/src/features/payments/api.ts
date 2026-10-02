@@ -1,10 +1,12 @@
 import { staffSession } from "../auth/session";
 export interface InvoiceLine { code?: string; concept: string; quantity: number; unitPriceCents: number; discountPercent: number; taxRate: number; }
 export interface Payment { id: string; repairOrderId: string; amountCents: number; method: "cash" | "card" | "transfer"; status: "paid" | "refunded"; reference: string | null; invoiceLines?: InvoiceLine[]; documentType?: "invoice" | "rectification"; originalPaymentId?: string | null; rectificationReason?: string | null; createdAt: string; }
+export interface TpvSale { id: string; source: "repair" | "online"; amountCents: number; status: "paid" | "refunded"; method: string; reference: string | null; invoiceSeries: string; invoiceNumber: number; createdAt: string; }
 export interface CashRegister { id: string; businessDate: string; status: "open" | "closed"; paidCents: number; refundedCents: number; netCents: number; }
 const headers = (withJsonBody: boolean): HeadersInit => ({ ...(withJsonBody ? { "content-type": "application/json" } : {}), authorization: `Bearer ${staffSession.value?.accessToken ?? ""}` });
 async function request<T>(url: string, init?: RequestInit): Promise<T> { const response = await fetch(url, { ...init, headers: { ...headers(init?.body !== undefined), ...init?.headers } }); if (!response.ok) throw new Error((await response.json().catch(() => ({ message: "No se pudo completar la operacion." }))).message); return response.json() as Promise<T>; }
 export const listPayments = () => request<Payment[]>("/api/payments");
+export const listTpvSales = () => request<TpvSale[]>("/api/payments/sales");
 export const listRepairs = () => request<{ items: { id: string; brand: string; model: string }[] }>("/api/repairs?pageSize=100");
 export const createPayment = (input: { repairOrderId: string; amountCents: number; method: Payment["method"]; reference?: string; invoiceLines?: InvoiceLine[] }) => request<Payment>("/api/payments", { method: "POST", body: JSON.stringify(input) });
 export const refundPayment = (id: string, reason: string) => request<Payment>(`/api/payments/${id}/refund`, { method: "POST", body: JSON.stringify({ reason }) });

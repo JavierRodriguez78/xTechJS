@@ -138,7 +138,7 @@ function openChat(repairOrderId: string): void { selectedRepairId.value = repair
         <p class="eyebrow">Portal de cliente</p>
         <h1>Hola, {{ customerSession?.user.displayName }}</h1>
       </div>
-      <button type="button" class="secondary" @click="signOutCustomer">Salir</button>
+      <div class="customer-portal-actions"><RouterLink class="button-link" :to="{ name: 'customer.trade-in.list' }">Vender equipo</RouterLink><button type="button" class="secondary" @click="signOutCustomer">Salir</button></div>
     </header>
 
     <p v-if="message" class="feedback success">{{ message }}</p>

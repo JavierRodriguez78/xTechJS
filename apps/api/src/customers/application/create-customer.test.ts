@@ -16,6 +16,7 @@ class TestCustomerRepository implements CustomerRepository {
       taxId: input.taxId ?? null,
       internalNotes: input.internalNotes ?? null,
       registrationStatus: "pending",
+      acquisitionChannel: input.acquisitionChannel ?? "staff",
       tags: input.tags ?? [],
       createdAt: new Date(),
       updatedAt: new Date()
@@ -48,6 +49,7 @@ class TestCustomerRepository implements CustomerRepository {
       taxId: input.taxId ?? null,
       internalNotes: input.internalNotes ?? null,
       registrationStatus: "pending",
+      acquisitionChannel: input.acquisitionChannel ?? "staff",
       tags: input.tags ?? [],
       createdAt: new Date(),
       updatedAt: new Date()

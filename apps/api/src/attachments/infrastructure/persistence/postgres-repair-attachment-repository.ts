@@ -27,6 +27,21 @@ export class PostgresRepairAttachmentRepository implements RepairAttachmentRepos
     return this.dataSource.getRepository(RepairAttachmentEntitySchema).find({ where: { repairStepId }, order: { createdAt: "ASC" } });
   }
 
+  listByEcommerceProduct(ecommerceProductId: string): Promise<readonly RepairAttachment[]> {
+    return this.dataSource.getRepository(RepairAttachmentEntitySchema).find({ where: { ecommerceProductId }, order: { createdAt: "ASC" } });
+  }
+
+  listByTradeInRequest(tradeInRequestId: string): Promise<readonly RepairAttachment[]> {
+    return this.dataSource.getRepository(RepairAttachmentEntitySchema).find({ where: { tradeInRequestId }, order: { createdAt: "ASC" } });
+  }
+
+  async findRepairOrderId(attachment: RepairAttachment): Promise<string | undefined> {
+    if (attachment.repairOrderId) return attachment.repairOrderId;
+    if (!attachment.repairStepId) return undefined;
+    const result = await this.dataSource.query('SELECT repair_order_id FROM repair_steps WHERE id = $1', [attachment.repairStepId]) as { repair_order_id: string }[];
+    return result[0]?.repair_order_id;
+  }
+
   async delete(id: string): Promise<void> {
     await this.dataSource.getRepository(RepairAttachmentEntitySchema).delete({ id });
   }

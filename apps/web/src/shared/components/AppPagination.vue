@@ -13,3 +13,43 @@ const pageCount = () => Math.max(1, Math.ceil(props.total / props.pageSize));
     <button type="button" class="secondary" :disabled="page >= pageCount()" @click="emit('change', page + 1)">Siguiente</button>
   </nav>
 </template>
+
+<style scoped>
+.app-pagination {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.app-pagination label {
+  align-items: center;
+  display: inline-flex;
+  gap: 4px;
+}
+
+.app-pagination select {
+  background: #fff;
+  border: 1px solid #b5c9bd;
+  border-radius: 4px;
+  font: inherit;
+  padding: 4px;
+}
+
+.app-pagination button {
+  padding: 8px 12px;
+}
+
+.app-pagination button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+@media (max-width: 560px) {
+  .app-pagination {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+</style>

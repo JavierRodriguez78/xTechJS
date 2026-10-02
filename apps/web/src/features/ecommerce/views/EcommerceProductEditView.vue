@@ -1,0 +1,22 @@
+<script setup lang="ts">
+import { onMounted, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { getManagedShopProduct, getManagedShopProductAttachments, updateManagedShopProduct, uploadManagedShopProductAttachment, type ManagedShopProductInput, type ShopAttachment } from "../api";
+
+const route = useRoute();
+const router = useRouter();
+const form = ref<ManagedShopProductInput>({ sku: "", title: "", description: "", category: "console", condition: "refurbished", priceCents: 0, stockQuantity: 0, published: false });
+const loading = ref(true);
+const saving = ref(false);
+const error = ref("");
+const attachments = ref<ShopAttachment[]>([]);
+const uploading = ref(false);
+async function load(): Promise<void> { loading.value = true; try { const id = String(route.params.id); const [product, loadedAttachments] = await Promise.all([getManagedShopProduct(id), getManagedShopProductAttachments(id)]); form.value = { sku: product.sku, title: product.title, description: product.description, category: product.category, condition: product.condition, priceCents: product.priceCents, stockQuantity: product.stockQuantity, published: product.published }; attachments.value = loadedAttachments; } catch (reason) { error.value = (reason as Error).message; } finally { loading.value = false; } }
+async function save(): Promise<void> { saving.value = true; error.value = ""; try { await updateManagedShopProduct(String(route.params.id), form.value); await router.push({ name: "ecommerce.products.list" }); } catch (reason) { error.value = (reason as Error).message; } finally { saving.value = false; } }
+async function upload(event: Event): Promise<void> { const file = (event.target as HTMLInputElement).files?.[0]; if (!file) return; uploading.value = true; error.value = ""; try { attachments.value.push(await uploadManagedShopProductAttachment(String(route.params.id), file)); } catch (reason) { error.value = (reason as Error).message; } finally { uploading.value = false; (event.target as HTMLInputElement).value = ""; } }
+onMounted(load);
+</script>
+
+<template>
+  <p v-if="loading" class="empty">Cargando producto...</p><p v-else-if="error && !form.sku" class="feedback error">{{ error }}</p><form v-else class="entity-form ecommerce-product-form" @submit.prevent="save"><header><div><p class="eyebrow">Ecommerce</p><h1>Editar producto</h1></div></header><fieldset><legend>Producto</legend><label>SKU<input v-model="form.sku" required maxlength="120" /></label><label>Título<input v-model="form.title" required maxlength="240" /></label><label>Descripción<textarea v-model="form.description" required maxlength="10000" rows="6" /></label><div class="ecommerce-form-row"><label>Categoría<select v-model="form.category"><option value="console">Consola</option><option value="retro_console">Consola retro</option><option value="game">Juego</option><option value="phone">Móvil</option><option value="tablet">Tablet</option><option value="accessory">Accesorio</option><option value="other">Otro</option></select></label><label>Estado<select v-model="form.condition"><option value="new">Nuevo</option><option value="refurbished">Reacondicionado</option><option value="used_good">Usado, buen estado</option><option value="used_fair">Usado</option></select></label></div></fieldset><fieldset><legend>Venta</legend><div class="ecommerce-form-row"><label>Precio (céntimos)<input v-model.number="form.priceCents" type="number" min="0" required /></label><label>Stock<input v-model.number="form.stockQuantity" type="number" min="0" required /></label></div><label class="checkbox-row"><input v-model="form.published" type="checkbox" /><span>Publicar en la tienda</span></label></fieldset><fieldset><legend>Fotos y documentos</legend><label class="attachments-upload">{{ uploading ? "Subiendo archivo" : "Añadir adjunto" }}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm,application/pdf" :disabled="uploading" @change="upload" /></label><ul v-if="attachments.length" class="ecommerce-attachment-list"><li v-for="attachment in attachments" :key="attachment.id">{{ attachment.fileName }} <span>{{ attachment.mimeType }}</span></li></ul><p v-else class="empty">Aún no hay adjuntos.</p></fieldset><p v-if="error" class="feedback error">{{ error }}</p><footer><RouterLink class="secondary button-link" :to="{ name: 'ecommerce.products.list' }">Cancelar</RouterLink><button :disabled="saving">{{ saving ? "Guardando" : "Guardar cambios" }}</button></footer></form>
+</template>

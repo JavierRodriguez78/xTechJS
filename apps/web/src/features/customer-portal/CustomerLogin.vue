@@ -15,7 +15,7 @@ async function submit(): Promise<void> {
   errorMessage.value = "";
   try {
     await signInCustomer(email.value, password.value);
-    const redirect = typeof route.query.redirect === "string" && route.query.redirect.startsWith("/customer")
+    const redirect = typeof route.query.redirect === "string" && (route.query.redirect.startsWith("/customer") || route.query.redirect.startsWith("/shop/"))
       ? route.query.redirect
       : "/customer";
     await router.replace(redirect);

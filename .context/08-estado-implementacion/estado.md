@@ -704,12 +704,78 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   de uso y de la vista. Verificado con typecheck de API y web, 58 pruebas API y
   32 pruebas web.
 
+- **(2026-10-01) Ecommerce y compraventa: primera entrega backend en curso.**
+  Se añadió el autorregistro público `POST /api/shop/register`, que crea en una
+  transacción el cliente completado, su usuario de portal y el consentimiento
+  inmutable, marcándolo con `acquisitionChannel: "self_service"`. El nuevo BC
+  separado `ecommerce` incorpora productos con stock propio, catálogo público
+  filtrable, pedido manual con reserva transaccional de stock, historial de
+  pedidos de cliente y gestión staff. También existe el flujo base de
+  compraventa: solicitud, revisión, propuesta, aceptación/rechazo y cierre con
+  pago saliente manual. Migraciones registradas para los nuevos agregados;
+  typecheck, build y las 58 pruebas API existentes pasan.
+  La migración de adjuntos polimórficos ya admite un único propietario
+  (`repairOrderId`, `repairStepId`, `ecommerceProductId` o `tradeInRequestId`)
+  y migra las fotos de pasos sin perder su autorización por reparación. El
+  catálogo staff expone listado, carga y descarga en
+  `/api/ecommerce/products/:id/attachments`; las tasaciones las exponen para
+  el cliente propietario y el staff autorizado en
+  `/api/customer/trade-in-requests/:id/attachments` y
+  `/api/trade-in-requests/:id/attachments`. Se admiten imágenes, vídeo y PDF,
+  con claves de almacenamiento separadas por propietario. Las tasaciones se
+  crean como `draft`; el cliente adjunta sus archivos y llama a
+  `POST /api/customer/trade-in-requests/:id/submit`. El envío exige al menos
+  una imagen y entonces cambia a `submitted`, evitando que staff vea borradores
+  incompletos. La tienda pública ya expone `/shop` con filtros, paginación en
+  servidor y estado en URL, además de `/shop/products/:id` con galería de fotos
+  reales. Los adjuntos públicos se sirven solo para productos publicados con
+  stock. También incluye `/shop/cart`, persistido en `sessionStorage` y limitado
+  al stock anunciado, y `/shop/checkout`, que exige login de cliente, recoge la
+  dirección y registra el pedido manual sin vaciar el carrito hasta recibir la
+  confirmación. El portal de cliente ofrece `/customer/orders` y
+  `/customer/orders/:id`, protegidos por el JWT de cliente, con estados, líneas
+  inmutables y dirección de entrega. El staff dispone de
+  `/ecommerce/pedidos`, protegido por `ecommerce:manage`, con filtro por estado
+  y paginación delegados al servidor, además de transiciones de pedido válidas.
+  La gestión de catálogo staff está disponible en `/ecommerce/catalogo`: listado
+  paginado y filtrable por texto, categoría y publicación; alta, edición y
+  publicación de productos; y subida/listado de fotos, vídeo o PDF por producto.
+  Se validaron el typecheck web y 38 pruebas Vitest, incluida la consulta
+  paginada del catálogo. El cliente también dispone de `/customer/vender-equipo`:
+  puede crear una solicitud como borrador, adjuntar fotos/documentos, enviarla
+  cuando contiene al menos una imagen, consultar la propuesta y aceptarla o
+  rechazarla. La consulta usa su JWT y conserva los borradores privados. El
+  staff dispone de `/compraventa`, protegido por `tradein:manage` y accesible a
+  administración y técnicos: filtra solicitudes por estado, abre su ficha,
+  lista los adjuntos, inicia la revisión, envía una propuesta y registra el
+  pago de cierre tras la aceptación. El endpoint staff aplica ahora el filtro
+  de estado solicitado. Al marcar un pedido manual como `paid`, se asigna una
+  numeración fiscal ecommerce persistente de serie `E`, asignada mediante una
+  secuencia PostgreSQL atómica para evitar colisiones entre confirmaciones,
+  se genera una factura
+  PDF desde las líneas inmutables del pedido y se envía automáticamente al
+  email del cliente; un fallo SMTP se registra como advertencia sin revertir la
+  confirmación de pago. El staff puede descargarla en
+  `GET /api/ecommerce/orders/:id/invoice.pdf`; el cliente la descarga desde el
+  detalle de su pedido mediante `GET /api/customer/orders/:id/invoice.pdf`, que
+  comprueba la propiedad y usa su JWT sin exponerlo en una URL. Las pruebas
+  unitarias cubren la numeración al confirmar el pago, la firma del PDF generado,
+  el envío con el adjunto y la descarga autenticada del cliente.
+  Se corrigió además el registro de migraciones: `InitialPaymentsMigration` estaba
+  importada pero ausente del array del datasource, por lo que una base vacía
+  intentaba alterar `payments` antes de crearla. Ahora se ejecuta antes de sus
+  migraciones incrementales; `make up` completó el contenedor `migrate` con
+  código `0` sobre el volumen local existente.
+
 ## Siguiente fase recomendada
 
-1. Aplicar el mismo contrato paginado, filtros y URL al listado de **Almacén**,
+1. Añadir pruebas HTTP de extremo a extremo para autorregistro, pedido, pago
+  manual, factura y correo, además de un proveedor de pago real cuando se elija
+  la pasarela.
+2. Aplicar el mismo contrato paginado, filtros y URL al listado de **Almacén**,
   empezando por material, stock bajo, proveedor y rango de movimientos.
-2. Continuar con TPV y ampliar Vitest a cada listado y formulario migrado.
-3. Extraer `FilterBar` o `DataTable` solo cuando una tercera vista confirme una
+3. Continuar con TPV y ampliar Vitest a cada listado y formulario migrado.
+4. Extraer `FilterBar` o `DataTable` solo cuando una tercera vista confirme una
   estructura común estable; por ahora `AppPagination` cubre la pieza compartida
   sin forzar una abstracción sobre filas de distinta naturaleza.
 

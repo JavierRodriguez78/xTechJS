@@ -3,14 +3,18 @@ import { customerSession } from "../../features/customer-portal/session";
 import { staffSession } from "../../features/auth/session";
 
 declare module "vue-router" {
-  interface RouteMeta { permission?: "customers:read" | "customers:manage" | "repairs:read" | "repairs:manage" | "inventory:manage" | "payments:manage" | "users:manage"; customer?: boolean }
+  interface RouteMeta { permission?: "customers:read" | "customers:manage" | "repairs:read" | "repairs:manage" | "inventory:manage" | "payments:manage" | "users:manage" | "ecommerce:manage" | "tradein:manage"; customer?: boolean }
 }
 
 const routes: RouteRecordRaw[] = [
+  { path: "/shop", name: "shop.catalog", component: () => import("../../features/ecommerce/views/ShopCatalogView.vue") },
+  { path: "/shop/products/:id", name: "shop.product", component: () => import("../../features/ecommerce/views/ShopProductView.vue") },
+  { path: "/shop/cart", name: "shop.cart", component: () => import("../../features/ecommerce/views/ShopCartView.vue") },
+  { path: "/shop/checkout", name: "shop.checkout", component: () => import("../../features/ecommerce/views/ShopCheckoutView.vue") },
   { path: "/login", name: "staff.login", component: () => import("../../features/auth/StaffLogin.vue") },
   { path: "/customer/register", name: "customer.register", component: () => import("../../features/customer-portal/CustomerRegistration.vue") },
   { path: "/customer/login", name: "customer.login", component: () => import("../../features/customer-portal/CustomerLogin.vue") },
-  { path: "/customer", component: () => import("../layouts/CustomerLayout.vue"), children: [{ path: "", name: "customer.portal", component: () => import("../../features/customer-portal/CustomerPortal.vue"), meta: { customer: true } }] },
+  { path: "/customer", component: () => import("../layouts/CustomerLayout.vue"), children: [{ path: "", name: "customer.portal", component: () => import("../../features/customer-portal/CustomerPortal.vue"), meta: { customer: true } }, { path: "orders", name: "customer.orders", component: () => import("../../features/ecommerce/views/CustomerOrdersView.vue"), meta: { customer: true } }, { path: "orders/:id", name: "customer.order", component: () => import("../../features/ecommerce/views/CustomerOrderDetailView.vue"), meta: { customer: true } }, { path: "vender-equipo", name: "customer.trade-in.list", component: () => import("../../features/ecommerce/views/CustomerTradeInListView.vue"), meta: { customer: true } }, { path: "vender-equipo/nueva", name: "customer.trade-in.create", component: () => import("../../features/ecommerce/views/CustomerTradeInCreateView.vue"), meta: { customer: true } }, { path: "vender-equipo/:id", name: "customer.trade-in.detail", component: () => import("../../features/ecommerce/views/CustomerTradeInDetailView.vue"), meta: { customer: true } }] },
   {
     path: "/", component: () => import("../layouts/AppLayout.vue"), children: [
       { path: "", redirect: { name: "customers.list" } },
@@ -50,6 +54,12 @@ const routes: RouteRecordRaw[] = [
       { path: "tpv/caja", name: "payments.cash-register", component: () => import("../../features/payments/views/CashRegisterView.vue"), meta: { permission: "payments:manage" } },
       { path: "tpv/informes", name: "payments.reports", component: () => import("../../features/payments/views/PaymentReportView.vue"), meta: { permission: "payments:manage" } },
       { path: "tpv/:id", name: "payments.detail", component: () => import("../../features/payments/views/PaymentDetailView.vue"), meta: { permission: "payments:manage" } },
+      { path: "ecommerce/catalogo", name: "ecommerce.products.list", component: () => import("../../features/ecommerce/views/EcommerceProductListView.vue"), meta: { permission: "ecommerce:manage" } },
+      { path: "ecommerce/catalogo/nuevo", name: "ecommerce.products.create", component: () => import("../../features/ecommerce/views/EcommerceProductCreateView.vue"), meta: { permission: "ecommerce:manage" } },
+      { path: "ecommerce/catalogo/:id/editar", name: "ecommerce.products.edit", component: () => import("../../features/ecommerce/views/EcommerceProductEditView.vue"), meta: { permission: "ecommerce:manage" } },
+      { path: "ecommerce/pedidos", name: "ecommerce.orders", component: () => import("../../features/ecommerce/views/EcommerceOrdersManagementView.vue"), meta: { permission: "ecommerce:manage" } },
+      { path: "compraventa", name: "trade-in.list", component: () => import("../../features/ecommerce/views/TradeInManagementView.vue"), meta: { permission: "tradein:manage" } },
+      { path: "compraventa/:id", name: "trade-in.detail", component: () => import("../../features/ecommerce/views/TradeInManagementDetailView.vue"), meta: { permission: "tradein:manage" } },
       { path: "admin/usuarios", name: "admin.users.list", component: () => import("../../features/admin/views/UserListView.vue"), meta: { permission: "users:manage" } },
       { path: "admin/usuarios/nuevo", name: "admin.users.create", component: () => import("../../features/admin/views/UserCreateView.vue"), meta: { permission: "users:manage" } },
       { path: "admin/usuarios/:id/editar", name: "admin.users.edit", component: () => import("../../features/admin/views/UserEditView.vue"), meta: { permission: "users:manage" } },
@@ -76,7 +86,7 @@ router.beforeEach((to) => {
   const canManage = role === "admin";
   if (to.meta.permission === "users:manage" && !canManage) return { name: "customers.list" };
   const isReadPermission = to.meta.permission.endsWith(":read");
-  const canAccess = canManage || (role === "technician" && (to.meta.permission === "customers:read" || to.meta.permission === "repairs:read" || to.meta.permission === "repairs:manage"));
+  const canAccess = canManage || (role === "technician" && (to.meta.permission === "customers:read" || to.meta.permission === "repairs:read" || to.meta.permission === "repairs:manage" || to.meta.permission === "tradein:manage"));
   return isReadPermission || canAccess ? true : { name: "customers.list" };
 });
 export default router;

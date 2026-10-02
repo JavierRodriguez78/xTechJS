@@ -17,13 +17,16 @@ function fakeStorage(bytesToReport = 3): AttachmentStorage {
 
 const repairSteps = { async findById() { return undefined; } } as unknown as RepairStepRepository;
 
-test("an attachment is stored and persisted when the repair order exists and the type is allowed", async () => {
+test("an allowed PDF attachment is stored and persisted when the repair order exists", async () => {
   const saved: unknown[] = [];
   const attachments: RepairAttachmentRepository = {
     async create(record) { saved.push(record); return { ...record, createdAt: new Date() }; },
     async findById() { return undefined; },
     async listByRepairOrder() { return []; },
     async listByRepairStep() { return []; },
+    async listByEcommerceProduct() { return []; },
+    async listByTradeInRequest() { return []; },
+    async findRepairOrderId() { return undefined; },
     async delete() {}
   };
   const repairs = { async findById() { return { id: "repair-1" }; } } as unknown as RepairOrderRepository;
@@ -32,8 +35,8 @@ test("an attachment is stored and persisted when the repair order exists and the
     repairOrderId: "repair-1",
     uploaderId: "tech-1",
     uploaderRole: "technician",
-    fileName: "foto.jpg",
-    mimeType: "image/jpeg",
+    fileName: "documento.pdf",
+    mimeType: "application/pdf",
     stream: Readable.from(["data"])
   });
 
@@ -47,6 +50,9 @@ test("an unsupported file type is rejected before touching storage", async () =>
     async findById() { return undefined; },
     async listByRepairOrder() { return []; },
     async listByRepairStep() { return []; },
+    async listByEcommerceProduct() { return []; },
+    async listByTradeInRequest() { return []; },
+    async findRepairOrderId() { return undefined; },
     async delete() {}
   };
   const repairs = { async findById() { return { id: "repair-1" }; } } as unknown as RepairOrderRepository;
@@ -57,8 +63,8 @@ test("an unsupported file type is rejected before touching storage", async () =>
       repairOrderId: "repair-1",
       uploaderId: "tech-1",
       uploaderRole: "technician",
-      fileName: "documento.pdf",
-      mimeType: "application/pdf",
+      fileName: "archivo.zip",
+      mimeType: "application/zip",
       stream: Readable.from(["data"])
     }),
     /Unsupported file type/
@@ -71,6 +77,9 @@ test("an attachment upload is rejected when the repair order does not exist", as
     async findById() { return undefined; },
     async listByRepairOrder() { return []; },
     async listByRepairStep() { return []; },
+    async listByEcommerceProduct() { return []; },
+    async listByTradeInRequest() { return []; },
+    async findRepairOrderId() { return undefined; },
     async delete() {}
   };
   const repairs = { async findById() { return undefined; } } as unknown as RepairOrderRepository;

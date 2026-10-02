@@ -9,6 +9,8 @@ export const PERMISSIONS = {
   repairsApproveQuote: "repairs:approve-quote",
   inventoryManage: "inventory:manage",
   paymentsManage: "payments:manage",
+  ecommerceManage: "ecommerce:manage",
+  tradeInManage: "tradein:manage",
   chatUse: "chat:use",
   impersonationUse: "impersonation:use"
 } as const;
@@ -19,7 +21,7 @@ const allPermissions = Object.values(PERMISSIONS);
 
 const permissionsByRole: Record<UserRole, readonly Permission[]> = {
   admin: allPermissions,
-  technician: [PERMISSIONS.customersRead, PERMISSIONS.repairsRead, PERMISSIONS.repairsManage, PERMISSIONS.chatUse],
+  technician: [PERMISSIONS.customersRead, PERMISSIONS.repairsRead, PERMISSIONS.repairsManage, PERMISSIONS.tradeInManage, PERMISSIONS.chatUse],
   customer: [PERMISSIONS.repairsRead, PERMISSIONS.repairsApproveQuote, PERMISSIONS.chatUse]
 };
 

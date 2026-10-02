@@ -6,8 +6,10 @@ export const RepairAttachmentEntitySchema = new EntitySchema<RepairAttachment>({
   tableName: "repair_attachments",
   columns: {
     id: { type: "uuid", primary: true },
-    repairOrderId: { type: "uuid", name: "repair_order_id" },
+    repairOrderId: { type: "uuid", name: "repair_order_id", nullable: true },
     repairStepId: { type: "uuid", name: "repair_step_id", nullable: true },
+    ecommerceProductId: { type: "uuid", name: "ecommerce_product_id", nullable: true },
+    tradeInRequestId: { type: "uuid", name: "trade_in_request_id", nullable: true },
     uploaderId: { type: "uuid", name: "uploader_id" },
     uploaderRole: { type: String, name: "uploader_role" },
     fileName: { type: String, name: "file_name" },

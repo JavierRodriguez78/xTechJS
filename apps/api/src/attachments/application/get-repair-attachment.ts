@@ -7,6 +7,7 @@ import type { AttachmentStorage } from "./attachment-storage.js";
 export interface AttachmentDownload {
   attachment: RepairAttachment;
   buffer: Buffer;
+  repairOrderId: string | undefined;
 }
 
 @Traceable("GetRepairAttachment")
@@ -22,6 +23,6 @@ export class GetRepairAttachment {
     if (!attachment) return undefined;
     const chunks: Buffer[] = [];
     for await (const chunk of this.storage.read(attachment.storageKey)) chunks.push(chunk as Buffer);
-    return { attachment, buffer: Buffer.concat(chunks) };
+    return { attachment, buffer: Buffer.concat(chunks), repairOrderId: await this.attachmentRepository.findRepairOrderId(attachment) };
   }
 }

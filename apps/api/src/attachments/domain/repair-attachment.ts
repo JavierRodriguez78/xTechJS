@@ -1,9 +1,11 @@
-export type AttachmentUploaderRole = "admin" | "technician";
+export type AttachmentUploaderRole = "admin" | "technician" | "customer";
 
 export interface RepairAttachment {
   id: string;
-  repairOrderId: string;
+  repairOrderId: string | null;
   repairStepId: string | null;
+  ecommerceProductId: string | null;
+  tradeInRequestId: string | null;
   uploaderId: string;
   uploaderRole: AttachmentUploaderRole;
   fileName: string;
@@ -18,6 +20,7 @@ export const ALLOWED_ATTACHMENT_MIME_TYPES = [
   "image/png",
   "image/webp",
   "image/gif",
+  "application/pdf",
   "video/mp4",
   "video/quicktime",
   "video/webm"

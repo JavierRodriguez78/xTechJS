@@ -59,7 +59,7 @@ export class AttachmentController {
   @PermissionRequired(PERMISSIONS.repairsRead)
   async downloadAttachment(@Param("id") id: string, @Param("attachmentId") attachmentId: string, @Res() reply: ControllerReply): Promise<unknown> {
     const download = await this.queryBus.execute(new GetRepairAttachmentQuery(attachmentId));
-    if (!download || download.attachment.repairOrderId !== id) return reply.code(404).send({ message: "Attachment not found" });
+    if (!download || download.repairOrderId !== id) return reply.code(404).send({ message: "Attachment not found" });
     reply.header("content-type", download.attachment.mimeType);
     reply.header("content-disposition", `inline; filename="${encodeURIComponent(download.attachment.fileName)}"`);
     return reply.send(download.buffer);
@@ -71,4 +71,5 @@ export class AttachmentController {
     const deleted = await this.commandBus.execute(new DeleteRepairAttachmentCommand(attachmentId));
     return deleted ? reply.code(204).send(undefined) : reply.code(404).send({ message: "Attachment not found" });
   }
+
 }

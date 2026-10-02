@@ -1,5 +1,6 @@
 import type { Readable } from "node:stream";
 import type { AttachmentUploaderRole } from "../../domain/repair-attachment.js";
+import type { EcommerceAttachmentOwner } from "../upload-ecommerce-attachment.js";
 
 export class UploadRepairAttachmentCommand {
   constructor(
@@ -31,4 +32,24 @@ export class GetRepairAttachmentQuery {
 
 export class GetOwnCustomerRepairAttachmentQuery {
   constructor(public readonly repairOrderId: string, public readonly attachmentId: string, public readonly email: string) {}
+}
+
+export class UploadEcommerceAttachmentCommand {
+  constructor(
+    public readonly owner: EcommerceAttachmentOwner,
+    public readonly ownerId: string,
+    public readonly uploaderId: string,
+    public readonly uploaderRole: AttachmentUploaderRole,
+    public readonly fileName: string,
+    public readonly mimeType: string,
+    public readonly stream: Readable
+  ) {}
+}
+
+export class ListEcommerceAttachmentsQuery {
+  constructor(public readonly owner: EcommerceAttachmentOwner, public readonly ownerId: string) {}
+}
+
+export class GetEcommerceAttachmentQuery {
+  constructor(public readonly owner: EcommerceAttachmentOwner, public readonly ownerId: string, public readonly attachmentId: string) {}
 }

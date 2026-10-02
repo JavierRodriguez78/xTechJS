@@ -21,7 +21,8 @@ export class PostgresCustomerRepository implements CustomerRepository {
       address: input.address || null,
       taxId: input.taxId || null,
       internalNotes: input.internalNotes || null,
-      registrationStatus: "pending",
+      registrationStatus: input.registrationStatus ?? "pending",
+      acquisitionChannel: input.acquisitionChannel ?? "staff",
       tags: input.tags ?? []
     });
     return this.dataSource.getRepository(CustomerEntitySchema).save(customer);

@@ -2,8 +2,10 @@ import type { RepairAttachment } from "../domain/repair-attachment.js";
 
 export interface NewRepairAttachmentRecord {
   id: string;
-  repairOrderId: string;
+  repairOrderId: string | null;
   repairStepId: string | null;
+  ecommerceProductId: string | null;
+  tradeInRequestId: string | null;
   uploaderId: string;
   uploaderRole: RepairAttachment["uploaderRole"];
   fileName: string;
@@ -17,5 +19,8 @@ export interface RepairAttachmentRepository {
   findById(id: string): Promise<RepairAttachment | undefined>;
   listByRepairOrder(repairOrderId: string): Promise<readonly RepairAttachment[]>;
   listByRepairStep(repairStepId: string): Promise<readonly RepairAttachment[]>;
+  listByEcommerceProduct(ecommerceProductId: string): Promise<readonly RepairAttachment[]>;
+  listByTradeInRequest(tradeInRequestId: string): Promise<readonly RepairAttachment[]>;
+  findRepairOrderId(attachment: RepairAttachment): Promise<string | undefined>;
   delete(id: string): Promise<void>;
 }

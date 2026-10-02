@@ -7,12 +7,18 @@ import { ListRepairAttachments } from "../list-repair-attachments.js";
 import { ListOwnCustomerRepairAttachments } from "../list-own-customer-repair-attachments.js";
 import { GetRepairAttachment, type AttachmentDownload } from "../get-repair-attachment.js";
 import { GetOwnCustomerRepairAttachment } from "../get-own-customer-repair-attachment.js";
+import { UploadEcommerceAttachment } from "../upload-ecommerce-attachment.js";
+import { ListEcommerceAttachments } from "../list-ecommerce-attachments.js";
+import { GetEcommerceAttachment, type EcommerceAttachmentDownload } from "../get-ecommerce-attachment.js";
 import {
   DeleteRepairAttachmentCommand,
+  GetEcommerceAttachmentQuery,
   GetOwnCustomerRepairAttachmentQuery,
   GetRepairAttachmentQuery,
+  ListEcommerceAttachmentsQuery,
   ListOwnCustomerRepairAttachmentsQuery,
   ListRepairAttachmentsQuery,
+  UploadEcommerceAttachmentCommand,
   UploadRepairAttachmentCommand
 } from "./attachment-messages.js";
 
@@ -81,5 +87,35 @@ export class GetOwnCustomerRepairAttachmentHandler implements IQueryHandler<GetO
 
   execute(query: GetOwnCustomerRepairAttachmentQuery): Promise<AttachmentDownload | undefined> {
     return this.useCase.execute(query.repairOrderId, query.attachmentId, query.email);
+  }
+}
+
+@Service()
+@CommandHandler(UploadEcommerceAttachmentCommand)
+export class UploadEcommerceAttachmentHandler implements ICommandHandler<UploadEcommerceAttachmentCommand, RepairAttachment | undefined> {
+  constructor(private readonly useCase: UploadEcommerceAttachment) {}
+
+  execute(command: UploadEcommerceAttachmentCommand): Promise<RepairAttachment | undefined> {
+    return this.useCase.execute(command);
+  }
+}
+
+@Service()
+@QueryHandler(ListEcommerceAttachmentsQuery)
+export class ListEcommerceAttachmentsHandler implements IQueryHandler<ListEcommerceAttachmentsQuery, readonly RepairAttachment[]> {
+  constructor(private readonly useCase: ListEcommerceAttachments) {}
+
+  execute(query: ListEcommerceAttachmentsQuery): Promise<readonly RepairAttachment[]> {
+    return this.useCase.execute(query.owner, query.ownerId);
+  }
+}
+
+@Service()
+@QueryHandler(GetEcommerceAttachmentQuery)
+export class GetEcommerceAttachmentHandler implements IQueryHandler<GetEcommerceAttachmentQuery, EcommerceAttachmentDownload | undefined> {
+  constructor(private readonly useCase: GetEcommerceAttachment) {}
+
+  execute(query: GetEcommerceAttachmentQuery): Promise<EcommerceAttachmentDownload | undefined> {
+    return this.useCase.execute(query.owner, query.ownerId, query.attachmentId);
   }
 }

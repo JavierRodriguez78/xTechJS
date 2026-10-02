@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, Post, Res } from "@xtaskjs/common";
 import { InjectCommandBus, InjectQueryBus, type CommandBus, type QueryBus } from "@xtaskjs/cqrs";
 import { Authenticated } from "@xtaskjs/security";
 import { z } from "zod";
-import { CreatePaymentCommand, GetDailyPaymentSummaryQuery, GetPaymentPdfQuery, GetPaymentReceiptQuery, GetPaymentReportQuery, ListPaymentsQuery, ListRepairPaymentsQuery, RefundPaymentCommand } from "../../application/cqrs/payment-messages.js";
+import { CreatePaymentCommand, GetDailyPaymentSummaryQuery, GetPaymentPdfQuery, GetPaymentReceiptQuery, GetPaymentReportQuery, ListPaymentsQuery, ListRepairPaymentsQuery, ListTpvSalesQuery, RefundPaymentCommand } from "../../application/cqrs/payment-messages.js";
 import { GetInvoiceDraftQuery } from "../../application/cqrs/invoice-draft-messages.js";
 import type { AutomaticInvoiceLine } from "../../domain/invoice-draft.js";
 import { CloseCashRegisterCommand, GetCashRegisterQuery, OpenCashRegisterCommand } from "../../application/cqrs/cash-register-messages.js";
@@ -24,6 +24,10 @@ export class PaymentController {
   @Get()
   @PermissionRequired(PERMISSIONS.paymentsManage)
   list(): Promise<unknown> { return this.queryBus.execute(new ListPaymentsQuery()); }
+
+  @Get("/sales")
+  @PermissionRequired(PERMISSIONS.paymentsManage)
+  listSales(): Promise<unknown> { return this.queryBus.execute(new ListTpvSalesQuery()); }
 
   @Get("/summary/:date")
   @PermissionRequired(PERMISSIONS.paymentsManage)

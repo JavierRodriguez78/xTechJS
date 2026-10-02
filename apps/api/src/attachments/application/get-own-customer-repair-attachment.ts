@@ -18,7 +18,7 @@ export class GetOwnCustomerRepairAttachment {
     const repair = await this.repairOrderRepository.findById(repairOrderId);
     if (!customer || !repair || repair.customerId !== customer.id) return undefined;
     const download = await this.getRepairAttachment.execute(attachmentId);
-    if (!download || download.attachment.repairOrderId !== repairOrderId) return undefined;
+    if (!download || download.repairOrderId !== repairOrderId) return undefined;
     return download;
   }
 }

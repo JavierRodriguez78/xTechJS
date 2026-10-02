@@ -9,7 +9,8 @@ import { GetPaymentReceipt } from "../get-payment-receipt.js";
 import { GetDailyPaymentSummary } from "../get-daily-payment-summary.js";
 import { GetPaymentReport } from "../get-payment-report.js";
 import { GetPaymentPdf } from "../get-payment-pdf.js";
-import { CreatePaymentCommand, GetDailyPaymentSummaryQuery, GetPaymentPdfQuery, GetPaymentReceiptQuery, GetPaymentReportQuery, ListPaymentsQuery, ListRepairPaymentsQuery, RefundPaymentCommand } from "./payment-messages.js";
+import { ListTpvSales, type TpvSale } from "../list-tpv-sales.js";
+import { CreatePaymentCommand, GetDailyPaymentSummaryQuery, GetPaymentPdfQuery, GetPaymentReceiptQuery, GetPaymentReportQuery, ListPaymentsQuery, ListRepairPaymentsQuery, ListTpvSalesQuery, RefundPaymentCommand } from "./payment-messages.js";
 
 @Service()
 @CommandHandler(CreatePaymentCommand)
@@ -23,6 +24,13 @@ export class CreatePaymentHandler implements ICommandHandler<CreatePaymentComman
 export class ListPaymentsHandler implements IQueryHandler<ListPaymentsQuery, readonly Payment[]> {
   constructor(private readonly useCase: ListPayments) {}
   execute(): Promise<readonly Payment[]> { return this.useCase.execute(); }
+}
+
+@Service()
+@QueryHandler(ListTpvSalesQuery)
+export class ListTpvSalesHandler implements IQueryHandler<ListTpvSalesQuery, readonly TpvSale[]> {
+  constructor(private readonly useCase: ListTpvSales) {}
+  execute(): Promise<readonly TpvSale[]> { return this.useCase.execute(); }
 }
 
 @Service()

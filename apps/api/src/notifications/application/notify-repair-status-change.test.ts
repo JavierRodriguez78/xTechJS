@@ -35,6 +35,7 @@ function customer(overrides: Partial<Customer> = {}): Customer {
     taxId: null,
     internalNotes: null,
     registrationStatus: "completed",
+    acquisitionChannel: "staff",
     tags: [],
     createdAt: new Date(),
     updatedAt: new Date(),

@@ -42,8 +42,10 @@ export class UploadRepairAttachment {
     const sizeBytes = await this.storage.save(storageKey, input.stream);
     return this.attachmentRepository.create({
       id: randomUUID(),
-      repairOrderId: input.repairOrderId,
+      repairOrderId: input.repairStepId ? null : input.repairOrderId,
       repairStepId: input.repairStepId ?? null,
+      ecommerceProductId: null,
+      tradeInRequestId: null,
       uploaderId: input.uploaderId,
       uploaderRole: input.uploaderRole,
       fileName: input.fileName,
