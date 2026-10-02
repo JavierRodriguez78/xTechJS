@@ -14,6 +14,7 @@ export const CustomerEntitySchema = new EntitySchema<Customer>({
     internalNotes: { type: String, name: "internal_notes", nullable: true },
     registrationStatus: { type: String, name: "registration_status", default: "pending" },
     acquisitionChannel: { type: String, name: "acquisition_channel", default: "staff" },
+    originStoreId: { type: "uuid", name: "origin_store_id", nullable: true },
     billingName: { type: String, name: "billing_name", nullable: true },
     billingTaxId: { type: String, name: "billing_tax_id", nullable: true },
     billingAddress: { type: String, name: "billing_address", nullable: true },

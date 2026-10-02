@@ -13,6 +13,7 @@ import { isAllowedAttachmentMimeType, type AttachmentUploaderRole } from "../../
 import { PERMISSIONS } from "../../../users/domain/permission.js";
 import { PermissionRequired } from "../../../users/infrastructure/http/permission-guard.js";
 import type { AuthTokenPayload } from "../../../users/infrastructure/http/auth-routes.js";
+import { GetRepairOrderQuery } from "../../../repairs/application/cqrs/repair-messages.js";
 
 const idSchema = z.string().uuid();
 
@@ -26,9 +27,18 @@ export class AttachmentController {
     @InjectQueryBus() private readonly queryBus: QueryBus
   ) {}
 
+  private async canAccessRepair(request: FastifyRequest, repairOrderId: string): Promise<boolean> {
+    const user = request.user as AuthTokenPayload;
+    if (user.role !== "technician") return true;
+    if (!user.storeId) return false;
+    const repair = await this.queryBus.execute(new GetRepairOrderQuery(repairOrderId));
+    return repair?.storeId === user.storeId;
+  }
+
   @Get("/:id/attachments")
   @PermissionRequired(PERMISSIONS.repairsRead)
-  listAttachments(@Param("id") id: string): Promise<unknown> {
+  async listAttachments(@Param("id") id: string, @Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> {
+    if (!await this.canAccessRepair(request, id)) return reply.code(404).send({ message: "Repair order not found" });
     return this.queryBus.execute(new ListRepairAttachmentsQuery(id));
   }
 
@@ -36,6 +46,7 @@ export class AttachmentController {
   @PermissionRequired(PERMISSIONS.repairsManage)
   async uploadAttachment(@Param("id") id: string, @Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> {
     if (!idSchema.safeParse(id).success) return reply.code(400).send({ message: "Invalid repair order id" });
+    if (!await this.canAccessRepair(request, id)) return reply.code(404).send({ message: "Repair order not found" });
     const upload = await request.file();
     if (!upload) return reply.code(400).send({ message: "No file provided" });
     if (!isAllowedAttachmentMimeType(upload.mimetype)) return reply.code(400).send({ message: "Unsupported file type" });
@@ -57,7 +68,8 @@ export class AttachmentController {
 
   @Get("/:id/attachments/:attachmentId")
   @PermissionRequired(PERMISSIONS.repairsRead)
-  async downloadAttachment(@Param("id") id: string, @Param("attachmentId") attachmentId: string, @Res() reply: ControllerReply): Promise<unknown> {
+  async downloadAttachment(@Param("id") id: string, @Param("attachmentId") attachmentId: string, @Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> {
+    if (!await this.canAccessRepair(request, id)) return reply.code(404).send({ message: "Attachment not found" });
     const download = await this.queryBus.execute(new GetRepairAttachmentQuery(attachmentId));
     if (!download || download.repairOrderId !== id) return reply.code(404).send({ message: "Attachment not found" });
     reply.header("content-type", download.attachment.mimeType);
@@ -67,7 +79,8 @@ export class AttachmentController {
 
   @Delete("/:id/attachments/:attachmentId")
   @PermissionRequired(PERMISSIONS.repairsManage)
-  async deleteAttachment(@Param("attachmentId") attachmentId: string, @Res() reply: ControllerReply): Promise<unknown> {
+  async deleteAttachment(@Param("id") id: string, @Param("attachmentId") attachmentId: string, @Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> {
+    if (!await this.canAccessRepair(request, id)) return reply.code(404).send({ message: "Attachment not found" });
     const deleted = await this.commandBus.execute(new DeleteRepairAttachmentCommand(attachmentId));
     return deleted ? reply.code(204).send(undefined) : reply.code(404).send({ message: "Attachment not found" });
   }

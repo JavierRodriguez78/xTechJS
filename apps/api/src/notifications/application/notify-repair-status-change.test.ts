@@ -37,6 +37,7 @@ function customer(overrides: Partial<Customer> = {}): Customer {
     internalNotes: null,
     registrationStatus: "completed",
     acquisitionChannel: "staff",
+    originStoreId: null,
     tags: [],
     createdAt: new Date(),
     updatedAt: new Date(),

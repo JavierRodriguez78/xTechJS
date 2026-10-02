@@ -9,7 +9,7 @@ import { PERMISSIONS } from "../../domain/permission.js";
 import { PermissionRequired } from "./permission-guard.js";
 
 type ControllerReply = { code(statusCode: number): ControllerReply; send(payload: unknown): unknown };
-const userSchema = z.object({ email: z.string().trim().email().max(320), displayName: z.string().trim().min(1).max(160), role: z.enum(["admin", "technician", "customer"]), password: z.string().min(12).max(256) });
+const userSchema = z.object({ email: z.string().trim().email().max(320), displayName: z.string().trim().min(1).max(160), role: z.enum(["admin", "technician", "customer"]), password: z.string().min(12).max(256), storeId: z.string().uuid().nullable().optional() });
 const updateUserSchema = userSchema.partial().extend({ active: z.boolean().optional() }).refine((value) => Object.keys(value).length > 0, "At least one field is required");
 const configValueSchema = z.object({ value: z.string().trim().min(1).max(160) });
 const repairDeviceCatalogSchema = z.object({ deviceType: z.string().trim().min(1).max(100), brand: z.string().trim().min(1).max(100), model: z.string().trim().min(1).max(160), imageUrl: z.string().trim().url().max(2000).optional() });

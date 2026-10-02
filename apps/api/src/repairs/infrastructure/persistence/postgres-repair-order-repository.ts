@@ -30,6 +30,7 @@ export class PostgresRepairOrderRepository implements RepairOrderRepository {
 
   async findPage(options: RepairOrderListOptions): Promise<RepairOrderPage> {
     const query = this.dataSource.getRepository(RepairOrderEntitySchema).createQueryBuilder("repair");
+    if (options.storeId) query.andWhere("repair.store_id = :storeId", { storeId: options.storeId });
     if (options.query) {
       query.andWhere("(repair.brand ILIKE :query OR repair.model ILIKE :query OR repair.device_type ILIKE :query OR repair.serial_number ILIKE :query OR repair.reported_issue ILIKE :query)", { query: `%${options.query}%` });
     }

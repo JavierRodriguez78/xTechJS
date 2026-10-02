@@ -8,8 +8,8 @@ import type { InventoryRepository } from "./inventory-repository.js";
 export class AdjustInventoryStock {
   constructor(@Qualifier("inventoryRepository") private readonly inventoryRepository: InventoryRepository) {}
 
-  execute(id: string, input: AdjustInventoryInput): Promise<InventoryItem | undefined> {
+  execute(storeId: string, id: string, input: AdjustInventoryInput): Promise<InventoryItem | undefined> {
     if (!Number.isInteger(input.quantity) || input.quantity === 0) throw new Error("Inventory quantity must be a non-zero integer");
-    return this.inventoryRepository.adjustStock(id, { ...input, note: input.note?.trim() });
+    return this.inventoryRepository.adjustStock(storeId, id, { ...input, note: input.note?.trim() });
   }
 }

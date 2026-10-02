@@ -24,6 +24,7 @@ export interface RepairDeviceSecret {
 
 export interface RepairOrder {
   id: string;
+  storeId?: string;
   customerId: string;
   deviceType: string;
   brand: string;
@@ -53,6 +54,7 @@ export interface RepairStatusEvent {
 }
 
 export interface CreateRepairOrderInput {
+  storeId?: string;
   customerId: string;
   deviceType: string;
   brand: string;

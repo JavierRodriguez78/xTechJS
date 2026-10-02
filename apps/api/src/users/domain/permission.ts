@@ -2,6 +2,7 @@ import type { UserRole } from "../../shared/domain/user-role.js";
 
 export const PERMISSIONS = {
   usersManage: "users:manage",
+  storesManage: "stores:manage",
   customersRead: "customers:read",
   customersManage: "customers:manage",
   repairsRead: "repairs:read",

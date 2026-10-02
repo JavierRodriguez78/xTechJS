@@ -15,6 +15,7 @@ import { UserEntitySchema } from "../../../users/infrastructure/persistence/user
 import { CustomerEntitySchema } from "../persistence/customer-entity.js";
 import { CustomerRegistrationTokenEntitySchema } from "../persistence/customer-registration-token-entity.js";
 import { DataProtectionConsentEntitySchema } from "../persistence/data-protection-consent-entity.js";
+import type { AuthTokenPayload } from "../../../users/infrastructure/http/auth-routes.js";
 
 const createCustomerSchema = z.object({
   displayName: z.string().trim().min(1).max(160),
@@ -165,12 +166,12 @@ export class CustomerController {
   @Post()
   @PermissionRequired(PERMISSIONS.customersManage)
   @Authenticated()
-  async createCustomer(@Body() body: unknown, @Res() reply: ControllerReply): Promise<unknown> {
+  async createCustomer(@Body() body: unknown, @Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> {
     const parsed = createCustomerSchema.safeParse(body);
     if (!parsed.success) {
       return reply.code(400).send({ message: "Invalid customer data", issues: parsed.error.flatten() });
     }
-    const customer = await this.commandBus.execute(new CreateCustomerCommand(parsed.data as CreateCustomerInput));
+    const customer = await this.commandBus.execute(new CreateCustomerCommand({ ...parsed.data, originStoreId: (request.user as AuthTokenPayload).storeId } as CreateCustomerInput));
     return reply.code(201).send(customer);
   }
 

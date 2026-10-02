@@ -22,6 +22,7 @@ function repair(status = "received"): Repair {
   return {
     id: "repair-1",
     customerId: "customer-1",
+    storeId: "store-1",
     deviceType: "Consola",
     brand: "Sony",
     model: "PS5",

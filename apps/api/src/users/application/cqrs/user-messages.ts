@@ -17,9 +17,9 @@ export class FindActiveNonAdminUserQuery {
 }
 
 export class CreateUserCommand {
-  constructor(public readonly input: { email: string; displayName: string; role: "admin" | "technician" | "customer"; password: string }) {}
+  constructor(public readonly input: { email: string; displayName: string; role: "admin" | "technician" | "customer"; password: string; storeId?: string | null }) {}
 }
 
 export class UpdateUserCommand {
-  constructor(public readonly id: string, public readonly input: { email?: string; displayName?: string; role?: "admin" | "technician" | "customer"; active?: boolean; password?: string }) {}
+  constructor(public readonly id: string, public readonly input: { email?: string; displayName?: string; role?: "admin" | "technician" | "customer"; storeId?: string | null; active?: boolean; password?: string }) {}
 }

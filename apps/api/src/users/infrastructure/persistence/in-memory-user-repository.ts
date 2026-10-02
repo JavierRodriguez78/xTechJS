@@ -2,9 +2,9 @@ import type { AuditLogEntry, UserRepository } from "../../application/user-repos
 import type { User, UserCredentials } from "../../domain/user.js";
 
 const users: UserCredentials[] = [
-  { id: "admin-1", email: "admin@xtechjs.local", displayName: "Admin Taller", role: "admin", active: true, passwordHash: "test-only" },
-  { id: "technician-1", email: "tecnico@xtechjs.local", displayName: "Ana Tecnica", role: "technician", active: true, passwordHash: "test-only" },
-  { id: "customer-1", email: "cliente@xtechjs.local", displayName: "Marta Ruiz", role: "customer", active: true, passwordHash: "test-only" }
+  { id: "admin-1", email: "admin@xtechjs.local", displayName: "Admin Taller", role: "admin", storeId: null, active: true, passwordHash: "test-only" },
+  { id: "technician-1", email: "tecnico@xtechjs.local", displayName: "Ana Tecnica", role: "technician", storeId: null, active: true, passwordHash: "test-only" },
+  { id: "customer-1", email: "cliente@xtechjs.local", displayName: "Marta Ruiz", role: "customer", storeId: null, active: true, passwordHash: "test-only" }
 ];
 
 export class InMemoryUserRepository implements UserRepository {
@@ -33,7 +33,7 @@ export class InMemoryUserRepository implements UserRepository {
     return user;
   }
 
-  async update(id: string, input: Partial<Pick<User, "email" | "displayName" | "role" | "active">> & { passwordHash?: string }): Promise<User | undefined> {
+  async update(id: string, input: Partial<Pick<User, "email" | "displayName" | "role" | "storeId" | "active">> & { passwordHash?: string }): Promise<User | undefined> {
     const user = users.find((item) => item.id === id);
     if (!user) return undefined;
     Object.assign(user, input);

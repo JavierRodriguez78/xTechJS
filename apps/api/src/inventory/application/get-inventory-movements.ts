@@ -8,7 +8,7 @@ import type { InventoryRepository } from "./inventory-repository.js";
 export class GetInventoryMovements {
   constructor(@Qualifier("inventoryRepository") private readonly inventoryRepository: InventoryRepository) {}
 
-  execute(id: string): Promise<readonly InventoryMovement[]> {
-    return this.inventoryRepository.findMovements(id);
+  execute(storeId: string, id: string): Promise<readonly InventoryMovement[]> {
+    return this.inventoryRepository.findMovements(storeId, id);
   }
 }

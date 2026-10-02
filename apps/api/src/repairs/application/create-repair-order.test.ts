@@ -33,12 +33,12 @@ class TestRepairRepository implements RepairOrderRepository {
 
 class TestUserRepository implements UserRepository {
   async findAll(): Promise<readonly User[]> { return []; }
-  async findById(id: string): Promise<User | undefined> { return id === "technician-1" ? { id, email: "tech@example.com", displayName: "Ana", role: "technician", active: true } : undefined; }
+  async findById(id: string): Promise<User | undefined> { return id === "technician-1" ? { id, email: "tech@example.com", displayName: "Ana", role: "technician", storeId: null, active: true } : undefined; }
   async findActiveByRole(): Promise<readonly User[]> { return []; }
   async findByEmail(): Promise<UserCredentials | undefined> { return undefined; }
   async count(): Promise<number> { return 0; }
   async create(user: UserCredentials): Promise<User> { return user; }
-  async update(id: string, input: Partial<Pick<User, "email" | "displayName" | "role" | "active">> & { passwordHash?: string }): Promise<User | undefined> { return this.findById(id).then((user) => user ? { ...user, ...input } : undefined); }
+  async update(id: string, input: Partial<Pick<User, "email" | "displayName" | "role" | "storeId" | "active">> & { passwordHash?: string }): Promise<User | undefined> { return this.findById(id).then((user) => user ? { ...user, ...input } : undefined); }
   async listAuditLogs(): Promise<readonly { id: string; action: string; createdAt: string; actorName: string | null; actorEmail: string | null; targetName: string | null; targetEmail: string | null }[]> { return []; }
 }
 

@@ -20,6 +20,7 @@ export interface Customer {
   internalNotes: string | null;
   registrationStatus: RegistrationStatus;
   acquisitionChannel: CustomerAcquisitionChannel;
+  originStoreId: string | null;
   billingName?: string | null;
   billingTaxId?: string | null;
   billingAddress?: string | null;
@@ -32,6 +33,7 @@ export interface Customer {
 }
 
 export interface CreateCustomerInput {
+  originStoreId?: string | null;
   displayName: string;
   email: string;
   phone?: string;

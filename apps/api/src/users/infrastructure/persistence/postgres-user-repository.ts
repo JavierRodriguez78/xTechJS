@@ -42,7 +42,7 @@ export class PostgresUserRepository implements UserRepository {
     return publicUser;
   }
 
-  async update(id: string, input: Partial<Pick<User, "email" | "displayName" | "role" | "active">> & { passwordHash?: string }): Promise<User | undefined> {
+  async update(id: string, input: Partial<Pick<User, "email" | "displayName" | "role" | "storeId" | "active">> & { passwordHash?: string }): Promise<User | undefined> {
     const repository = this.dataSource.getRepository(UserEntitySchema);
     const user = await repository.preload({ id, ...input });
     if (!user) return undefined;

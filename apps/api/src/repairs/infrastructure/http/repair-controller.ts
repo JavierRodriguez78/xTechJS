@@ -35,7 +35,7 @@ import type { AuthTokenPayload } from "../../../users/infrastructure/http/auth-r
 
 const conditionChecklistSchema = z.object({ items: z.array(z.object({ label: z.string().trim().min(1).max(160), ok: z.boolean() })).min(1).max(30), notes: z.string().trim().max(2000).optional() });
 const quoteLineSchema = z.object({ description: z.string().trim().min(1).max(500), quantity: z.number().int().min(1).max(1000), unitPriceCents: z.number().int().min(0).max(100000000) });
-const createSchema = z.object({ customerId: z.string().uuid(), deviceType: z.string().trim().min(1).max(100), brand: z.string().trim().min(1).max(100), model: z.string().trim().min(1).max(160), serialNumber: z.string().trim().max(160).optional(), reportedIssue: z.string().trim().min(1).max(5000), deliveredAccessories: z.string().trim().max(2000).optional(), devicePasscode: z.string().trim().min(1).max(500).optional(), technicianId: z.string().uuid().optional(), estimatedCompletionAt: z.coerce.date().optional(), initialQuoteLines: z.array(quoteLineSchema).min(1).max(50).optional(), preRepairCondition: conditionChecklistSchema.optional() });
+const createSchema = z.object({ customerId: z.string().uuid(), storeId: z.string().uuid().optional(), deviceType: z.string().trim().min(1).max(100), brand: z.string().trim().min(1).max(100), model: z.string().trim().min(1).max(160), serialNumber: z.string().trim().max(160).optional(), reportedIssue: z.string().trim().min(1).max(5000), deliveredAccessories: z.string().trim().max(2000).optional(), devicePasscode: z.string().trim().min(1).max(500).optional(), technicianId: z.string().uuid().optional(), estimatedCompletionAt: z.coerce.date().optional(), initialQuoteLines: z.array(quoteLineSchema).min(1).max(50).optional(), preRepairCondition: conditionChecklistSchema.optional() });
 // El estado no se valida contra una lista fija: los estados activos los define la
 // configuracion administrativa y el caso de uso los comprueba contra ella.
 const statusSchema = z.object({ status: z.string().trim().min(1).max(160), note: z.string().trim().max(2000).optional() });
@@ -66,12 +66,21 @@ export class RepairController {
     @InjectQueryBus() private readonly queryBus: QueryBus
   ) {}
 
+  private async canAccessRepair(request: FastifyRequest, repairOrderId: string): Promise<boolean> {
+    const user = request.user as AuthTokenPayload;
+    if (user.role !== "technician") return true;
+    if (!user.storeId) return false;
+    const repair = await this.queryBus.execute(new GetRepairOrderQuery(repairOrderId));
+    return repair?.storeId === user.storeId;
+  }
+
   @Get()
   @PermissionRequired(PERMISSIONS.repairsRead)
   async listRepairs(@Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> {
     const parsed = listRepairsQuerySchema.safeParse(request.query);
     if (!parsed.success) return reply.code(400).send({ message: "Invalid repair list query", issues: parsed.error.flatten() });
     const { q, estado, tecnico, tipo, cliente, desde, hasta, orden, pagina, pageSize } = parsed.data;
+    const user = request.user as AuthTokenPayload;
     const receivedTo = hasta ? new Date(`${hasta}T00:00:00.000Z`) : undefined;
     if (receivedTo) receivedTo.setUTCDate(receivedTo.getUTCDate() + 1);
     return this.queryBus.execute(new ListRepairOrdersQuery({
@@ -80,6 +89,7 @@ export class RepairController {
       technicianId: tecnico,
       deviceType: tipo,
       customerId: cliente,
+      storeId: user.role === "technician" ? user.storeId ?? undefined : undefined,
       receivedFrom: desde ? new Date(`${desde}T00:00:00.000Z`) : undefined,
       receivedTo,
       sort: orden,
@@ -96,21 +106,24 @@ export class RepairController {
 
   @Get("/:id")
   @PermissionRequired(PERMISSIONS.repairsRead)
-  async getRepair(@Param("id") id: string, @Res() reply: ControllerReply): Promise<unknown> {
+  async getRepair(@Param("id") id: string, @Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> {
+    if (!await this.canAccessRepair(request, id)) return reply.code(404).send({ message: "Repair order not found" });
     const repair = await this.queryBus.execute(new GetRepairOrderQuery(id));
     return repair ?? reply.code(404).send({ message: "Repair order not found" });
   }
 
   @Get("/:id/passcode")
   @PermissionRequired(PERMISSIONS.repairsManage)
-  async getDevicePasscode(@Param("id") id: string, @Res() reply: ControllerReply): Promise<unknown> {
+  async getDevicePasscode(@Param("id") id: string, @Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> {
+    if (!await this.canAccessRepair(request, id)) return reply.code(404).send({ message: "Device passcode not found" });
     const passcode = await this.queryBus.execute(new GetRepairDevicePasscodeQuery(id));
     return passcode === undefined ? reply.code(404).send({ message: "Device passcode not found" }) : { passcode };
   }
 
   @Get("/:id/receipt")
   @PermissionRequired(PERMISSIONS.repairsRead)
-  async downloadReceipt(@Param("id") id: string, @Res() reply: ControllerReply): Promise<unknown> {
+  async downloadReceipt(@Param("id") id: string, @Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> {
+    if (!await this.canAccessRepair(request, id)) return reply.code(404).send({ message: "Repair order not found" });
     const document = await this.queryBus.execute(new GetRepairReceiptQuery(id));
     if (!document) return reply.code(404).send({ message: "Repair order not found" });
     reply.header("content-type", "application/pdf");
@@ -120,7 +133,8 @@ export class RepairController {
 
   @Get("/:id/report")
   @PermissionRequired(PERMISSIONS.repairsRead)
-  async downloadTechnicalReport(@Param("id") id: string, @Res() reply: ControllerReply): Promise<unknown> {
+  async downloadTechnicalReport(@Param("id") id: string, @Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> {
+    if (!await this.canAccessRepair(request, id)) return reply.code(404).send({ message: "Repair order not found" });
     const document = await this.queryBus.execute(new GetRepairTechnicalReportQuery(id));
     if (!document) return reply.code(404).send({ message: "Repair order not found" });
     reply.header("content-type", "application/pdf");
@@ -130,7 +144,8 @@ export class RepairController {
 
   @Get("/:id/steps")
   @PermissionRequired(PERMISSIONS.repairsRead)
-  async listSteps(@Param("id") id: string, @Res() reply: ControllerReply): Promise<unknown> {
+  async listSteps(@Param("id") id: string, @Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> {
+    if (!await this.canAccessRepair(request, id)) return reply.code(404).send({ message: "Repair order not found" });
     const steps = await this.queryBus.execute(new ListRepairStepsQuery(id));
     return steps ?? reply.code(404).send({ message: "Repair order not found" });
   }
@@ -138,6 +153,7 @@ export class RepairController {
   @Post("/:id/steps")
   @PermissionRequired(PERMISSIONS.repairsManage)
   async addStep(@Param("id") id: string, @Body() body: unknown, @Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> {
+    if (!await this.canAccessRepair(request, id)) return reply.code(404).send({ message: "Repair order not found" });
     const parsed = repairStepSchema.safeParse(body);
     if (!parsed.success) return reply.code(400).send({ message: "Invalid repair step", issues: parsed.error.flatten() });
     const user = request.user as AuthTokenPayload;
@@ -148,6 +164,7 @@ export class RepairController {
   @Patch("/:id/steps/:stepId")
   @PermissionRequired(PERMISSIONS.repairsManage)
   async updateStep(@Param("id") id: string, @Param("stepId") stepId: string, @Body() body: unknown, @Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> {
+    if (!await this.canAccessRepair(request, id)) return reply.code(404).send({ message: "Repair order not found" });
     const parsed = repairStepUpdateSchema.safeParse(body);
     if (!parsed.success) return reply.code(400).send({ message: "Invalid repair step", issues: parsed.error.flatten() });
     const user = request.user as AuthTokenPayload;
@@ -163,6 +180,7 @@ export class RepairController {
   @Delete("/:id/steps/:stepId")
   @PermissionRequired(PERMISSIONS.repairsManage)
   async deleteStep(@Param("id") id: string, @Param("stepId") stepId: string, @Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> {
+    if (!await this.canAccessRepair(request, id)) return reply.code(404).send({ message: "Repair order not found" });
     const user = request.user as AuthTokenPayload;
     try {
       const deleted = await this.commandBus.execute(new DeleteRepairStepCommand(id, stepId, user.sub, user.role));
@@ -175,7 +193,8 @@ export class RepairController {
 
   @Get("/:id/history")
   @PermissionRequired(PERMISSIONS.repairsRead)
-  async getHistory(@Param("id") id: string, @Res() reply: ControllerReply): Promise<unknown> {
+  async getHistory(@Param("id") id: string, @Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> {
+    if (!await this.canAccessRepair(request, id)) return reply.code(404).send({ message: "Repair order not found" });
     const history = await this.queryBus.execute(new GetRepairStatusHistoryQuery(id));
     return history.length ? history : reply.code(404).send({ message: "Repair order not found" });
   }
@@ -187,7 +206,9 @@ export class RepairController {
     if (!parsed.success) return reply.code(400).send({ message: "Invalid repair order", issues: parsed.error.flatten() });
     try {
       const user = request.user as AuthTokenPayload;
-      return reply.code(201).send(await this.commandBus.execute(new CreateRepairOrderCommand(parsed.data as CreateRepairOrderInput, user.sub)));
+      const storeId = user.role === "technician" ? user.storeId : parsed.data.storeId;
+      if (!storeId) return reply.code(400).send({ message: "Selecciona una tienda para la reparacion." });
+      return reply.code(201).send(await this.commandBus.execute(new CreateRepairOrderCommand({ ...parsed.data, storeId } as CreateRepairOrderInput, user.sub)));
     } catch (error) {
       if (error instanceof DeviceTypeNotConfiguredError) return reply.code(400).send({ message: `El tipo de dispositivo "${error.deviceType}" no esta configurado.` });
       if (error instanceof DeviceModelNotConfiguredError) return reply.code(400).send({ message: `El modelo "${error.brand} ${error.model}" no esta configurado para ${error.deviceType}.` });
@@ -197,7 +218,8 @@ export class RepairController {
 
   @Patch("/:id/status")
   @PermissionRequired(PERMISSIONS.repairsManage)
-  async changeStatus(@Param("id") id: string, @Body() body: unknown, @Res() reply: ControllerReply): Promise<unknown> {
+  async changeStatus(@Param("id") id: string, @Body() body: unknown, @Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> {
+    if (!await this.canAccessRepair(request, id)) return reply.code(404).send({ message: "Repair order not found" });
     const parsed = statusSchema.safeParse(body);
     if (!parsed.success) return reply.code(400).send({ message: "Invalid repair status", issues: parsed.error.flatten() });
     try {
@@ -211,7 +233,8 @@ export class RepairController {
 
   @Patch("/:id/technical")
   @PermissionRequired(PERMISSIONS.repairsManage)
-  async updateTechnical(@Param("id") id: string, @Body() body: unknown, @Res() reply: ControllerReply): Promise<unknown> {
+  async updateTechnical(@Param("id") id: string, @Body() body: unknown, @Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> {
+    if (!await this.canAccessRepair(request, id)) return reply.code(404).send({ message: "Repair order not found" });
     const parsed = technicalSchema.safeParse(body);
     if (!parsed.success) return reply.code(400).send({ message: "Invalid technical details", issues: parsed.error.flatten() });
     try {
@@ -224,14 +247,16 @@ export class RepairController {
 
   @Get("/:id/quote")
   @PermissionRequired(PERMISSIONS.repairsRead)
-  async getQuote(@Param("id") id: string, @Res() reply: ControllerReply): Promise<unknown> {
+  async getQuote(@Param("id") id: string, @Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> {
+    if (!await this.canAccessRepair(request, id)) return reply.code(404).send({ message: "Repair quote not found" });
     const quote = await this.queryBus.execute(new GetRepairQuoteQuery(id));
     return quote ?? reply.code(404).send({ message: "Repair quote not found" });
   }
 
   @Patch("/:id/quote")
   @PermissionRequired(PERMISSIONS.repairsManage)
-  async saveQuote(@Param("id") id: string, @Body() body: unknown, @Res() reply: ControllerReply): Promise<unknown> {
+  async saveQuote(@Param("id") id: string, @Body() body: unknown, @Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> {
+    if (!await this.canAccessRepair(request, id)) return reply.code(404).send({ message: "Repair order not found" });
     const parsed = quoteSchema.safeParse(body);
     if (!parsed.success) return reply.code(400).send({ message: "Invalid repair quote", issues: parsed.error.flatten() });
     const quote = await this.commandBus.execute(new SaveRepairQuoteCommand(id, parsed.data as SaveRepairQuoteInput));
@@ -240,7 +265,8 @@ export class RepairController {
 
   @Post("/:id/quote/approve")
   @PermissionRequired(PERMISSIONS.repairsManage)
-  async approveQuote(@Param("id") id: string, @Res() reply: ControllerReply): Promise<unknown> {
+  async approveQuote(@Param("id") id: string, @Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> {
+    if (!await this.canAccessRepair(request, id)) return reply.code(404).send({ message: "Repair quote not found" });
     try {
       const quote = await this.commandBus.execute(new ApproveRepairQuoteCommand(id));
       return quote ?? reply.code(404).send({ message: "Repair quote not found" });

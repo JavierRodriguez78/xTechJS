@@ -5,6 +5,7 @@ export interface User {
   email: string;
   displayName: string;
   role: UserRole;
+  storeId: string | null;
   active: boolean;
 }
 

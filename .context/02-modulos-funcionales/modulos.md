@@ -69,3 +69,11 @@
 - Función de suplantación de usuario (ver `01-roles-permisos/roles.md`), con auditoría.
 - Configuración general (tipos de dispositivo, flujos de estado, plantillas de notificación, tarifas).
 - Dashboards/reportes (reparaciones por estado, facturación, stock crítico, rendimiento por técnico).
+- **Página principal del panel con indicadores clave** (nuevos clientes, ventas online, reparaciones en curso y finalizadas, stock bajo), agregable globalmente o filtrable por tienda. Especificación completa en `15-multitienda/multitienda.md` sección 6.
+
+## Multitienda
+- El negocio puede operar **varias tiendas físicas** desde la misma instalación: cada tienda tiene sus propias reparaciones, su propio almacén/stock y sus propios empleados asignados.
+- **Los clientes son compartidos** entre todas las tiendas: un mismo cliente puede tener reparaciones o pedidos en varias tiendas sin registrarse de nuevo.
+- **Traspasos de stock entre tiendas**, con trazabilidad completa de qué tienda envía y cuál recibe cada traspaso.
+- Un admin puede tener acceso global (todas las tiendas) o quedar acotado a una tienda concreta, igual que el resto del staff.
+- Especificación completa (modelo de datos, migración de almacén y facturación, decisiones abiertas) en `15-multitienda/multitienda.md`.

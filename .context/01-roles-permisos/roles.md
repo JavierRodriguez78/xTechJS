@@ -22,3 +22,12 @@ La aplicación debe implementar **como mínimo 3 roles**, con separación estric
 - Puede consultar y, si aplica, pagar presupuestos/facturas asociados a sus reparaciones.
 
 > El sistema de permisos debe diseñarse de forma extensible (RBAC o similar) para poder añadir roles adicionales en el futuro (p. ej. "recepción", "encargado de almacén") sin romper la arquitectura.
+
+## Alcance por tienda (multitienda)
+
+Con varias tiendas (ver `15-multitienda/multitienda.md`), cada usuario queda
+acotado a una tienda (`storeId`), salvo el admin, que puede ser global
+(`storeId: null`, ve y gestiona todas las tiendas) o estar asignado a una
+tienda concreta. Los permisos de este documento no cambian, se interpretan
+siempre "dentro del alcance de la tienda del usuario". Los clientes siguen
+sin estar ligados a ninguna tienda: son compartidos entre todas.

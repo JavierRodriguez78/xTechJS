@@ -3,11 +3,13 @@ import type { RepairStatus } from "../domain/repair-status.js";
 
 export interface NewRepairOrderRecord extends Omit<CreateRepairOrderInput, "devicePasscode"> {
   id: string;
+  storeId: string;
   devicePasscodeEncrypted?: string;
   recordedByUserId: string;
 }
 
 export interface RepairOrderListOptions {
+  storeId?: string;
   query?: string;
   status?: string;
   technicianId?: string;

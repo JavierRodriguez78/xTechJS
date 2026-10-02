@@ -1,9 +1,10 @@
 import { staffSession } from "../auth/session";
 
-export interface AdminUser { id: string; email: string; displayName: string; role: "admin" | "technician" | "customer"; active: boolean; }
+export interface AdminUser { id: string; email: string; displayName: string; role: "admin" | "technician" | "customer"; storeId: string | null; active: boolean; }
 export interface AuditLogEntry { id: string; action: string; createdAt: string; actorName: string | null; actorEmail: string | null; targetName: string | null; targetEmail: string | null; }
 export interface NotificationTemplate { key: string; subject: string; body: string; enabled: boolean; updatedAt: string; }
 export interface RepairDeviceCatalogEntry { deviceType: string; brand: string; model: string; imageUrl?: string; }
+export interface Store { id: string; name: string; address: string; phone: string | null; taxId: string | null; invoiceSeriesPrefix: string; active: boolean; }
 const request = async <T>(url: string, init?: RequestInit): Promise<T> => {
   const response = await fetch(url, { ...init, headers: { authorization: `Bearer ${staffSession.value?.accessToken ?? ""}`, ...init?.headers } });
   // El servidor explica por que rechaza la operacion (estado protegido, plantilla
@@ -13,6 +14,9 @@ const request = async <T>(url: string, init?: RequestInit): Promise<T> => {
 };
 export const listUsers = () => request<AdminUser[]>("/api/users");
 export const listAuditLogs = () => request<AuditLogEntry[]>("/api/users/audit");
+export const listStores = () => request<Store[]>("/api/stores");
+export const createStore = (input: Omit<Store, "id" | "active"> & { active?: boolean }) => request<Store>("/api/stores", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
+export const updateStore = (id: string, input: Partial<Omit<Store, "id">>) => request<Store>(`/api/stores/${id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
 export const listRepairStatuses = () => request<{ values: string[] }>("/api/admin/config/repair-statuses");
 export const listDeviceTypes = () => request<{ values: string[] }>("/api/admin/config/device-types");
 export const addConfigValue = (kind: "repair-statuses" | "device-types", value: string) => request<{ values: string[] }>(`/api/admin/config/${kind}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ value }) });
@@ -23,8 +27,8 @@ export const removeRepairDeviceCatalogEntry = (input: Pick<RepairDeviceCatalogEn
 export const listNotificationTemplates = () => request<{ templates: NotificationTemplate[]; placeholders: string[] }>("/api/admin/config/notification-templates");
 export const saveNotificationTemplate = (input: { key: string; subject: string; body: string; enabled: boolean }) => request<NotificationTemplate>("/api/admin/config/notification-templates", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
 export const removeNotificationTemplate = (key: string) => request<{ key: string }>("/api/admin/config/notification-templates/remove", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ key }) });
-export const createUser = (input: { email: string; displayName: string; role: AdminUser["role"]; password: string }) => request<AdminUser>("/api/users", { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${staffSession.value?.accessToken ?? ""}` }, body: JSON.stringify(input) });
-export const updateUser = (id: string, input: { email?: string; displayName?: string; role?: AdminUser["role"]; active?: boolean; password?: string }) => request<AdminUser>(`/api/users/${id}`, { method: "PATCH", headers: { "content-type": "application/json", authorization: `Bearer ${staffSession.value?.accessToken ?? ""}` }, body: JSON.stringify(input) });
+export const createUser = (input: { email: string; displayName: string; role: AdminUser["role"]; password: string; storeId?: string | null }) => request<AdminUser>("/api/users", { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${staffSession.value?.accessToken ?? ""}` }, body: JSON.stringify(input) });
+export const updateUser = (id: string, input: { email?: string; displayName?: string; role?: AdminUser["role"]; storeId?: string | null; active?: boolean; password?: string }) => request<AdminUser>(`/api/users/${id}`, { method: "PATCH", headers: { "content-type": "application/json", authorization: `Bearer ${staffSession.value?.accessToken ?? ""}` }, body: JSON.stringify(input) });
 
 export async function impersonateUser(id: string): Promise<{ accessToken: string; user: AdminUser }> {
   const response = await fetch(`/api/auth/impersonate/${id}`, { method: "POST", headers: { authorization: `Bearer ${staffSession.value?.accessToken ?? ""}` } });

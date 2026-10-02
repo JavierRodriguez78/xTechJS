@@ -10,6 +10,7 @@ export interface StaffSession {
     displayName: string;
     email: string;
     role: StaffRole;
+    storeId: string | null;
   };
 }
 

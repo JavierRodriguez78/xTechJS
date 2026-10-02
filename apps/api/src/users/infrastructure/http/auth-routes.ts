@@ -16,6 +16,7 @@ export interface AuthTokenPayload {
   sub: string;
   email?: string;
   role: UserRole;
+  storeId: string | null;
   impersonatorId?: string;
 }
 
@@ -56,7 +57,7 @@ export class AuthController {
     if (!user) {
       return reply.code(401).send({ message: "Invalid credentials" });
     }
-    const token = request.server.jwt.sign({ sub: user.id, role: user.role });
+    const token = request.server.jwt.sign({ sub: user.id, role: user.role, storeId: user.storeId });
     return { accessToken: token, user: toPublicUser(user) };
   }
 
@@ -66,7 +67,7 @@ export class AuthController {
     if (!user || !isStaffRole(user.role)) {
       return reply.code(401).send({ message: "Invalid staff credentials" });
     }
-    const token = request.server.jwt.sign({ sub: user.id, email: user.email, role: user.role });
+    const token = request.server.jwt.sign({ sub: user.id, email: user.email, role: user.role, storeId: user.storeId });
     return { accessToken: token, user: toPublicUser(user) };
   }
 
@@ -74,7 +75,7 @@ export class AuthController {
   async customerLogin(@Body() input: { email: string; password: string }, @Req() request: FastifyRequest, @Res() reply: { code(statusCode: number): { send(payload: unknown): unknown } }): Promise<unknown> {
     const user = await this.commandBus.execute(new AuthenticateUserCommand(input?.email ?? "", input?.password ?? ""));
     if (!user || user.role !== "customer") return reply.code(401).send({ message: "Invalid customer credentials" });
-    const token = request.server.jwt.sign({ sub: user.id, email: user.email, role: user.role });
+    const token = request.server.jwt.sign({ sub: user.id, email: user.email, role: user.role, storeId: user.storeId });
     return { accessToken: token, user: toPublicUser(user) };
   }
 
@@ -88,7 +89,7 @@ export class AuthController {
     }
 
     await recordImpersonation(this.dataSource, request.user.sub, target.id);
-    const accessToken = request.server.jwt.sign({ sub: target.id, role: target.role, impersonatorId: request.user.sub });
+    const accessToken = request.server.jwt.sign({ sub: target.id, role: target.role, storeId: target.storeId, impersonatorId: request.user.sub });
     return { accessToken, user: toPublicUser(target), impersonatedBy: request.user.sub };
   }
 }

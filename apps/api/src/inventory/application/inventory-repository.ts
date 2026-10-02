@@ -2,9 +2,9 @@ import type { AdjustInventoryInput, CreateInventoryItemInput, InventoryItem, Inv
 
 export interface InventoryRepository {
   create(input: CreateInventoryItemInput & { id: string }): Promise<InventoryItem>;
-  findAll(): Promise<readonly InventoryItem[]>;
-  findBelowMinimum(): Promise<readonly InventoryItem[]>;
+  findAll(storeId: string): Promise<readonly InventoryItem[]>;
+  findBelowMinimum(storeId: string): Promise<readonly InventoryItem[]>;
   findById(id: string): Promise<InventoryItem | undefined>;
-  adjustStock(id: string, input: AdjustInventoryInput): Promise<InventoryItem | undefined>;
-  findMovements(id: string): Promise<readonly InventoryMovement[]>;
+  adjustStock(storeId: string, id: string, input: AdjustInventoryInput): Promise<InventoryItem | undefined>;
+  findMovements(storeId: string, id: string): Promise<readonly InventoryMovement[]>;
 }

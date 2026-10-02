@@ -6,6 +6,7 @@ export const RepairOrderEntitySchema = new EntitySchema<RepairOrder>({
   tableName: "repair_orders",
   columns: {
     id: { type: "uuid", primary: true }, customerId: { type: "uuid", name: "customer_id" },
+    storeId: { type: "uuid", name: "store_id" },
     deviceType: { type: String, name: "device_type" }, brand: { type: String }, model: { type: String },
     serialNumber: { type: String, name: "serial_number", nullable: true }, reportedIssue: { type: String, name: "reported_issue" },
     deliveredAccessories: { type: String, name: "delivered_accessories", nullable: true }, technicianId: { type: "uuid", name: "technician_id", nullable: true }, estimatedCompletionAt: { type: "timestamptz", name: "estimated_completion_at", nullable: true }, diagnosis: { type: String, nullable: true }, status: { type: String },

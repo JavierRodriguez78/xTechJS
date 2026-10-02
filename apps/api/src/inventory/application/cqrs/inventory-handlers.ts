@@ -20,7 +20,7 @@ export class CreateInventoryItemHandler implements ICommandHandler<CreateInvento
 @CommandHandler(AdjustInventoryStockCommand)
 export class AdjustInventoryStockHandler implements ICommandHandler<AdjustInventoryStockCommand, InventoryItem | undefined> {
   constructor(private readonly useCase: AdjustInventoryStock) {}
-  execute(command: AdjustInventoryStockCommand): Promise<InventoryItem | undefined> { return this.useCase.execute(command.id, command.input); }
+  execute(command: AdjustInventoryStockCommand): Promise<InventoryItem | undefined> { return this.useCase.execute(command.storeId, command.id, command.input); }
 }
 
 @Service()
@@ -34,19 +34,19 @@ export class ConsumeInventoryForRepairHandler implements ICommandHandler<Consume
 @QueryHandler(ListInventoryItemsQuery)
 export class ListInventoryItemsHandler implements IQueryHandler<ListInventoryItemsQuery, readonly InventoryItem[]> {
   constructor(private readonly useCase: ListInventoryItems) {}
-  execute(): Promise<readonly InventoryItem[]> { return this.useCase.execute(); }
+  execute(query: ListInventoryItemsQuery): Promise<readonly InventoryItem[]> { return this.useCase.execute(query.storeId); }
 }
 
 @Service()
 @QueryHandler(ListLowStockItemsQuery)
 export class ListLowStockItemsHandler implements IQueryHandler<ListLowStockItemsQuery, readonly InventoryItem[]> {
   constructor(private readonly useCase: ListLowStockItems) {}
-  execute(): Promise<readonly InventoryItem[]> { return this.useCase.execute(); }
+  execute(query: ListLowStockItemsQuery): Promise<readonly InventoryItem[]> { return this.useCase.execute(query.storeId); }
 }
 
 @Service()
 @QueryHandler(GetInventoryMovementsQuery)
 export class GetInventoryMovementsHandler implements IQueryHandler<GetInventoryMovementsQuery, readonly InventoryMovement[]> {
   constructor(private readonly useCase: GetInventoryMovements) {}
-  execute(query: GetInventoryMovementsQuery): Promise<readonly InventoryMovement[]> { return this.useCase.execute(query.id); }
+  execute(query: GetInventoryMovementsQuery): Promise<readonly InventoryMovement[]> { return this.useCase.execute(query.storeId, query.id); }
 }

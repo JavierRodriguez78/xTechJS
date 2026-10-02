@@ -21,6 +21,7 @@ export class AuthenticationService {
       displayName: input.displayName,
       passwordHash: await hash(input.password, 12),
       role: "admin",
+      storeId: null,
       active: true
     });
   }

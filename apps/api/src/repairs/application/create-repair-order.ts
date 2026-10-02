@@ -32,10 +32,12 @@ export class CreateRepairOrder {
       throw new DeviceModelNotConfiguredError(deviceType, input.brand.trim(), input.model.trim());
     }
     if (input.technicianId) await assertActiveTechnician(this.userRepository, input.technicianId);
+    if (!input.storeId) throw new Error("A store is required to create a repair order");
     const passcode = input.devicePasscode?.trim();
 
     const repair = await this.repairOrderRepository.create({
       id: randomUUID(),
+      storeId: input.storeId,
       customerId: input.customerId,
       deviceType,
       brand: input.brand.trim(),

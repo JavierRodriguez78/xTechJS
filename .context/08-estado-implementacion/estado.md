@@ -1,9 +1,44 @@
 # Estado de implementacion - xTechJS
 
-**Actualizado:** 2026-10-01
+**Actualizado:** 2026-10-02
 
 Este documento complementa la especificacion funcional. Describe exclusivamente lo que
 existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase.
+
+## Multitienda
+
+- **(2026-10-02) Fundación multitienda implementada.** Nuevo BC `stores` con
+  entidad TypeORM, migración y CRUD `GET`/`POST`/`PATCH /api/stores`, protegido
+  por `stores:manage`. La administración web permite crear, listar y
+  activar/desactivar tiendas.
+- `users.store_id` es nullable: administradores globales conservan `null`; los
+  técnicos deben tener una tienda asignada, validación aplicada tanto al crear
+  como al editar. `storeId` viaja en el JWT, la sesión staff y los formularios
+  administrativos de usuarios.
+- `repair_orders.store_id` es obligatorio. La migración conserva el histórico
+  asignándolo a una tienda existente o a `Tienda principal`. En alta, un
+  técnico usa exclusivamente su tienda del token; un administrador global debe
+  elegir una tienda desde la consola de recepción.
+- Reparaciones y adjuntos aplican el alcance de tienda para técnicos en
+  listados y rutas por ID (detalle, estado, técnico, presupuestos, documentos,
+  passcode, historial, pasos y adjuntos). Los accesos fuera de alcance devuelven
+  `404`; los administradores globales mantienen acceso transversal.
+- Inventario inicia su separación: `store_inventory_stock` conserva stock y
+  mínimo por artículo/tienda, los artículos nuevos inicializan saldo cero en
+  todas las tiendas activas y los movimientos llevan `store_id`. Los ajustes
+  manuales operan contra el saldo de la tienda del usuario (o la indicada por
+  un admin global); los consumos toman la tienda de la reparación. Se implementó
+  `POST /api/inventory/transfers`, transaccional, que descuenta origen,
+  incrementa destino y registra movimientos `transfer_out`/`transfer_in`.
+- Los clientes continúan compartidos y ahora guardan `originStoreId`
+  informativo al ser creados por un empleado de tienda; altas externas y de
+  administradores globales conservan `null`. No interviene en permisos ni en
+  visibilidad.
+- Listado, alertas, detalle, ajuste y movimientos de almacén ya mantienen el
+  `storeId`; los administradores globales seleccionan una tienda y los técnicos
+  usan la suya automáticamente.
+- Aún pendiente: alcance de compras/TPV/cajas/facturación, fulfillment
+  ecommerce y dashboard agregado o filtrado por tienda.
 
 ## Base creada
 

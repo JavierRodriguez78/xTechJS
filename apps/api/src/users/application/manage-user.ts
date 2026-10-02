@@ -10,18 +10,22 @@ import type { UserRepository } from "./user-repository.js";
 export class ManageUser {
   constructor(@Qualifier("userRepository") private readonly userRepository: UserRepository) {}
 
-  async create(input: { email: string; displayName: string; role: User["role"]; password: string }): Promise<User> {
+  async create(input: { email: string; displayName: string; role: User["role"]; password: string; storeId?: string | null }): Promise<User> {
     const email = input.email.trim().toLowerCase();
     if (input.password.length < 12) throw new Error("Password must have at least 12 characters");
+    if (input.role === "technician" && !input.storeId) throw new Error("A technician must be assigned to a store");
     if (await this.userRepository.findByEmail(email)) throw new Error("User email already exists");
-    const user: UserCredentials = { id: randomUUID(), email, displayName: input.displayName.trim(), role: input.role, active: true, passwordHash: await hash(input.password, 12) };
+    const user: UserCredentials = { id: randomUUID(), email, displayName: input.displayName.trim(), role: input.role, storeId: input.storeId ?? null, active: true, passwordHash: await hash(input.password, 12) };
     return this.userRepository.create(user);
   }
 
-  async update(id: string, input: { email?: string; displayName?: string; role?: User["role"]; active?: boolean; password?: string }): Promise<User | undefined> {
+  async update(id: string, input: { email?: string; displayName?: string; role?: User["role"]; storeId?: string | null; active?: boolean; password?: string }): Promise<User | undefined> {
     const current = await this.userRepository.findById(id);
     if (!current) return undefined;
-    const update: Parameters<UserRepository["update"]>[1] = { email: input.email?.trim().toLowerCase(), displayName: input.displayName?.trim(), role: input.role, active: input.active };
+    const nextRole = input.role ?? current.role;
+    const nextStoreId = input.storeId === undefined ? current.storeId : input.storeId;
+    if (nextRole === "technician" && !nextStoreId) throw new Error("A technician must be assigned to a store");
+    const update: Parameters<UserRepository["update"]>[1] = { email: input.email?.trim().toLowerCase(), displayName: input.displayName?.trim(), role: input.role, storeId: input.storeId, active: input.active };
     if (input.password) {
       if (input.password.length < 12) throw new Error("Password must have at least 12 characters");
       update.passwordHash = await hash(input.password, 12);

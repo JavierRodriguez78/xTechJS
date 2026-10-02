@@ -1,5 +1,5 @@
 import { EntitySchema } from "typeorm";
-import type { InventoryItem, InventoryMovement } from "../../domain/inventory-item.js";
+import type { InventoryItem, InventoryMovement, StoreInventoryStock } from "../../domain/inventory-item.js";
 
 export const InventoryItemEntitySchema = new EntitySchema<InventoryItem>({
   name: "InventoryItem",
@@ -24,11 +24,24 @@ export const InventoryMovementEntitySchema = new EntitySchema<InventoryMovement>
   tableName: "inventory_movements",
   columns: {
     id: { type: "uuid", primary: true },
+    storeId: { type: "uuid", name: "store_id" },
     inventoryItemId: { type: "uuid", name: "inventory_item_id" },
     repairOrderId: { type: "uuid", name: "repair_order_id", nullable: true },
     quantity: { type: Number },
     type: { type: String },
     note: { type: String, nullable: true },
     createdAt: { type: "timestamptz", name: "created_at", createDate: true }
+  }
+});
+
+export const StoreInventoryStockEntitySchema = new EntitySchema<StoreInventoryStock>({
+  name: "StoreInventoryStock",
+  tableName: "store_inventory_stock",
+  columns: {
+    storeId: { type: "uuid", name: "store_id", primary: true },
+    inventoryItemId: { type: "uuid", name: "inventory_item_id", primary: true },
+    stock: { type: Number, default: 0 },
+    minimumStock: { type: Number, name: "minimum_stock", default: 0 },
+    updatedAt: { type: "timestamptz", name: "updated_at", updateDate: true }
   }
 });

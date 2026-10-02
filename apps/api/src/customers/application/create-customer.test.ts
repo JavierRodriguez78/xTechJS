@@ -17,6 +17,7 @@ class TestCustomerRepository implements CustomerRepository {
       internalNotes: input.internalNotes ?? null,
       registrationStatus: "pending",
       acquisitionChannel: input.acquisitionChannel ?? "staff",
+      originStoreId: input.originStoreId ?? null,
       tags: input.tags ?? [],
       createdAt: new Date(),
       updatedAt: new Date()
@@ -50,6 +51,7 @@ class TestCustomerRepository implements CustomerRepository {
       internalNotes: input.internalNotes ?? null,
       registrationStatus: "pending",
       acquisitionChannel: input.acquisitionChannel ?? "staff",
+      originStoreId: input.originStoreId ?? null,
       tags: input.tags ?? [],
       createdAt: new Date(),
       updatedAt: new Date()

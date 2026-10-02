@@ -74,6 +74,8 @@ import "./notifications/infrastructure/http/notification-template-controller.js"
 import "./notifications/infrastructure/persistence/postgres-notification-template-repository.js";
 import "./notifications/infrastructure/persistence/postgres-customer-notification-repository.js";
 import "./notifications/infrastructure/repair-status-notifier-adapter.js";
+import "./stores/infrastructure/http/store-controller.js";
+import "./users/infrastructure/http/admin-dashboard-controller.js";
 import { startTrace, traceOperation } from "./shared/infrastructure/observability/trace.js";
 
 declare module "fastify" {

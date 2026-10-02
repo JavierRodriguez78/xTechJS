@@ -1,0 +1,10 @@
+<script setup lang="ts">
+import { onMounted, ref } from "vue";
+import { createStore, listStores, updateStore, type Store } from "../api";
+const stores = ref<Store[]>([]); const error = ref(""); const form = ref({ name: "", address: "", phone: "", taxId: "", invoiceSeriesPrefix: "" });
+async function load(): Promise<void> { try { stores.value = await listStores(); } catch (reason) { error.value = (reason as Error).message; } }
+async function save(): Promise<void> { try { await createStore(form.value); form.value = { name: "", address: "", phone: "", taxId: "", invoiceSeriesPrefix: "" }; await load(); } catch (reason) { error.value = (reason as Error).message; } }
+async function toggle(store: Store): Promise<void> { try { await updateStore(store.id, { active: !store.active }); await load(); } catch (reason) { error.value = (reason as Error).message; } }
+onMounted(load);
+</script>
+<template><section><header><div><p class="eyebrow">Administracion</p><h1>Tiendas</h1></div></header><p v-if="error" class="feedback error">{{ error }}</p><form class="entity-form" @submit.prevent="save"><label>Nombre<input v-model="form.name" required /></label><label>Direccion<input v-model="form.address" required /></label><label>Telefono<input v-model="form.phone" /></label><label>NIF<input v-model="form.taxId" /></label><label>Prefijo de serie<input v-model="form.invoiceSeriesPrefix" required placeholder="VLC-" /></label><footer><button>Crear tienda</button></footer></form><div class="customer-list"><p v-if="!stores.length" class="empty">No hay tiendas configuradas.</p><div v-for="store in stores" :key="store.id" class="customer-row"><strong>{{ store.name }}</strong><span>{{ store.address }}</span><span>{{ store.invoiceSeriesPrefix }}</span><button class="secondary" type="button" @click="toggle(store)">{{ store.active ? "Desactivar" : "Activar" }}</button></div></div></section></template>
