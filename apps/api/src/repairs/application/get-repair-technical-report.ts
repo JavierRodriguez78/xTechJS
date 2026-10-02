@@ -1,7 +1,7 @@
 import PDFDocument from "pdfkit";
 import { Qualifier, Service } from "@xtaskjs/core";
+import { DataSource, InjectDataSource } from "@xtaskjs/typeorm";
 import { Traceable } from "../../shared/infrastructure/observability/trace.js";
-import { loadConfig } from "../../shared/infrastructure/config/app-config.js";
 import type { RepairAttachmentRepository } from "../../attachments/application/repair-attachment-repository.js";
 import type { AttachmentStorage } from "../../attachments/application/attachment-storage.js";
 import type { CustomerRepository } from "../../customers/application/customer-repository.js";
@@ -9,6 +9,7 @@ import type { InvoiceDraftRepository } from "../../payments/application/invoice-
 import type { UserRepository } from "../../users/application/user-repository.js";
 import type { RepairOrderRepository } from "./repair-order-repository.js";
 import type { RepairStepRepository } from "./repair-step-repository.js";
+import { resolveStoreIssuer } from "../../stores/application/store-issuer.js";
 
 async function streamToBuffer(stream: AsyncIterable<Buffer | string>): Promise<Buffer> {
   const chunks: Buffer[] = [];
@@ -19,6 +20,8 @@ async function streamToBuffer(stream: AsyncIterable<Buffer | string>): Promise<B
 @Traceable("GetRepairTechnicalReport")
 @Service()
 export class GetRepairTechnicalReport {
+  @InjectDataSource() private readonly dataSource!: DataSource;
+
   constructor(
     @Qualifier("repairOrderRepository") private readonly repairOrderRepository: RepairOrderRepository,
     @Qualifier("repairStepRepository") private readonly repairStepRepository: RepairStepRepository,
@@ -38,18 +41,18 @@ export class GetRepairTechnicalReport {
       this.invoiceDraftRepository.findByRepairOrderId(repairOrderId)
     ]);
     if (!customer) return undefined;
+    const issuer = await resolveStoreIssuer(this.dataSource, repair.storeId);
     const attachments = await this.attachmentRepository.listByRepairOrder(repairOrderId);
     return new Promise(async (resolve, reject) => {
-      const config = loadConfig();
       const document = new PDFDocument({ size: "A4", margin: 56 });
       const chunks: Buffer[] = [];
       document.on("data", (chunk: Buffer) => chunks.push(chunk));
       document.on("end", () => resolve(Buffer.concat(chunks)));
       document.on("error", reject);
       try {
-        document.fontSize(20).text(config.get("INVOICE_ISSUER_NAME"));
-        document.fontSize(9).text(`NIF: ${config.get("INVOICE_ISSUER_TAX_ID")}`);
-        document.text(config.get("INVOICE_ISSUER_ADDRESS"));
+        document.fontSize(20).text(issuer.legalName);
+        document.fontSize(9).text(`NIF: ${issuer.taxId}`);
+        document.text(`Establecimiento: ${issuer.establishmentAddress}`);
         document.moveDown().fontSize(16).text("INFORME TECNICO DE REPARACION");
         document.fontSize(10).text(`Generado: ${new Date().toLocaleString("es-ES")}`);
         document.moveDown().fontSize(11).text("Reparacion");

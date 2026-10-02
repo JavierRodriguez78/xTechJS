@@ -40,7 +40,10 @@ export interface Store {
   (opcionalmente) numeración de factura, según el resto de este documento.
 - No tiene por qué ser compleja en v1: nombre, dirección y poco más. Se deja
   preparada para crecer (horario, email de contacto, etc.) sin bloquear el
-  resto.
+  resto. La ficha completa de la tienda (dirección estructurada, identidad
+  fiscal por tienda solo como excepción, VeriFactu) se especifica en
+  `16-alta-tienda/alta-tienda.md`, que complementa este documento sin
+  sustituirlo.
 
 ## 2. Empleados por tienda (`users`)
 

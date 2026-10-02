@@ -11,6 +11,23 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   entidad TypeORM, migración y CRUD `GET`/`POST`/`PATCH /api/stores`, protegido
   por `stores:manage`. La administración web permite crear, listar y
   activar/desactivar tiendas.
+- **(2026-10-02) Ficha de establecimiento ampliada.** Las tiendas conservan
+  dirección legada compatible y ahora guardan vía, código postal, localidad,
+  provincia y país, además de email, horario, logo y un identificador
+  VeriFactu opcional sin lógica asociada. La ficha permite editar esos datos
+  y deja razón social/NIF como excepción fiscal. Los PDF de cobros y
+  documentos de reparación usan la razón social y NIF de la tienda cuando se
+  hayan configurado, con fallback a la identidad global, y muestran el
+  domicilio del establecimiento. Las facturas ecommerce mantienen el emisor
+  global hasta que los pedidos incorporen `storeId`/fulfillment.
+- **(2026-10-02) Usabilidad y catalogo postal de tiendas.** Listado separado
+  del alta/edicion, con busqueda y filtro de estado. La ficha tiene tres
+  columnas adaptativas y apartados fiscales opcionales plegables. Migracion
+  de catalogo offline con 250 paises/territorios, 52 provincias/ciudades
+  autonomas y 37.867 registros poblacion/codigo postal de Espana (GeoNames,
+  CC BY). Selectores dependientes con busqueda de poblacion y validacion en
+  servidor. Los datos historicos no se reasignan automaticamente. Cobertura
+  internacional y garantia de exhaustividad postal no incluidas.
 - `users.store_id` es nullable: administradores globales conservan `null`; los
   técnicos deben tener una tienda asignada, validación aplicada tanto al crear
   como al editar. `storeId` viaja en el JWT, la sesión staff y los formularios

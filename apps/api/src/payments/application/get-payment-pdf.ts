@@ -1,23 +1,27 @@
 import PDFDocument from "pdfkit";
 import { Service } from "@xtaskjs/core";
+import { DataSource, InjectDataSource } from "@xtaskjs/typeorm";
 import { Traceable } from "../../shared/infrastructure/observability/trace.js";
-import { loadConfig } from "../../shared/infrastructure/config/app-config.js";
+import { RepairOrderEntitySchema } from "../../repairs/infrastructure/persistence/repair-order-entity.js";
+import { resolveStoreIssuer } from "../../stores/application/store-issuer.js";
 import { GetPaymentReceipt, type PaymentReceipt } from "./get-payment-receipt.js";
 
 @Traceable("GetPaymentPdf")
 @Service()
 export class GetPaymentPdf {
+  @InjectDataSource() private readonly dataSource!: DataSource;
+
   constructor(private readonly getPaymentReceipt: GetPaymentReceipt) {}
 
   async execute(id: string): Promise<Buffer | undefined> {
     const receipt = await this.getPaymentReceipt.execute(id);
     if (!receipt) return undefined;
-    return this.render(receipt);
+    const repair = await this.dataSource.getRepository(RepairOrderEntitySchema).findOneBy({ id: receipt.repair.id });
+    return this.render(receipt, await resolveStoreIssuer(this.dataSource, repair?.storeId));
   }
 
-  private render(receipt: PaymentReceipt): Promise<Buffer> {
+  private render(receipt: PaymentReceipt, issuer: Awaited<ReturnType<typeof resolveStoreIssuer>>): Promise<Buffer> {
     return new Promise((resolve, reject) => {
-      const config = loadConfig();
       const totalCents = receipt.payment.documentType === "rectification" ? -receipt.payment.amountCents : receipt.payment.amountCents;
       const lines = receipt.payment.invoiceLines ?? [];
       const baseCents = lines.reduce((total, line) => total + Math.round(line.quantity * line.unitPriceCents * (1 - line.discountPercent / 100)), 0);
@@ -32,9 +36,9 @@ export class GetPaymentPdf {
       document.on("data", (chunk: Buffer) => chunks.push(chunk));
       document.on("end", () => resolve(Buffer.concat(chunks)));
       document.on("error", reject);
-      document.fontSize(20).text(config.get("INVOICE_ISSUER_NAME"));
-      document.fontSize(9).text(`NIF: ${config.get("INVOICE_ISSUER_TAX_ID")}`);
-      document.text(`Domicilio: ${config.get("INVOICE_ISSUER_ADDRESS")}`);
+      document.fontSize(20).text(issuer.legalName);
+      document.fontSize(9).text(`NIF: ${issuer.taxId}`);
+      document.text(`Establecimiento emisor: ${issuer.establishmentAddress}`);
       document.moveDown().fontSize(16).text(receipt.payment.documentType === "rectification" ? "FACTURA RECTIFICATIVA" : "FACTURA");
       document.fontSize(10).text(`Serie y numero: ${receipt.receiptNumber}`);
       document.text(`Fecha de expedicion: ${receipt.issuedAt.toLocaleDateString("es-ES")}`);

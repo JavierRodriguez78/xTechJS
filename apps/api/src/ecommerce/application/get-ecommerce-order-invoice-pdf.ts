@@ -2,8 +2,8 @@ import PDFDocument from "pdfkit";
 import { Service } from "@xtaskjs/core";
 import { DataSource, InjectDataSource } from "@xtaskjs/typeorm";
 import { Traceable } from "../../shared/infrastructure/observability/trace.js";
-import { loadConfig } from "../../shared/infrastructure/config/app-config.js";
 import { CustomerEntitySchema } from "../../customers/infrastructure/persistence/customer-entity.js";
+import { resolveStoreIssuer } from "../../stores/application/store-issuer.js";
 import { EcommerceOrderEntitySchema, EcommerceOrderLineEntitySchema } from "../infrastructure/persistence/ecommerce-entity.js";
 
 @Traceable("GetEcommerceOrderInvoicePdf")
@@ -20,17 +20,17 @@ export class GetEcommerceOrderInvoicePdf {
       this.dataSource.getRepository(EcommerceOrderLineEntitySchema).find({ where: { orderId: order.id } })
     ]);
     if (!customer) return undefined;
+    const issuer = await resolveStoreIssuer(this.dataSource);
     return new Promise((resolve, reject) => {
       const document = new PDFDocument({ size: "A4", margin: 56 });
       const chunks: Buffer[] = [];
       document.on("data", (chunk: Buffer) => chunks.push(chunk));
       document.on("end", () => resolve(Buffer.concat(chunks)));
       document.on("error", reject);
-      const config = loadConfig();
       const number = `${order.invoiceSeries}-${String(order.invoiceNumber).padStart(6, "0")}`;
-      document.fontSize(20).text(config.get("INVOICE_ISSUER_NAME"));
-      document.fontSize(9).text(`NIF: ${config.get("INVOICE_ISSUER_TAX_ID")}`);
-      document.text(`Domicilio: ${config.get("INVOICE_ISSUER_ADDRESS")}`);
+      document.fontSize(20).text(issuer.legalName);
+      document.fontSize(9).text(`NIF: ${issuer.taxId}`);
+      document.text(`Domicilio: ${issuer.establishmentAddress}`);
       document.moveDown().fontSize(16).text("FACTURA");
       document.fontSize(10).text(`Serie y numero: ${number}`);
       document.text(`Fecha de expedicion: ${new Date().toLocaleDateString("es-ES")}`);

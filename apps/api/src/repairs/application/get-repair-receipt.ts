@@ -2,8 +2,8 @@ import PDFDocument from "pdfkit";
 import { Qualifier, Service } from "@xtaskjs/core";
 import { DataSource, InjectDataSource } from "@xtaskjs/typeorm";
 import { Traceable } from "../../shared/infrastructure/observability/trace.js";
-import { loadConfig } from "../../shared/infrastructure/config/app-config.js";
 import type { CustomerRepository } from "../../customers/application/customer-repository.js";
+import { resolveStoreIssuer } from "../../stores/application/store-issuer.js";
 import { RepairConditionRecordEntitySchema } from "../infrastructure/persistence/repair-order-entity.js";
 import type { RepairOrderRepository } from "./repair-order-repository.js";
 import type { RepairQuoteRepository } from "./repair-quote-repository.js";
@@ -29,6 +29,7 @@ export class GetRepairReceipt {
       this.dataSource.getRepository(RepairConditionRecordEntitySchema).findOneBy({ repairOrderId, phase: "pre_repair" })
     ]);
     if (!customer) return undefined;
+    const issuer = await resolveStoreIssuer(this.dataSource, repair.storeId);
 
     return new Promise((resolve, reject) => {
       const document = new PDFDocument({ size: "A4", margin: 56 });
@@ -37,10 +38,9 @@ export class GetRepairReceipt {
       document.on("end", () => resolve(Buffer.concat(chunks)));
       document.on("error", reject);
       try {
-        const config = loadConfig();
-        document.fontSize(20).text(config.get("INVOICE_ISSUER_NAME"));
-        document.fontSize(9).text(`NIF: ${config.get("INVOICE_ISSUER_TAX_ID")}`);
-        document.text(config.get("INVOICE_ISSUER_ADDRESS"));
+        document.fontSize(20).text(issuer.legalName);
+        document.fontSize(9).text(`NIF: ${issuer.taxId}`);
+        document.text(`Establecimiento: ${issuer.establishmentAddress}`);
         document.moveDown().fontSize(16).text("RESGUARDO DE DEPOSITO");
         document.fontSize(10).text(`Fecha de recepcion: ${repair.createdAt.toLocaleString("es-ES")}`);
         document.text(`Referencia: ${repair.id.slice(0, 8)}`);
