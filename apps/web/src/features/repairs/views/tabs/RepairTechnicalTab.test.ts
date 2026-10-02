@@ -29,6 +29,7 @@ function repair(status = "received"): Repair {
     reportedIssue: "No enciende",
     deliveredAccessories: null,
     technicianId: null,
+    estimatedCompletionAt: null,
     diagnosis: null,
     status,
     createdAt: "2026-09-17T09:00:00.000Z"

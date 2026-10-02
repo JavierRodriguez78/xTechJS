@@ -21,6 +21,8 @@ import { AddRepairStep, DeleteRepairStep, ListRepairSteps, UpdateRepairStep } fr
 import { ListOwnCustomerRepairSteps } from "../list-own-customer-repair-steps.js";
 import { GetRepairTechnicalReport } from "../get-repair-technical-report.js";
 import { GetOwnCustomerRepairTechnicalReport } from "../get-own-customer-repair-technical-report.js";
+import { GetRepairDevicePasscode } from "../get-repair-device-passcode.js";
+import { GetRepairReceipt } from "../get-repair-receipt.js";
 import {
   ApproveRepairQuoteCommand,
   ApproveCustomerRepairQuoteCommand,
@@ -30,6 +32,8 @@ import {
   CreateRepairOrderCommand,
   GetRepairQuoteQuery,
   GetRepairOrderQuery,
+  GetRepairDevicePasscodeQuery,
+  GetRepairReceiptQuery,
   GetOwnCustomerQuoteQuery,
   GetOwnCustomerRepairTechnicalReportQuery,
   GetRepairTechnicalReportQuery,
@@ -80,7 +84,27 @@ export class CreateRepairOrderHandler implements ICommandHandler<CreateRepairOrd
   constructor(private readonly useCase: CreateRepairOrder) {}
 
   execute(command: CreateRepairOrderCommand): Promise<RepairOrder> {
-    return this.useCase.execute(command.input);
+    return this.useCase.execute(command.input, command.recordedByUserId);
+  }
+}
+
+@Service()
+@QueryHandler(GetRepairDevicePasscodeQuery)
+export class GetRepairDevicePasscodeHandler implements IQueryHandler<GetRepairDevicePasscodeQuery, string | undefined> {
+  constructor(private readonly useCase: GetRepairDevicePasscode) {}
+
+  execute(query: GetRepairDevicePasscodeQuery): Promise<string | undefined> {
+    return this.useCase.execute(query.repairOrderId);
+  }
+}
+
+@Service()
+@QueryHandler(GetRepairReceiptQuery)
+export class GetRepairReceiptHandler implements IQueryHandler<GetRepairReceiptQuery, Buffer | undefined> {
+  constructor(private readonly useCase: GetRepairReceipt) {}
+
+  execute(query: GetRepairReceiptQuery): Promise<Buffer | undefined> {
+    return this.useCase.execute(query.repairOrderId);
   }
 }
 

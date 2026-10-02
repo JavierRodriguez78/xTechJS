@@ -9,6 +9,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-xtechjs}
       POSTGRES_USER: ${POSTGRES_USER:-xtechjs}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      DEVICE_PASSCODE_ENCRYPTION_KEY: ${DEVICE_PASSCODE_ENCRYPTION_KEY:-development-only-device-passcode-key}
     depends_on:
       postgres:
         condition: service_healthy
@@ -41,6 +42,7 @@ services:
       INVOICE_ISSUER_ADDRESS: "${INVOICE_ISSUER_ADDRESS:-PENDIENTE_CONFIGURAR}"
       INVOICE_SERIES: "${INVOICE_SERIES:-B}"
       INVOICE_VAT_RATE: ${INVOICE_VAT_RATE:-21}
+      DEVICE_PASSCODE_ENCRYPTION_KEY: ${DEVICE_PASSCODE_ENCRYPTION_KEY:-development-only-device-passcode-key}
       UPLOADS_DIR: /app/uploads
     ports:
       - "${API_PORT:-3000}:3000"

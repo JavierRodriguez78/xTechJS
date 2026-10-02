@@ -20,6 +20,7 @@
 
 ## Gestión de equipos y reparaciones (taller)
 - Alta de "orden de reparación" (ticket): equipo, cliente, tipo de dispositivo, avería reportada, accesorios entregados, estado inicial.
+- **Ficha de recepción ampliada (inspirada en el flujo de ticket de RepairDesk)**: en el mismo alta, opcionalmente, PIN/contraseña de desbloqueo del equipo (cifrado, visible solo para staff), presupuesto inicial orientativo, checklist de condición del equipo pre-reparación (y post-reparación al entregar), firma táctil del cliente aceptando las condiciones del depósito, técnico asignado y fecha estimada de entrega, con resguardo de depósito descargable en PDF. Especificación completa en `14-alta-reparacion/alta-reparacion.md`.
 - Flujo de estados configurable (ej.: recibido → en diagnóstico → presupuestado → aprobado por cliente → en reparación → en pruebas → reparado → entregado / no reparable → cancelado).
 - Ficha técnica del equipo (marca, modelo, número de serie/identificador, tipo: consola actual, consola retro, móvil, electrodoméstico).
 - Adjuntos por reparación: fotografías y vídeos del proceso, subidos por el técnico, visibles para el cliente y el admin.

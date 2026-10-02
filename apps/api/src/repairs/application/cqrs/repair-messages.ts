@@ -6,7 +6,15 @@ import type { UserRole } from "../../../shared/domain/user-role.js";
 import type { RepairOrderListOptions } from "../repair-order-repository.js";
 
 export class CreateRepairOrderCommand {
-  constructor(public readonly input: CreateRepairOrderInput) {}
+  constructor(public readonly input: CreateRepairOrderInput, public readonly recordedByUserId: string) {}
+}
+
+export class GetRepairDevicePasscodeQuery {
+  constructor(public readonly repairOrderId: string) {}
+}
+
+export class GetRepairReceiptQuery {
+  constructor(public readonly repairOrderId: string) {}
 }
 
 export class ChangeRepairStatusCommand {

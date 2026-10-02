@@ -3,6 +3,7 @@ import { InjectCommandBus, InjectQueryBus, type CommandBus, type QueryBus } from
 import { Authenticated } from "@xtaskjs/security";
 import { z } from "zod";
 import { AdminConfigService, ProtectedConfigValueError } from "../../application/admin-config.js";
+import type { RepairDeviceCatalogEntry } from "../../../repairs/domain/repair-device-catalog.js";
 import { CreateUserCommand, ListAuditLogsQuery, ListTechniciansQuery, ListUsersQuery, UpdateUserCommand } from "../../application/cqrs/user-messages.js";
 import { PERMISSIONS } from "../../domain/permission.js";
 import { PermissionRequired } from "./permission-guard.js";
@@ -11,6 +12,7 @@ type ControllerReply = { code(statusCode: number): ControllerReply; send(payload
 const userSchema = z.object({ email: z.string().trim().email().max(320), displayName: z.string().trim().min(1).max(160), role: z.enum(["admin", "technician", "customer"]), password: z.string().min(12).max(256) });
 const updateUserSchema = userSchema.partial().extend({ active: z.boolean().optional() }).refine((value) => Object.keys(value).length > 0, "At least one field is required");
 const configValueSchema = z.object({ value: z.string().trim().min(1).max(160) });
+const repairDeviceCatalogSchema = z.object({ deviceType: z.string().trim().min(1).max(100), brand: z.string().trim().min(1).max(100), model: z.string().trim().min(1).max(160), imageUrl: z.string().trim().url().max(2000).optional() });
 
 @Authenticated()
 @Controller("/api")
@@ -104,6 +106,30 @@ export class UserController {
     if (!parsed.success) return reply.code(400).send({ message: "Invalid configuration value" });
     await this.adminConfigService.removeDeviceType(parsed.data.value);
     return reply.code(200).send({ values: await this.adminConfigService.listDeviceTypes() });
+  }
+
+  @Get("/admin/config/repair-device-catalog")
+  @PermissionRequired(PERMISSIONS.usersManage)
+  async listRepairDeviceCatalog(): Promise<{ entries: readonly RepairDeviceCatalogEntry[] }> {
+    return { entries: await this.adminConfigService.listRepairDeviceCatalog() };
+  }
+
+  @Post("/admin/config/repair-device-catalog")
+  @PermissionRequired(PERMISSIONS.usersManage)
+  async addRepairDeviceCatalogEntry(@Body() body: unknown, @Res() reply: ControllerReply): Promise<unknown> {
+    const parsed = repairDeviceCatalogSchema.safeParse(body);
+    if (!parsed.success) return reply.code(400).send({ message: "Invalid repair device catalog entry", issues: parsed.error.flatten() });
+    await this.adminConfigService.addRepairDeviceCatalogEntry(parsed.data);
+    return reply.code(201).send({ entries: await this.adminConfigService.listRepairDeviceCatalog() });
+  }
+
+  @Post("/admin/config/repair-device-catalog/remove")
+  @PermissionRequired(PERMISSIONS.usersManage)
+  async removeRepairDeviceCatalogEntry(@Body() body: unknown, @Res() reply: ControllerReply): Promise<unknown> {
+    const parsed = repairDeviceCatalogSchema.pick({ deviceType: true, brand: true, model: true }).safeParse(body);
+    if (!parsed.success) return reply.code(400).send({ message: "Invalid repair device catalog entry" });
+    await this.adminConfigService.removeRepairDeviceCatalogEntry(parsed.data);
+    return reply.code(200).send({ entries: await this.adminConfigService.listRepairDeviceCatalog() });
   }
 
   @Get("/technicians")

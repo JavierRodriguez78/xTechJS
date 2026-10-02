@@ -21,6 +21,7 @@ Este paquete contiene el contexto técnico y funcional completo del proyecto **x
 - `11-alta-clientes/registro-cliente.md` — Flujo de alta de cliente con email obligatorio, autorregistro (contraseña + datos de facturación), autorización LOPD/RGPD, y MailHog como SMTP de pruebas
 - `12-informe-tecnico-reparacion/informe-tecnico.md` — Bitácora de pasos de reparación con soporte fotográfico (`RepairStep`), informe técnico en PDF descargable por staff y cliente, y nota de que la facturación automática de materiales consumidos (`ConsumeInventoryForRepair` → `InvoiceDraft`) **ya está implementada**
 - `13-ecommerce-compraventa/ecommerce.md` — Autorregistro público sin invitación, tienda online (catálogo, carrito, pedidos, pago) y flujo de compra de equipos a particulares ("vende tu equipo") con valoración y propuesta económica
+- `14-alta-reparacion/alta-reparacion.md` — Ficha de recepción de equipo ampliada (PIN cifrado, presupuesto inicial, checklist de condición pre/post, firma del cliente, resguardo en PDF), inspirada en el flujo de ticket de RepairDesk
 
 ## Uso recomendado
 
@@ -32,8 +33,9 @@ Este paquete contiene el contexto técnico y funcional completo del proyecto **x
 6. Para implementar el autorregistro de clientes, pega `11-alta-clientes/registro-cliente.md` junto con `05-infraestructura/infraestructura.md` (MailHog) y `02-modulos-funcionales/modulos.md` (sección CRM actualizada).
 7. Para implementar la bitácora de pasos de reparación con fotos y el informe técnico en PDF, pega `12-informe-tecnico-reparacion/informe-tecnico.md` junto con `02-modulos-funcionales/modulos.md` (sección de gestión de equipos y reparaciones actualizada). Ese fichero deja explícito que la facturación automática de materiales ya está implementada, para que ChatGPT no la reconstruya.
 8. Para implementar la tienda online y la compra de equipos a particulares, pega `13-ecommerce-compraventa/ecommerce.md` junto con `01-roles-permisos/roles.md` (permisos nuevos de staff) y `11-alta-clientes/registro-cliente.md` (reutiliza el mismo `Customer` y el mismo consentimiento LOPD/RGPD). Revisa primero las decisiones abiertas de su sección 5 (pasarela de pago, modelo de stock, logística) antes de pedir la implementación completa.
-9. `07-entregables/entregables.md` sirve como guion de las peticiones concretas a hacer a ChatGPT.
-10. **Siempre que se pida generar, revisar o modificar cualquier pantalla, pega
+9. Para mejorar el alta de orden de reparación (ficha de recepción con PIN, presupuesto inicial, checklist de condición y firma), pega `14-alta-reparacion/alta-reparacion.md` junto con `02-modulos-funcionales/modulos.md`. Revisa antes sus decisiones abiertas (catálogo de precios por avería, checklist configurable, firma obligatoria u opcional).
+10. `07-entregables/entregables.md` sirve como guion de las peticiones concretas a hacer a ChatGPT.
+11. **Siempre que se pida generar, revisar o modificar cualquier pantalla, pega
    `04-frontend/frontend.md` completo.** Su sección 2 ("Regla de oro de la UI")
    es normativa: prohíbe el patrón de listado y ficha editable en la misma
    pantalla, y obliga a rutas separadas de listado/detalle/edición con pestañas

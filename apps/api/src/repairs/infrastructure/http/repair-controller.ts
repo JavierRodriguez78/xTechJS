@@ -11,6 +11,8 @@ import {
   AddRepairStepCommand,
   ChangeRepairStatusCommand,
   CreateRepairOrderCommand,
+  GetRepairDevicePasscodeQuery,
+  GetRepairReceiptQuery,
   GetRepairOrderQuery,
   GetRepairQuoteQuery,
   GetRepairTechnicalReportQuery,
@@ -25,17 +27,20 @@ import {
 import { DeleteRepairStepCommand } from "../../application/cqrs/repair-messages.js";
 import { RepairStepAccessDeniedError } from "../../application/manage-repair-step.js";
 import { DeviceTypeNotConfiguredError } from "../../domain/device-type.js";
+import { DeviceModelNotConfiguredError } from "../../application/create-repair-order.js";
 import { RepairStatusNotConfiguredError } from "../../domain/repair-status.js";
 import { PERMISSIONS } from "../../../users/domain/permission.js";
 import { PermissionRequired } from "../../../users/infrastructure/http/permission-guard.js";
 import type { AuthTokenPayload } from "../../../users/infrastructure/http/auth-routes.js";
 
-const createSchema = z.object({ customerId: z.string().uuid(), deviceType: z.string().trim().min(1).max(100), brand: z.string().trim().min(1).max(100), model: z.string().trim().min(1).max(160), serialNumber: z.string().trim().max(160).optional(), reportedIssue: z.string().trim().min(1).max(5000), deliveredAccessories: z.string().trim().max(2000).optional() });
+const conditionChecklistSchema = z.object({ items: z.array(z.object({ label: z.string().trim().min(1).max(160), ok: z.boolean() })).min(1).max(30), notes: z.string().trim().max(2000).optional() });
+const quoteLineSchema = z.object({ description: z.string().trim().min(1).max(500), quantity: z.number().int().min(1).max(1000), unitPriceCents: z.number().int().min(0).max(100000000) });
+const createSchema = z.object({ customerId: z.string().uuid(), deviceType: z.string().trim().min(1).max(100), brand: z.string().trim().min(1).max(100), model: z.string().trim().min(1).max(160), serialNumber: z.string().trim().max(160).optional(), reportedIssue: z.string().trim().min(1).max(5000), deliveredAccessories: z.string().trim().max(2000).optional(), devicePasscode: z.string().trim().min(1).max(500).optional(), technicianId: z.string().uuid().optional(), estimatedCompletionAt: z.coerce.date().optional(), initialQuoteLines: z.array(quoteLineSchema).min(1).max(50).optional(), preRepairCondition: conditionChecklistSchema.optional() });
 // El estado no se valida contra una lista fija: los estados activos los define la
 // configuracion administrativa y el caso de uso los comprueba contra ella.
 const statusSchema = z.object({ status: z.string().trim().min(1).max(160), note: z.string().trim().max(2000).optional() });
 const technicalSchema = z.object({ technicianId: z.string().uuid().optional(), diagnosis: z.string().trim().max(5000).optional() }).refine((input) => Object.keys(input).length > 0, "At least one technical field is required");
-const quoteSchema = z.object({ status: z.enum(["draft", "sent"]), lines: z.array(z.object({ description: z.string().trim().min(1).max(500), quantity: z.number().int().min(1).max(1000), unitPriceCents: z.number().int().min(0).max(100000000) })).min(1).max(50) });
+const quoteSchema = z.object({ status: z.enum(["draft", "sent"]), lines: z.array(quoteLineSchema).min(1).max(50) });
 const repairStepSchema = z.object({ title: z.string().trim().min(1).max(200), description: z.string().trim().max(10000).optional(), performedAt: z.coerce.date().optional() });
 const repairStepUpdateSchema = repairStepSchema.partial().refine((input) => Object.keys(input).length > 0, "At least one repair step field is required");
 const listRepairsQuerySchema = z.object({
@@ -94,6 +99,23 @@ export class RepairController {
   async getRepair(@Param("id") id: string, @Res() reply: ControllerReply): Promise<unknown> {
     const repair = await this.queryBus.execute(new GetRepairOrderQuery(id));
     return repair ?? reply.code(404).send({ message: "Repair order not found" });
+  }
+
+  @Get("/:id/passcode")
+  @PermissionRequired(PERMISSIONS.repairsManage)
+  async getDevicePasscode(@Param("id") id: string, @Res() reply: ControllerReply): Promise<unknown> {
+    const passcode = await this.queryBus.execute(new GetRepairDevicePasscodeQuery(id));
+    return passcode === undefined ? reply.code(404).send({ message: "Device passcode not found" }) : { passcode };
+  }
+
+  @Get("/:id/receipt")
+  @PermissionRequired(PERMISSIONS.repairsRead)
+  async downloadReceipt(@Param("id") id: string, @Res() reply: ControllerReply): Promise<unknown> {
+    const document = await this.queryBus.execute(new GetRepairReceiptQuery(id));
+    if (!document) return reply.code(404).send({ message: "Repair order not found" });
+    reply.header("content-type", "application/pdf");
+    reply.header("content-disposition", `attachment; filename="resguardo-${id.slice(0, 8)}.pdf"`);
+    return reply.send(document);
   }
 
   @Get("/:id/report")
@@ -160,13 +182,15 @@ export class RepairController {
 
   @Post()
   @PermissionRequired(PERMISSIONS.repairsManage)
-  async createRepair(@Body() body: unknown, @Res() reply: ControllerReply): Promise<unknown> {
+  async createRepair(@Body() body: unknown, @Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> {
     const parsed = createSchema.safeParse(body);
     if (!parsed.success) return reply.code(400).send({ message: "Invalid repair order", issues: parsed.error.flatten() });
     try {
-      return reply.code(201).send(await this.commandBus.execute(new CreateRepairOrderCommand(parsed.data as CreateRepairOrderInput)));
+      const user = request.user as AuthTokenPayload;
+      return reply.code(201).send(await this.commandBus.execute(new CreateRepairOrderCommand(parsed.data as CreateRepairOrderInput, user.sub)));
     } catch (error) {
       if (error instanceof DeviceTypeNotConfiguredError) return reply.code(400).send({ message: `El tipo de dispositivo "${error.deviceType}" no esta configurado.` });
+      if (error instanceof DeviceModelNotConfiguredError) return reply.code(400).send({ message: `El modelo "${error.brand} ${error.model}" no esta configurado para ${error.deviceType}.` });
       throw error;
     }
   }

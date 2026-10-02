@@ -5,7 +5,7 @@ import { Traceable } from "../../../shared/infrastructure/observability/trace.js
 import type { RepairOrderListOptions, RepairOrderPage, RepairOrderRepository, NewRepairOrderRecord } from "../../application/repair-order-repository.js";
 import type { RepairOrder, RepairStatusEvent } from "../../domain/repair-order.js";
 import type { RepairStatus } from "../../domain/repair-status.js";
-import { RepairOrderEntitySchema, RepairStatusEventEntitySchema } from "./repair-order-entity.js";
+import { RepairConditionRecordEntitySchema, RepairDeviceSecretEntitySchema, RepairOrderEntitySchema, RepairStatusEventEntitySchema } from "./repair-order-entity.js";
 
 @Traceable("PostgresRepairOrderRepository")
 @Service({ name: "repairOrderRepository" })
@@ -15,8 +15,11 @@ export class PostgresRepairOrderRepository implements RepairOrderRepository {
 
   async create(input: NewRepairOrderRecord): Promise<RepairOrder> {
     return this.dataSource.transaction(async (manager) => {
-      const repair = await manager.getRepository(RepairOrderEntitySchema).save({ ...input, serialNumber: input.serialNumber || null, deliveredAccessories: input.deliveredAccessories || null, technicianId: null, diagnosis: null, status: "received" });
+      const { devicePasscodeEncrypted, preRepairCondition, recordedByUserId, ...repairInput } = input;
+      const repair = await manager.getRepository(RepairOrderEntitySchema).save({ ...repairInput, serialNumber: input.serialNumber || null, deliveredAccessories: input.deliveredAccessories || null, technicianId: input.technicianId || null, estimatedCompletionAt: input.estimatedCompletionAt || null, diagnosis: null, status: "received" });
       await manager.getRepository(RepairStatusEventEntitySchema).save({ id: randomUUID(), repairOrderId: repair.id, status: "received", note: "Orden recibida" });
+      if (devicePasscodeEncrypted) await manager.getRepository(RepairDeviceSecretEntitySchema).save({ repairOrderId: repair.id, encryptedPasscode: devicePasscodeEncrypted });
+      if (preRepairCondition) await manager.getRepository(RepairConditionRecordEntitySchema).save({ id: randomUUID(), repairOrderId: repair.id, phase: "pre_repair", checklist: preRepairCondition, recordedByUserId });
       return repair;
     });
   }

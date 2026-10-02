@@ -3,6 +3,7 @@ import { staffSession } from "../auth/session";
 export interface AdminUser { id: string; email: string; displayName: string; role: "admin" | "technician" | "customer"; active: boolean; }
 export interface AuditLogEntry { id: string; action: string; createdAt: string; actorName: string | null; actorEmail: string | null; targetName: string | null; targetEmail: string | null; }
 export interface NotificationTemplate { key: string; subject: string; body: string; enabled: boolean; updatedAt: string; }
+export interface RepairDeviceCatalogEntry { deviceType: string; brand: string; model: string; imageUrl?: string; }
 const request = async <T>(url: string, init?: RequestInit): Promise<T> => {
   const response = await fetch(url, { ...init, headers: { authorization: `Bearer ${staffSession.value?.accessToken ?? ""}`, ...init?.headers } });
   // El servidor explica por que rechaza la operacion (estado protegido, plantilla
@@ -16,6 +17,9 @@ export const listRepairStatuses = () => request<{ values: string[] }>("/api/admi
 export const listDeviceTypes = () => request<{ values: string[] }>("/api/admin/config/device-types");
 export const addConfigValue = (kind: "repair-statuses" | "device-types", value: string) => request<{ values: string[] }>(`/api/admin/config/${kind}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ value }) });
 export const removeConfigValue = (kind: "repair-statuses" | "device-types", value: string) => request<{ values: string[] }>(`/api/admin/config/${kind}/remove`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ value }) });
+export const listRepairDeviceCatalog = () => request<{ entries: RepairDeviceCatalogEntry[] }>("/api/admin/config/repair-device-catalog");
+export const addRepairDeviceCatalogEntry = (input: RepairDeviceCatalogEntry) => request<{ entries: RepairDeviceCatalogEntry[] }>("/api/admin/config/repair-device-catalog", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
+export const removeRepairDeviceCatalogEntry = (input: Pick<RepairDeviceCatalogEntry, "deviceType" | "brand" | "model">) => request<{ entries: RepairDeviceCatalogEntry[] }>("/api/admin/config/repair-device-catalog/remove", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
 export const listNotificationTemplates = () => request<{ templates: NotificationTemplate[]; placeholders: string[] }>("/api/admin/config/notification-templates");
 export const saveNotificationTemplate = (input: { key: string; subject: string; body: string; enabled: boolean }) => request<NotificationTemplate>("/api/admin/config/notification-templates", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
 export const removeNotificationTemplate = (key: string) => request<{ key: string }>("/api/admin/config/notification-templates/remove", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ key }) });

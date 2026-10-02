@@ -24,6 +24,7 @@ export const environmentSchema = z.object({
   INVOICE_SERIES: z.string().min(1).max(20).default("B"),
   INVOICE_VAT_RATE: z.coerce.number().min(0).max(100).default(21),
   JWT_SECRET: z.string().min(32).default("development-only-secret-change-me-32"),
+  DEVICE_PASSCODE_ENCRYPTION_KEY: z.string().min(32).default("development-only-device-passcode-key"),
   JWT_EXPIRES_IN: z.string().min(1).default("8h"),
   UPLOADS_DIR: z.string().min(1).default("uploads"),
   ATTACHMENT_MAX_SIZE_BYTES: z.coerce.number().int().min(1).default(25 * 1024 * 1024)
@@ -31,6 +32,9 @@ export const environmentSchema = z.object({
   if (environment.NODE_ENV !== "production") return;
   if (environment.JWT_SECRET === "development-only-secret-change-me-32") {
     context.addIssue({ code: z.ZodIssueCode.custom, path: ["JWT_SECRET"], message: "JWT_SECRET must be replaced in production" });
+  }
+  if (environment.DEVICE_PASSCODE_ENCRYPTION_KEY === "development-only-device-passcode-key") {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ["DEVICE_PASSCODE_ENCRYPTION_KEY"], message: "DEVICE_PASSCODE_ENCRYPTION_KEY must be replaced in production" });
   }
   if (environment.POSTGRES_PASSWORD === "change-me") {
     context.addIssue({ code: z.ZodIssueCode.custom, path: ["POSTGRES_PASSWORD"], message: "POSTGRES_PASSWORD must be replaced in production" });

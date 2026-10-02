@@ -18,6 +18,7 @@ function repairOrder(status: string): RepairOrder {
     reportedIssue: "No enciende",
     deliveredAccessories: null,
     technicianId: null,
+    estimatedCompletionAt: null,
     diagnosis: null,
     status,
     createdAt: new Date(),
@@ -34,7 +35,8 @@ function scenario(currentStatus: string, configured: readonly string[]) {
   } as unknown as RepairOrderRepository;
   const config: RepairWorkflowConfig = {
     async listStatuses() { return configured; },
-    async listDeviceTypes() { return []; }
+    async listDeviceTypes() { return []; },
+    async listDeviceCatalog() { return []; }
   };
   const notifier: RepairStatusNotifier = {
     async notifyStatusChange(repair, note) { notified.push({ status: repair.status, note }); }
@@ -87,7 +89,7 @@ test("a persisted status change notifies the customer with the applied note", as
 test("a missing repair order neither changes status nor notifies", async () => {
   const notified: string[] = [];
   const repository = { async findById() { return undefined; } } as unknown as RepairOrderRepository;
-  const config: RepairWorkflowConfig = { async listStatuses() { return REPAIR_STATUSES; }, async listDeviceTypes() { return []; } };
+  const config: RepairWorkflowConfig = { async listStatuses() { return REPAIR_STATUSES; }, async listDeviceTypes() { return []; }, async listDeviceCatalog() { return []; } };
   const notifier: RepairStatusNotifier = { async notifyStatusChange(repair) { notified.push(repair.status); } };
 
   const repair = await new ChangeRepairStatus(repository, config, notifier).execute("unknown", "diagnosing");

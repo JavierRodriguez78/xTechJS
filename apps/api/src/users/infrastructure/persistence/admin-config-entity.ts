@@ -2,7 +2,7 @@ import { EntitySchema } from "typeorm";
 
 export interface AdminConfigRecord {
   key: string;
-  values: string[];
+  values: unknown;
   updatedAt: Date;
 }
 

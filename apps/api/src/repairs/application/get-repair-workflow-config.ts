@@ -1,10 +1,12 @@
 import { Qualifier, Service } from "@xtaskjs/core";
 import { Traceable } from "../../shared/infrastructure/observability/trace.js";
 import type { RepairWorkflowConfig } from "./repair-workflow-config.js";
+import type { RepairDeviceCatalogEntry } from "../domain/repair-device-catalog.js";
 
 export interface RepairWorkflowConfigView {
   statuses: readonly string[];
   deviceTypes: readonly string[];
+  deviceCatalog: readonly RepairDeviceCatalogEntry[];
 }
 
 /**
@@ -18,10 +20,11 @@ export class GetRepairWorkflowConfig {
   constructor(@Qualifier("repairWorkflowConfig") private readonly workflowConfig: RepairWorkflowConfig) {}
 
   async execute(): Promise<RepairWorkflowConfigView> {
-    const [statuses, deviceTypes] = await Promise.all([
+    const [statuses, deviceTypes, deviceCatalog] = await Promise.all([
       this.workflowConfig.listStatuses(),
-      this.workflowConfig.listDeviceTypes()
+      this.workflowConfig.listDeviceTypes(),
+      this.workflowConfig.listDeviceCatalog()
     ]);
-    return { statuses, deviceTypes };
+    return { statuses, deviceTypes, deviceCatalog };
   }
 }

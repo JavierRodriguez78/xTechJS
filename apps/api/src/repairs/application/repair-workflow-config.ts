@@ -1,3 +1,5 @@
+import type { RepairDeviceCatalogEntry } from "../domain/repair-device-catalog.js";
+
 /**
  * Puerto de la configuracion administrativa que el modulo de reparaciones
  * necesita. Aisla los casos de uso del almacenamiento de configuracion y permite
@@ -6,4 +8,5 @@
 export interface RepairWorkflowConfig {
   listStatuses(): Promise<readonly string[]>;
   listDeviceTypes(): Promise<readonly string[]>;
+  listDeviceCatalog(): Promise<readonly RepairDeviceCatalogEntry[]>;
 }

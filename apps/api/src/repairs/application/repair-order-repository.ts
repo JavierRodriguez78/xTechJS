@@ -1,8 +1,10 @@
 import type { CreateRepairOrderInput, RepairOrder, RepairStatusEvent, UpdateRepairTechnicalInput } from "../domain/repair-order.js";
 import type { RepairStatus } from "../domain/repair-status.js";
 
-export interface NewRepairOrderRecord extends CreateRepairOrderInput {
+export interface NewRepairOrderRecord extends Omit<CreateRepairOrderInput, "devicePasscode"> {
   id: string;
+  devicePasscodeEncrypted?: string;
+  recordedByUserId: string;
 }
 
 export interface RepairOrderListOptions {

@@ -704,7 +704,7 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   de uso y de la vista. Verificado con typecheck de API y web, 58 pruebas API y
   32 pruebas web.
 
-- **(2026-10-01) Ecommerce y compraventa: primera entrega backend en curso.**
+- **(2026-10-01) Ecommerce y compraventa implementados.**
   Se añadió el autorregistro público `POST /api/shop/register`, que crea en una
   transacción el cliente completado, su usuario de portal y el consentimiento
   inmutable, marcándolo con `acquisitionChannel: "self_service"`. El nuevo BC
@@ -766,6 +766,33 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   intentaba alterar `payments` antes de crearla. Ahora se ejecuta antes de sus
   migraciones incrementales; `make up` completó el contenedor `migrate` con
   código `0` sobre el volumen local existente.
+
+- **(2026-10-02) Recepción de reparación ampliada.** El alta admite técnico
+  activo, fecha estimada de finalización y checklist inmutable del estado previo
+  del equipo. El PIN o patrón se cifra con AES-256-GCM y se guarda exclusivamente
+  en `repair_device_secrets`, fuera de `repair_orders` y de todas las respuestas
+  habituales; el personal con `repairs:manage` lo consulta bajo demanda en una
+  ruta específica. La clave se configura con `DEVICE_PASSCODE_ENCRYPTION_KEY`,
+  es obligatoria en producción y comparte valor entre el migrador y la API. La
+  interfaz de alta incorpora selector de técnico, fecha/hora estimada, campo de
+  PIN ocultable y lista de comprobación inicial. También permite añadir líneas
+  opcionales de presupuesto orientativo, que reutilizan `SaveRepairQuote` y se
+  guardan como borrador sin cambiar el estado de la orden. El detalle interno
+  permite descargar un resguardo PDF con cliente, equipo, accesorios, fecha
+  estimada, checklist previo y presupuesto orientativo, sin consultar ni incluir
+  el PIN del dispositivo. El alta se reorganizó como consola de recepción:
+  panel izquierdo para búsqueda paginada y selección de cliente más presupuesto
+  inicial; panel derecho para tarjetas de tipo de reparación, datos del equipo,
+  checklist y acciones operativas. Reutiliza `GET /api/customers?q=...` para la
+  búsqueda y el filtro `cliente` de `GET /api/repairs` para ver los tickets del
+  cliente seleccionado. Administración puede configurar un catálogo de
+  tipo/marca/modelo con URL de imagen opcional; la selección de tipo abre un
+  panel lateral de marcas y después de modelos, muestra esas imágenes y la API
+  valida la combinación configurada al dar de alta. Los tipos sin catálogo
+  abren igualmente el panel: los técnicos pueden introducir marca/modelo y los
+  administradores acceden a la configuración del catálogo desde ahí. Quedan
+  pendientes para una siguiente entrega la firma de aceptación y el checklist
+  posterior a la reparación.
 
 ## Siguiente fase recomendada
 

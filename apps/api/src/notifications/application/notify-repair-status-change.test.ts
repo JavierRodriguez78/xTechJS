@@ -19,6 +19,7 @@ const repair: RepairOrder = {
   reportedIssue: "No enciende",
   deliveredAccessories: null,
   technicianId: null,
+  estimatedCompletionAt: null,
   diagnosis: null,
   status: "repaired",
   createdAt: new Date(),
