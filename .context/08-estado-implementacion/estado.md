@@ -1,12 +1,19 @@
 # Estado de implementacion - xTechJS
 
-**Actualizado:** 2026-10-02
+**Actualizado:** 2026-10-03
 
 Este documento complementa la especificacion funcional. Describe exclusivamente lo que
 existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase.
 
 ## Multitienda
 
+- **(2026-10-03) Horario semanal por tienda.** Casilla abierto/cerrado y
+  horas de apertura/cierre por dia, con un tramo dentro del mismo dia.
+  Persistencia JSONB mediante `AddWeeklyOpeningHoursMigration1740800000000`.
+  Cliente y API validan las horas; el servidor exige siete dias sin
+  duplicados y horas nulas en dias cerrados. Se conserva el horario antiguo
+  sin reinterpretarlo ni reemplazarlo al editar otros datos. Pruebas
+  focalizadas: 8 de API y 7 de formulario; typechecks API/web correctos.
 - **(2026-10-02) Fundación multitienda implementada.** Nuevo BC `stores` con
   entidad TypeORM, migración y CRUD `GET`/`POST`/`PATCH /api/stores`, protegido
   por `stores:manage`. La administración web permite crear, listar y

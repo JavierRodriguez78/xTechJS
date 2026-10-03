@@ -4,7 +4,7 @@ import StoreFormView from "./StoreFormView.vue";
 
 const api = vi.hoisted(() => ({ createStore: vi.fn(), listStores: vi.fn(), updateStore: vi.fn(), listAddressCountries: vi.fn(), listAddressProvinces: vi.fn(), listAddressPlaces: vi.fn(), push: vi.fn() }));
 const route = { params: {} as Record<string, string> };
-vi.mock("../api", () => api);
+vi.mock("../api", async (importOriginal) => ({ ...await importOriginal<typeof import("../api")>(), ...api }));
 vi.mock("vue-router", () => ({ useRoute: () => route, useRouter: () => ({ push: api.push }) }));
 
 describe("ficha de tiendas", () => {
@@ -59,5 +59,59 @@ describe("ficha de tiendas", () => {
     expect(wrapper.findAll("select")[2].element.value).toBe("Madrid");
     expect(wrapper.findAll("select")[3].element.value).toBe("28002");
     expect(wrapper.findAll("input")[0].element.value).toBe("Madrid");
+  });
+
+  it("guarda apertura y cierre por dia y elimina las horas de los dias cerrados", async () => {
+    const wrapper = mount(StoreFormView, { global: { stubs: { RouterLink: true } } });
+    await flushPromises();
+    await wrapper.find('[aria-label="Lunes abierto"]').setValue(true);
+    await wrapper.find('[aria-label="Apertura Lunes"]').setValue("09:00");
+    await wrapper.find('[aria-label="Cierre Lunes"]').setValue("18:00");
+    await wrapper.find('[aria-label="Martes abierto"]').setValue(true);
+    await wrapper.find('[aria-label="Apertura Martes"]').setValue("10:00");
+    await wrapper.find('[aria-label="Cierre Martes"]').setValue("17:00");
+    await wrapper.find('[aria-label="Martes abierto"]').setValue(false);
+    expect(wrapper.find('[aria-label="Apertura Martes"]').attributes("disabled")).toBeDefined();
+    await wrapper.find("form").trigger("submit");
+    await flushPromises();
+    const schedule = api.createStore.mock.calls[0][0].weeklyOpeningHours;
+    expect(schedule).toHaveLength(7);
+    expect(schedule[0]).toEqual({ day: "monday", open: true, opensAt: "09:00", closesAt: "18:00" });
+    expect(schedule[1]).toEqual({ day: "tuesday", open: false, opensAt: null, closesAt: null });
+  });
+
+  it("impide guardar un dia abierto sin horas o con el cierre anterior a la apertura", async () => {
+    const wrapper = mount(StoreFormView, { global: { stubs: { RouterLink: true } } });
+    await flushPromises();
+    await wrapper.find('[aria-label="Lunes abierto"]').setValue(true);
+    await wrapper.find("form").trigger("submit");
+    expect(api.createStore).not.toHaveBeenCalled();
+    await wrapper.find('[aria-label="Apertura Lunes"]').setValue("18:00");
+    await wrapper.find('[aria-label="Cierre Lunes"]').setValue("09:00");
+    await wrapper.find("form").trigger("submit");
+    expect(api.createStore).not.toHaveBeenCalled();
+    expect(wrapper.find('[role="alert"]').text()).toContain("Lunes");
+  });
+
+  it("carga el horario semanal guardado para editar", async () => {
+    route.params = { id: "store-1" };
+    api.listStores.mockResolvedValue([{ id: "store-1", weeklyOpeningHours: [{ day: "wednesday", open: true, opensAt: "08:30", closesAt: "14:00" }] }]);
+    const wrapper = mount(StoreFormView, { global: { stubs: { RouterLink: true } } });
+    await flushPromises();
+    expect((wrapper.find('[aria-label="Miercoles abierto"]').element as HTMLInputElement).checked).toBe(true);
+    expect((wrapper.find('[aria-label="Apertura Miercoles"]').element as HTMLInputElement).value).toBe("08:30");
+    expect((wrapper.find('[aria-label="Cierre Miercoles"]').element as HTMLInputElement).value).toBe("14:00");
+  });
+
+  it("preserva el horario de texto antiguo hasta que se edita el semanal", async () => {
+    route.params = { id: "store-1" };
+    api.listStores.mockResolvedValue([{ id: "store-1", openingHours: "L-V 9 a 18", weeklyOpeningHours: null }]);
+    const wrapper = mount(StoreFormView, { global: { stubs: { RouterLink: true } } });
+    await flushPromises();
+    expect(wrapper.text()).toContain("Horario anterior: L-V 9 a 18");
+    await wrapper.find("form").trigger("submit");
+    await flushPromises();
+    expect(api.updateStore.mock.calls[0][1].openingHours).toBe("L-V 9 a 18");
+    expect(api.updateStore.mock.calls[0][1]).not.toHaveProperty("weeklyOpeningHours");
   });
 });

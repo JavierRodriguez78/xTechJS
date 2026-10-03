@@ -97,7 +97,8 @@ export interface Store {
   addressCountry: string;    // "España" por defecto
   phone?: string | null;     // ya existe
   email?: string | null;     // nuevo, opcional
-  openingHours?: string | null; // nuevo, texto libre simple: "L-V 9:00-14:00 y 16:00-19:00"
+  openingHours?: string | null; // horario legado, conservado sin interpretar
+  weeklyOpeningHours?: StoreDayOpeningHours[] | null; // horario semanal estructurado
   invoiceSeriesPrefix: string; // ya existe
   logoUrl?: string | null;   // nuevo, opcional
   active: boolean;           // ya existe
@@ -165,6 +166,26 @@ que es obligatoria.
   movil. Identidad y direccion son bloques visibles; excepcion fiscal y
   VeriFactu son apartados opcionales plegables. El prefijo de serie no forma
   parte de la excepcion fiscal.
+
+#### Horario semanal
+
+La ficha permite marcar cada dia de lunes a domingo como abierto/cerrado y
+configurar su apertura y cierre con campos de hora. Los dias cerrados tienen
+las horas deshabilitadas. Se guarda un tramo por dia, en formato `HH:mm` de
+24 horas; ambas horas son obligatorias en dias abiertos y el cierre debe ser
+posterior a la apertura dentro del mismo dia. No incluye varios turnos ni
+horarios que crucen medianoche.
+
+`StoreDayOpeningHours` contiene `day` (`monday` a `sunday`), `open`, `opensAt`
+y `closesAt`. La API exige los siete dias sin duplicados; en dias cerrados
+las horas son `null`. Crear y editar usan `weeklyOpeningHours` y las mismas
+validaciones en cliente y servidor.
+
+La migracion `AddWeeklyOpeningHoursMigration1740800000000` agrega
+`stores.weekly_opening_hours` como JSONB nullable. No interpreta ni borra el
+texto antiguo `openingHours`. Si una tienda no tiene horario estructurado,
+la ficha muestra el texto anterior y conserva ese estado al editar otros
+datos; el horario semanal solo se establece al modificar sus controles.
 
 ### 4.2. Catalogo geografico seleccionable
 

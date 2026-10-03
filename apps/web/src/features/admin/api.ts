@@ -4,8 +4,13 @@ export interface AdminUser { id: string; email: string; displayName: string; rol
 export interface AuditLogEntry { id: string; action: string; createdAt: string; actorName: string | null; actorEmail: string | null; targetName: string | null; targetEmail: string | null; }
 export interface NotificationTemplate { key: string; subject: string; body: string; enabled: boolean; updatedAt: string; }
 export interface RepairDeviceCatalogEntry { deviceType: string; brand: string; model: string; imageUrl?: string; }
-export interface Store { id: string; name: string; legalName: string | null; address: string; addressStreet: string; addressPostalCode: string; addressCity: string; addressProvince: string; addressCountry: string; phone: string | null; email: string | null; taxId: string | null; openingHours: string | null; invoiceSeriesPrefix: string; logoUrl: string | null; veriFactuSystemId: string | null; active: boolean; }
-export type SaveStoreInput = Omit<Store, "id" | "address" | "active" | "createdAt" | "updatedAt">;
+export const STORE_WEEK_DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
+export type StoreDayOpeningHours = { day: typeof STORE_WEEK_DAYS[number] } & (
+  { open: true; opensAt: string; closesAt: string } |
+  { open: false; opensAt: null; closesAt: null }
+);
+export interface Store { id: string; name: string; legalName: string | null; address: string; addressStreet: string; addressPostalCode: string; addressCity: string; addressProvince: string; addressCountry: string; phone: string | null; email: string | null; taxId: string | null; openingHours: string | null; weeklyOpeningHours: StoreDayOpeningHours[] | null; invoiceSeriesPrefix: string; logoUrl: string | null; veriFactuSystemId: string | null; active: boolean; }
+export type SaveStoreInput = Omit<Store, "id" | "address" | "active" | "createdAt" | "updatedAt" | "weeklyOpeningHours"> & { weeklyOpeningHours?: StoreDayOpeningHours[] };
 const request = async <T>(url: string, init?: RequestInit): Promise<T> => {
   const response = await fetch(url, { ...init, headers: { authorization: `Bearer ${staffSession.value?.accessToken ?? ""}`, ...init?.headers } });
   // El servidor explica por que rechaza la operacion (estado protegido, plantilla

@@ -1,3 +1,10 @@
+export const STORE_WEEK_DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
+export type StoreWeekDay = typeof STORE_WEEK_DAYS[number];
+export type StoreDayOpeningHours = { day: StoreWeekDay } & (
+  { open: true; opensAt: string; closesAt: string } |
+  { open: false; opensAt: null; closesAt: null }
+);
+
 export interface Store {
   id: string;
   name: string;
@@ -13,6 +20,7 @@ export interface Store {
   email: string | null;
   taxId: string | null;
   openingHours: string | null;
+  weeklyOpeningHours: StoreDayOpeningHours[] | null;
   invoiceSeriesPrefix: string;
   logoUrl: string | null;
   veriFactuSystemId: string | null;
@@ -33,6 +41,7 @@ export interface SaveStoreInput {
   email?: string;
   taxId?: string;
   openingHours?: string;
+  weeklyOpeningHours?: StoreDayOpeningHours[];
   invoiceSeriesPrefix: string;
   logoUrl?: string;
   veriFactuSystemId?: string;

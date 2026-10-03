@@ -7,9 +7,21 @@ import { z } from "zod";
 import { PERMISSIONS } from "../../../users/domain/permission.js";
 import { PermissionRequired } from "../../../users/infrastructure/http/permission-guard.js";
 import type { SaveStoreInput, Store } from "../../domain/store.js";
+import { STORE_WEEK_DAYS } from "../../domain/store.js";
 import { StoreEntitySchema } from "../persistence/store-entity.js";
 
-const schema = z.object({ name: z.string().trim().min(1).max(160), legalName: z.string().trim().max(200).optional(), addressStreet: z.string().trim().min(1).max(500), addressPostalCode: z.string().trim().regex(/^\d{5}$/, "El codigo postal debe tener cinco digitos"), addressCity: z.string().trim().min(1).max(120), addressProvince: z.string().trim().min(1).max(120), addressCountry: z.string().trim().min(1).max(80).default("España"), phone: z.string().trim().max(80).optional(), email: z.union([z.string().trim().email().max(320), z.literal("")]).optional(), taxId: z.string().trim().max(80).optional(), openingHours: z.string().trim().max(500).optional(), invoiceSeriesPrefix: z.string().trim().min(1).max(32), logoUrl: z.union([z.string().trim().url().max(2000), z.literal("")]).optional(), veriFactuSystemId: z.string().trim().max(120).optional(), active: z.boolean().optional() });
+const timeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
+const weeklyOpeningHoursSchema = z.array(z.discriminatedUnion("open", [
+  z.object({ day: z.enum(STORE_WEEK_DAYS), open: z.literal(true), opensAt: timeSchema, closesAt: timeSchema }),
+  z.object({ day: z.enum(STORE_WEEK_DAYS), open: z.literal(false), opensAt: z.null(), closesAt: z.null() })
+])).length(7).superRefine((days, context) => {
+  if (new Set(days.map((day) => day.day)).size !== 7) context.addIssue({ code: z.ZodIssueCode.custom, message: "El horario debe contener los siete dias sin duplicados." });
+  days.forEach((day, index) => {
+    if (day.open && day.closesAt <= day.opensAt) context.addIssue({ code: z.ZodIssueCode.custom, path: [index, "closesAt"], message: "El cierre debe ser posterior a la apertura." });
+  });
+});
+
+const schema = z.object({ name: z.string().trim().min(1).max(160), legalName: z.string().trim().max(200).optional(), addressStreet: z.string().trim().min(1).max(500), addressPostalCode: z.string().trim().regex(/^\d{5}$/, "El codigo postal debe tener cinco digitos"), addressCity: z.string().trim().min(1).max(120), addressProvince: z.string().trim().min(1).max(120), addressCountry: z.string().trim().min(1).max(80).default("España"), phone: z.string().trim().max(80).optional(), email: z.union([z.string().trim().email().max(320), z.literal("")]).optional(), taxId: z.string().trim().max(80).optional(), openingHours: z.string().trim().max(500).optional(), weeklyOpeningHours: weeklyOpeningHoursSchema.optional(), invoiceSeriesPrefix: z.string().trim().min(1).max(32), logoUrl: z.union([z.string().trim().url().max(2000), z.literal("")]).optional(), veriFactuSystemId: z.string().trim().max(120).optional(), active: z.boolean().optional() });
 type Reply = { code(status: number): Reply; send(value: unknown): unknown };
 
 @Authenticated()
