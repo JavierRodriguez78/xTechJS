@@ -702,9 +702,28 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   `repairOrderId`, movimiento negativo auditado y migracion incremental. Las alertas
   de stock bajo minimo se consultan en `GET /api/inventory/alerts/low-stock`. El
   catalogo de proveedores usa `inventory_suppliers` y expone
-  `GET`/`POST /api/inventory/suppliers`; las ordenes de compra exponen
-  `GET`/`POST /api/inventory/purchase-orders` y
+  `GET`/`POST /api/inventory/suppliers`, `GET/PATCH
+  /api/inventory/suppliers/:id` y las acciones explicitas
+  `POST /api/inventory/suppliers/:id/deactivate|reactivate`. El listado acepta
+  `q`, `category` y `active`; pedidos nuevos rechazan proveedores inactivos.
+  Las ordenes de compra exponen `GET`/`POST
+  /api/inventory/purchase-orders` y
   `POST /api/inventory/purchase-orders/:id/receive`.
+- **(2026-10-03) Gestión ampliada de proveedores.** `Supplier` guarda razón
+  social, NIF, dirección fiscal estructurada, segundo teléfono, plazo de pago,
+  categoría y estado activo/baja. La migración aditiva
+  `1741400000000-expand-supplier-profile.ts` conserva proveedores existentes
+  como activos y limita el plazo pactado a 0–60 días. La ficha
+  `/admin/proveedores/:id` separa datos generales, pedidos históricos y
+  catálogo vinculado paginado en servidor con estado de página/tamaño en la URL;
+  `/almacen/proveedores/nuevo` contiene el alta completa en una pantalla
+  independiente y el listado solo ofrece filtros, tabla y navegación a
+  alta/ficha. Los filtros cubren texto, categoría y estado.
+  No existe borrado físico, los datos bancarios no se incorporan y la
+  integración del catálogo sigue creando proveedores con el perfil fiscal vacío.
+  Migración `1741400000000` aplicada a PostgreSQL local sin recrear volúmenes;
+  148 pruebas API y 94 web, typechecks y builds correctos. API local saludable
+  y ruta de proveedores confirmada como protegida (`401` sin sesión).
 - **(2026-10-03) Catálogo externo de repuestos.** `Supplier` suma `externalRef`
   único y `website`; `SupplierCatalogItem` guarda compatibilidad,
   precio/disponibilidad observados y vínculo opcional a artículo propio. La

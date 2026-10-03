@@ -60,6 +60,14 @@ export interface Supplier {
 }
 ```
 
+**Actualización:** `Supplier` incorpora además identificación fiscal (NIF/
+razón social), dirección estructurada y condiciones de pago, especificadas en
+`20-gestion-proveedores/gestion-proveedores.md`. Cuando esta integración crea
+un proveedor automáticamente, esos campos quedan vacíos porque la aplicación
+externa no los conoce: el staff debe completarlos a mano desde la ficha del
+proveedor antes de registrar su primera factura recibida. El contrato de
+ingesta de este documento no cambia.
+
 `externalRef` es único cuando no es `null` (constraint a nivel de base de
 datos), y es el campo que se usa para decidir si un proveedor ya existe antes
 de crear uno nuevo — nunca se compara por `name`, porque el nombre puede

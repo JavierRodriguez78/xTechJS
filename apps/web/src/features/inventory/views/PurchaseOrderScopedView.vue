@@ -20,7 +20,7 @@ async function load(): Promise<void> {
   if (!storeId.value) { orders.value = []; items.value = []; return; }
   loading.value = true;
   error.value = "";
-  try { [orders.value, items.value, suppliers.value] = await Promise.all([listOrders(storeId.value), listItems(storeId.value), listSuppliers()]); }
+  try { [orders.value, items.value, suppliers.value] = await Promise.all([listOrders(storeId.value), listItems(storeId.value), listSuppliers({ active: true })]); }
   catch (reason) { error.value = (reason as Error).message; }
   finally { loading.value = false; }
 }

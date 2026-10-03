@@ -60,7 +60,12 @@
 - Catálogo de materiales y repuestos (componentes electrónicos, piezas, pantallas, baterías, herramientas consumibles, etc.).
 - Control de stock (entradas, salidas, stock mínimo, alertas de reposición).
 - Vinculación de consumo de stock directamente desde la orden de reparación cuando el técnico registra materiales usados.
-- Gestión de proveedores y, opcionalmente, órdenes de compra.
+- **Gestión de proveedores** (alta, edición, ficha con pestañas, baja sin
+  borrado físico): identificación fiscal (NIF/razón social), dirección
+  estructurada, condiciones de pago y categoría, conforme a la normativa
+  española de facturación y conservación de documentos contables.
+  Especificación completa en `20-gestion-proveedores/gestion-proveedores.md`.
+  Y, opcionalmente, órdenes de compra.
 - Trazabilidad: qué reparación consumió qué material y en qué cantidad.
 - **Catálogo de repuestos de proveedor alimentado automáticamente**: una
   aplicación externa propia envía periódicamente, por API, los precios y

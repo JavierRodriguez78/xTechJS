@@ -9,19 +9,20 @@ import { CreatePurchaseOrderCommand, ListPurchaseOrdersQuery, ReceivePurchaseOrd
 
 const storeA = "00000000-0000-4000-8000-000000000001";
 const storeB = "00000000-0000-4000-8000-000000000002";
-function setup(activeStoreIds = [storeA, storeB]) {
+const supplierId = "00000000-0000-4000-8000-000000000010";
+function setup(activeStoreIds = [storeA, storeB], activeSupplierIds = [supplierId]) {
   const commands: unknown[] = [];
   const queries: unknown[] = [];
   const controller = new PurchaseOrderController(
     { execute: async (command: unknown) => { commands.push(command); return command; } } as unknown as CommandBus,
     { execute: async (query: unknown) => { queries.push(query); return query; } } as unknown as QueryBus
   );
-  Object.defineProperty(controller, "dataSource", { value: { query: async (_sql: string, [id]: [string]) => activeStoreIds.includes(id) ? [{ id }] : [] } as unknown as DataSource });
+  Object.defineProperty(controller, "dataSource", { value: { query: async (sql: string, [id]: [string]) => (sql.includes("inventory_suppliers") ? activeSupplierIds : activeStoreIds).includes(id) ? [{ id }] : [] } as unknown as DataSource });
   const reply = { status: 200, code(status: number) { this.status = status; return this; }, send(payload: unknown) { return payload; } };
   const request = (claims: object = { role: "technician", storeId: storeA, defaultStoreId: storeA, storeAccess: [storeA, storeB] }, query: object = {}) => ({ user: claims, query }) as unknown as FastifyRequest;
   return { controller, commands, queries, reply, request };
 }
-const input = { storeId: storeB, supplierId: "00000000-0000-4000-8000-000000000010", lines: [{ inventoryItemId: "00000000-0000-4000-8000-000000000020", quantity: 2, unitCostCents: 500 }] };
+const input = { storeId: storeB, supplierId, lines: [{ inventoryItemId: "00000000-0000-4000-8000-000000000020", quantity: 2, unitCostCents: 500 }] };
 
 test("purchase orders are scoped to accessible stores and receive stock only there", async () => {
   const { controller, commands, queries, reply, request } = setup();
@@ -40,6 +41,13 @@ test("purchase orders reject another store and choose the employee default", asy
   assert.equal(commands.length, 0);
   await controller.create({ ...input, storeId: undefined }, request({ role: "technician", defaultStoreId: storeA, storeAccess: [storeA] }), reply);
   assert.equal((commands[0] as CreatePurchaseOrderCommand).input.storeId, storeA);
+});
+
+test("purchase orders reject inactive suppliers", async () => {
+  const { controller, commands, reply, request } = setup([storeA, storeB], []);
+  await controller.create(input, request(), reply);
+  assert.equal(reply.status, 409);
+  assert.equal(commands.length, 0);
 });
 
 test("purchase-order filter only narrows stores within the user's access", async () => {

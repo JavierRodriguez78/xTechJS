@@ -43,6 +43,8 @@ export class PurchaseOrderController {
     if (!canAccessStore(user, storeId)) return reply.code(403).send({ message: "No tienes acceso a la tienda seleccionada." });
     const stores: Array<{ id: string }> = await this.dataSource.query('SELECT id FROM stores WHERE id = $1 AND active = true', [storeId]);
     if (!stores.length) return reply.code(400).send({ message: "La tienda seleccionada no existe o esta inactiva." });
+    const suppliers: Array<{ id: string }> = await this.dataSource.query('SELECT id FROM inventory_suppliers WHERE id = $1 AND active = true', [parsed.data.supplierId]);
+    if (!suppliers.length) return reply.code(409).send({ message: "El proveedor no existe o esta inactivo." });
     return reply.code(201).send(await this.commandBus.execute(new CreatePurchaseOrderCommand({ ...parsed.data, storeId })));
   }
 

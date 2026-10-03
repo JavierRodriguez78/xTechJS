@@ -51,7 +51,13 @@ const routes: RouteRecordRaw[] = [
       { path: "almacen", name: "inventory.list", component: () => import("../../features/inventory/views/InventoryScopedListView.vue"), meta: { permission: "inventory:manage" } },
       { path: "almacen/nuevo", name: "inventory.create", component: () => import("../../features/inventory/views/InventoryCreateView.vue"), meta: { permission: "inventory:manage" } },
       { path: "almacen/alertas", name: "inventory.alerts", component: () => import("../../features/inventory/views/LowStockScopedView.vue"), meta: { permission: "inventory:manage" } },
+      { path: "almacen/proveedores/nuevo", name: "suppliers.create", component: () => import("../../features/inventory/views/SupplierCreateView.vue"), meta: { permission: "inventory:manage" } },
       { path: "almacen/proveedores", name: "suppliers.list", component: () => import("../../features/inventory/views/SupplierListView.vue"), meta: { permission: "inventory:manage" } },
+      { path: "admin/proveedores/:id", component: () => import("../../features/inventory/views/SupplierDetailView.vue"), meta: { permission: "inventory:manage" }, redirect: { name: "suppliers.detail.general" }, children: [
+        { path: "general", name: "suppliers.detail.general", component: () => import("../../features/inventory/views/tabs/SupplierGeneralTab.vue") },
+        { path: "pedidos", name: "suppliers.detail.orders", component: () => import("../../features/inventory/views/tabs/SupplierOrdersTab.vue") },
+        { path: "catalogo", name: "suppliers.detail.catalog", component: () => import("../../features/inventory/views/tabs/SupplierCatalogTab.vue") }
+      ] },
       { path: "almacen/ordenes-compra", name: "purchase-orders.list", component: () => import("../../features/inventory/views/PurchaseOrderScopedView.vue"), meta: { permission: "inventory:manage" } },
       { path: "almacen/catalogo-repuestos", name: "inventory.catalog.list", component: () => import("../../features/inventory/views/SupplierCatalogListView.vue"), meta: { permission: "inventory:manage" } },
       { path: "almacen/catalogo-repuestos/:id", name: "inventory.catalog.detail", component: () => import("../../features/inventory/views/SupplierCatalogDetailView.vue"), meta: { permission: "inventory:manage" } },

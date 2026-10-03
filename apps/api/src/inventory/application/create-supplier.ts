@@ -17,7 +17,17 @@ export class CreateSupplier {
       phone: input.phone?.trim(),
       notes: input.notes?.trim(),
       externalRef: input.externalRef?.trim().toLowerCase() || null,
-      website: input.website?.trim() || undefined
+      website: input.website?.trim() || null,
+      legalName: input.legalName?.trim() || null,
+      taxId: input.taxId?.trim().toUpperCase() || null,
+      secondaryPhone: input.secondaryPhone?.trim() || null,
+      addressStreet: input.addressStreet?.trim() || null,
+      addressPostalCode: input.addressPostalCode?.trim() || null,
+      addressCity: input.addressCity?.trim() || null,
+      addressProvince: input.addressProvince?.trim() || null,
+      addressCountry: input.addressCountry?.trim() || null,
+      paymentTermDays: input.paymentTermDays ?? null,
+      category: input.category?.trim() || null
     });
   }
 }

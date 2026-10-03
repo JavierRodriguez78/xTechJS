@@ -90,6 +90,8 @@ export class SupplierCatalogController {
     if (!catalogItem) return reply.code(404).send({ message: "Catalog item not found" });
     if (!catalogItem.inventoryItemId) return reply.code(409).send({ message: "Vincula o crea el artículo de inventario antes de generar el pedido." });
     if (!await this.canAccessInventoryItem(catalogItem.inventoryItemId, user, parsed.data.storeId)) return reply.code(404).send({ message: "Inventory item not found" });
+    const suppliers: Array<{ id: string }> = await this.dataSource.query('SELECT id FROM inventory_suppliers WHERE id = $1 AND active = true', [catalogItem.supplierId]);
+    if (!suppliers.length) return reply.code(409).send({ message: "El proveedor no existe o esta inactivo." });
     return reply.code(201).send(await this.commandBus.execute(new CreatePurchaseOrderCommand({
       supplierId: catalogItem.supplierId,
       storeId: parsed.data.storeId,
