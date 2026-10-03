@@ -21,11 +21,9 @@ onMounted(load);
     </p>
     <p v-if="error" class="feedback error">{{ error }}</p>
     <form class="filter-bar" @submit.prevent="add"><input v-model="value" placeholder="Nuevo estado" /><button>Añadir</button></form>
-    <div class="customer-list">
-      <ul v-if="statuses.length" class="customer-repair-items">
-        <li v-for="status in statuses" :key="status"><strong>{{ repairStatusLabel(status) }}</strong><span>{{ status }}</span><button class="secondary" type="button" @click="remove(status)">Eliminar</button></li>
-      </ul>
-      <p v-else class="empty">No hay estados configurados.</p>
-    </div>
+    <div class="admin-table-wrap"><table class="admin-data-table admin-status-table"><thead><tr><th scope="col">Estado</th><th scope="col">Clave</th><th scope="col">Acciones</th></tr></thead><tbody>
+      <tr v-for="status in statuses" :key="status"><th scope="row">{{ repairStatusLabel(status) }}</th><td><code>{{ status }}</code></td><td><button class="secondary" type="button" @click="remove(status)">Eliminar</button></td></tr>
+      <tr v-if="!statuses.length"><td class="empty" colspan="3">No hay estados configurados.</td></tr>
+    </tbody></table></div>
   </section>
 </template>

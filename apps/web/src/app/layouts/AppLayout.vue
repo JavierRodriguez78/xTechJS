@@ -227,3 +227,23 @@ button:focus-visible, summary:focus-visible, .section-navigation a:focus-visible
   .content { padding: 20px 12px; }
 }
 </style>
+
+<style>
+.admin-table-wrap { border: 1px solid #cbd7d0; min-width: 0; overflow-x: auto; }
+.admin-data-table { border-collapse: collapse; min-width: 560px; text-align: left; width: 100%; }
+.admin-data-table thead { background: #e2ebe5; }
+.admin-data-table th, .admin-data-table td { border-bottom: 1px solid #d6dfda; padding: 13px 14px; vertical-align: middle; }
+.admin-data-table thead th { color: #60766d; font-family: "DM Mono", monospace; font-size: 10px; font-weight: 500; text-transform: uppercase; white-space: nowrap; }
+.admin-data-table tbody th { color: #173c36; font-size: 13px; font-weight: 700; }
+.admin-data-table tbody td { color: #49675a; font-size: 12px; }
+.admin-data-table tbody tr:hover { background: #f7faf8; }
+.admin-data-table tbody tr:last-child > * { border-bottom: 0; }
+.admin-data-table .empty { padding: 26px 14px; text-align: center; }
+.admin-data-table code { color: #698078; font-size: 11px; }
+.admin-table-actions { display: flex; gap: 7px; white-space: nowrap; }
+.admin-table-actions button, .admin-data-table td > button { font-size: 11px; padding: 8px 10px; }
+.admin-catalog-table { min-width: 720px; }
+.admin-template-table { min-width: 880px; }
+.admin-audit-table { min-width: 700px; }
+.admin-no-image { color: #698078; font-size: 11px; }
+</style>

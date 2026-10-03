@@ -164,7 +164,9 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
 - El panel administrativo permite filtrar por tienda y periodo, y muestra
   ventas TPV cobradas, clientes nuevos, alertas de stock, estados de
   reparación, pedidos de compra y técnicos con más reparaciones mediante
-  gráficas de barras.
+  gráficas. El desglose de reparaciones se presenta como un gráfico de dona con
+  total, cantidad y porcentaje por estado configurado; reutiliza
+  `repairsByStatus` del resumen, filtrado por periodo y tienda.
 - Aún pendiente: alcance de compras/TPV/cajas/facturación y fulfillment
   ecommerce. Las cifras de pedidos de compra siguen siendo globales y el panel
   aún no agrega ventas online.
@@ -844,6 +846,9 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
     `sent` en `customer_notifications`, aparición en
     `GET /api/customers/:id/communications` y ausencia de aviso al desactivar la
     plantilla. Los datos temporales de la prueba se eliminaron después.
+  - Las vistas de tipos de dispositivo, catálogo de equipos, estados de
+    reparación, plantillas y auditoría presentan los registros en tablas con
+    scroll horizontal adaptable, manteniendo sus acciones de gestión.
 
 - **(2026-10-01) Primera migración de listados completada: Clientes.**
   `GET /api/customers` acepta búsqueda de texto, estado de registro, etiqueta,

@@ -107,19 +107,10 @@ onMounted(load);
       </footer>
     </form>
 
-    <div class="customer-list">
-      <div v-if="loading" v-for="item in 3" :key="item" class="skeleton-row" />
-      <ul v-else-if="templates.length" class="customer-repair-items">
-        <li v-for="template in templates" :key="template.key">
-          <strong>{{ statusFromKey(template.key) ? repairStatusLabel(statusFromKey(template.key)) : template.key }}</strong>
-          <span>{{ template.subject }}</span>
-          <span :class="['status-pill', template.enabled ? 'completed' : 'pending']">{{ template.enabled ? "Activa" : "Desactivada" }}</span>
-          <em>{{ new Date(template.updatedAt).toLocaleString("es-ES") }}</em>
-          <button type="button" @click="startEdit(template)">Editar</button>
-          <button class="secondary" type="button" @click="remove(template)">Eliminar</button>
-        </li>
-      </ul>
-      <p v-else class="empty">No hay plantillas configuradas: ningun cambio de estado avisa todavia al cliente.</p>
-    </div>
+    <div class="admin-table-wrap"><table class="admin-data-table admin-template-table"><thead><tr><th scope="col">Estado</th><th scope="col">Asunto</th><th scope="col">Estado de envío</th><th scope="col">Actualizada</th><th scope="col">Acciones</th></tr></thead><tbody>
+      <tr v-if="loading"><td class="empty" colspan="5">Cargando plantillas...</td></tr>
+      <tr v-else v-for="template in templates" :key="template.key"><th scope="row">{{ statusFromKey(template.key) ? repairStatusLabel(statusFromKey(template.key)) : template.key }}</th><td>{{ template.subject }}</td><td><span :class="['status-pill', template.enabled ? 'completed' : 'pending']">{{ template.enabled ? "Activa" : "Desactivada" }}</span></td><td>{{ new Date(template.updatedAt).toLocaleString("es-ES") }}</td><td class="admin-table-actions"><button type="button" @click="startEdit(template)">Editar</button><button class="secondary" type="button" @click="remove(template)">Eliminar</button></td></tr>
+      <tr v-if="!loading && !templates.length"><td class="empty" colspan="5">No hay plantillas configuradas: ningun cambio de estado avisa todavia al cliente.</td></tr>
+    </tbody></table></div>
   </section>
 </template>
