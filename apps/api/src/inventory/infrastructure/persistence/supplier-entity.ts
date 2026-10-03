@@ -10,6 +10,8 @@ export const SupplierEntitySchema = new EntitySchema<Supplier>({
     email: { type: String, nullable: true },
     phone: { type: String, nullable: true },
     notes: { type: String, nullable: true },
+    externalRef: { type: String, name: "external_ref", nullable: true, length: 320 },
+    website: { type: String, nullable: true, length: 2000 },
     createdAt: { type: "timestamptz", name: "created_at", createDate: true },
     updatedAt: { type: "timestamptz", name: "updated_at", updateDate: true }
   }

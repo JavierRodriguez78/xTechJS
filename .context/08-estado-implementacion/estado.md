@@ -30,6 +30,23 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   1440 y 375 px sin desbordamiento horizontal, con sesiones y respuestas
   simuladas; verificados perfil, salida y superposicion movil. El menú del
   administrador de tienda oculta opciones globales sin alcance.
+- **(2026-10-03) Dashboards por módulo.** Los botones superiores Atención,
+  Almacén y Ventas navegan a resúmenes gráficos con filtros de periodo y tienda;
+  Administración conserva el panel general. Nuevos endpoints
+  `GET /api/admin/dashboard/overview/attention`, `/inventory` y `/sales` exigen
+  `customers:read`, `inventory:manage` y `payments:manage` y respetan el
+  `storeAccess` del token. Reparaciones online sin `storeId` se agregan solo
+  para el administrador global; empleados y administradores acotados no reciben
+  esos datos. Verificado con 4 pruebas de controlador, 2 de vista y 12 de
+  navegación.
+- **(2026-10-03) Dashboards por módulo.** Los grupos superiores Atención,
+  Almacén y Ventas navegan a resúmenes propios; Administración conserva el
+  panel general. Nuevos endpoints `GET /api/admin/dashboard/overview/attention`,
+  `/inventory`, `/sales` exigen `customers:read`, `inventory:manage` y
+  `payments:manage`, respectivamente, y validan la tienda seleccionada frente
+  a `storeAccess`. Las vistas muestran filtros de periodo/tienda y gráficos
+  para reparaciones/clientes, stock/movimientos/compras y cobros/ventas online.
+  Los datos online, aún sin `storeId`, se reservan al administrador global.
 
 ## Perfil propio
 
@@ -688,6 +705,20 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   `GET`/`POST /api/inventory/suppliers`; las ordenes de compra exponen
   `GET`/`POST /api/inventory/purchase-orders` y
   `POST /api/inventory/purchase-orders/:id/receive`.
+- **(2026-10-03) Catálogo externo de repuestos.** `Supplier` suma `externalRef`
+  único y `website`; `SupplierCatalogItem` guarda compatibilidad,
+  precio/disponibilidad observados y vínculo opcional a artículo propio. La
+  ingesta `POST /api/integrations/spare-parts-catalog` usa `X-Api-Key` hasheada,
+  upsert idempotente por proveedor/referencia y procesa lotes de hasta 500 con
+  errores parciales. Importar no crea inventario ni modifica stock.
+  `GET /api/inventory/catalog` filtra texto, proveedor, categoría, marca,
+  modelo, disponibilidad y rango de precio. La ficha permite enlazar/crear el
+  artículo propio y generar un pedido con el precio observado; la creación
+  interna inicializa stock cero en las tiendas autorizadas. La ruta
+  `/configuracion/integraciones` gestiona claves, mostradas una sola vez y
+  revocables.
+  Migración `1741300000000` aplicada en PostgreSQL local. Verificado: 141
+  pruebas API, 90 web, typechecks/builds y API saludable.
 - TPV: cobros y reembolsos asociados a reparaciones implementados con TypeORM,
   CQRS, `PaymentController` y trazabilidad. Incluye resumen diario, cierre
   persistente de caja, reporte por rango y descarga PDF con estructura de factura.

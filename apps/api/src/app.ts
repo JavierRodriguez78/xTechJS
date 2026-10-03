@@ -33,8 +33,14 @@ import "./repairs/infrastructure/persistence/postgres-repair-order-repository.js
 import "./repairs/infrastructure/persistence/postgres-repair-quote-repository.js";
 import "./repairs/infrastructure/persistence/postgres-repair-step-repository.js";
 import "./inventory/application/cqrs/inventory-handlers.js";
+import "./inventory/application/cqrs/supplier-catalog-handlers.js";
 import "./inventory/infrastructure/http/inventory-controller.js";
 import "./inventory/infrastructure/http/supplier-controller.js";
+import "./inventory/infrastructure/http/supplier-catalog-controller.js";
+import "./inventory/infrastructure/http/supplier-catalog-integration-controller.js";
+import "./inventory/infrastructure/http/integration-api-key-controller.js";
+import "./inventory/infrastructure/http/integration-api-key-guard.js";
+import "./inventory/application/integration-api-key-service.js";
 import "./inventory/infrastructure/persistence/postgres-inventory-repository.js";
 import "./inventory/application/cqrs/supplier-handlers.js";
 import "./inventory/infrastructure/persistence/postgres-supplier-repository.js";
@@ -76,6 +82,8 @@ import "./notifications/infrastructure/persistence/postgres-customer-notificatio
 import "./notifications/infrastructure/repair-status-notifier-adapter.js";
 import "./stores/infrastructure/http/store-controller.js";
 import "./users/infrastructure/http/admin-dashboard-controller.js";
+import "./users/infrastructure/http/module-dashboard-controller.js";
+import "./users/infrastructure/http/module-dashboard-controller.js";
 import { startTrace, traceOperation } from "./shared/infrastructure/observability/trace.js";
 
 declare module "fastify" {

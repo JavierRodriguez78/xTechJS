@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { staffSession } from "../../auth/session";
-import { listStores, type Store } from "../api";
+import { listAccessibleStores, type Store } from "../api";
 import RepairStatusDonut from "../components/RepairStatusDonut.vue";
 
 type Count = { status?: string; name?: string; count: number }; type Summary = { newCustomers: number; lowStock: number; paidSales: { count: number; cents: number }; repairsByStatus: Count[]; purchaseOrdersByStatus: Count[]; technicians: Count[]; };
-const stores = ref<Store[]>([]); const storeId = ref(""); const from = ref(new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10)); const to = ref(new Date().toISOString().slice(0, 10)); const summary = ref<Summary | null>(null); const error = ref("");
+const stores = ref<Array<Pick<Store, "id" | "name" | "active">>>([]); const storeId = ref(""); const from = ref(new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10)); const to = ref(new Date().toISOString().slice(0, 10)); const summary = ref<Summary | null>(null); const error = ref("");
 async function load(): Promise<void> { try { error.value = ""; const query = new URLSearchParams({ from: from.value, to: to.value }); if (storeId.value) query.set("storeId", storeId.value); const response = await fetch(`/api/admin/dashboard/summary?${query}`, { headers: { authorization: `Bearer ${staffSession.value?.accessToken ?? ""}` } }); if (!response.ok) throw new Error((await response.json().catch(() => ({ message: "No se pudo cargar el panel." }))).message); summary.value = await response.json() as Summary; } catch (reason) { error.value = (reason as Error).message; } }
-onMounted(async () => { if (staffSession.value?.user.role === "admin") stores.value = (await listStores()).filter((store) => store.active); await load(); });
+onMounted(async () => { if (staffSession.value?.user.role === "admin") stores.value = (await listAccessibleStores()).filter((store) => store.active); await load(); });
 function width(rows: Count[], value: number): string { return `${Math.max(8, Math.round((value / Math.max(...rows.map((row) => row.count), 1)) * 100))}%`; }
 function euros(cents: number): string { return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(cents / 100); }
 </script>

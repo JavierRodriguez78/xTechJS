@@ -260,10 +260,25 @@ global ve el agregado de todas las tiendas; con `storeId`, filtra a una):
   resultado.
 - Frontend: `DashboardOverview.vue`, con un selector de tienda visible solo
   para admin global (para el resto, los datos se limitan a `storeAccess`), y
-  un selector de rango de fechas. Tarjetas/contadores simples primero;
-  gráficas (evolución de reparaciones o ventas en el tiempo) se dejan como
-  mejora posterior si se pide explícitamente, para no sobredimensionar la
-  primera versión del dashboard.
+  un selector de rango de fechas. El panel general conserva tarjetas y el
+  gráfico de reparaciones por estado; las vistas resumen por módulo y sus
+  gráficas se describen en la sección 6.1.
+
+### 6.1. Dashboards por módulo
+
+Al seleccionar Atención, Almacén o Ventas en el menú superior se abre una vista
+resumen del módulo, además de mantener los accesos laterales a sus listados y
+fichas. Cada resumen comparte filtros de periodo y tienda y presenta
+principalmente gráficos: reparaciones por estado/técnico; posiciones de stock,
+movimientos y pedidos de compra; cobros por día/método y productos online
+vendidos. Administración conserva el panel general.
+
+Cada endpoint aplica el permiso funcional y `storeAccess`; los administradores
+globales agregan todas las tiendas o filtran una, y los trabajadores solo ven
+tiendas asignadas. Los pedidos online no tienen actualmente `storeId`, por lo
+que sus ventas/productos solo se agregan al dashboard global y se omiten en
+vistas acotadas. Los filtros no deben convertir esta ausencia de atribución en
+ventas de una tienda concreta.
 
 ## 7. Permisos
 

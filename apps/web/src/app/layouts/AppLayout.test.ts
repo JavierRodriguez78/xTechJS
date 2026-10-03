@@ -13,7 +13,7 @@ vi.mock("../../features/auth/session", async () => {
 vi.mock("../../features/admin/api", () => ({ getSessionStore: mocks.getSessionStore }));
 vi.mock("../../features/chat/notifications", () => ({ startChatNotifications: mocks.start, stopChatNotifications: mocks.stop, totalChatUnread: () => 2 }));
 
-const routeNames = ["customers.list", "repairs.list", "repairs.detail.chat", "inventory.list", "inventory.alerts", "suppliers.list", "purchase-orders.list", "payments.list", "payments.cash-register", "payments.reports", "trade-in.list", "ecommerce.products.list", "ecommerce.orders", "admin.dashboard", "admin.stores.list", "admin.stores.edit", "admin.users.list", "admin.employees.list", "admin.employees.create", "admin.employees.edit", "admin.audit.list", "admin.config.statuses", "admin.config.devices", "admin.config.templates", "staff.profile", "staff.login"];
+const routeNames = ["customers.list", "repairs.list", "repairs.detail.chat", "inventory.list", "inventory.catalog.list", "inventory.catalog.detail", "admin.integrations", "inventory.alerts", "suppliers.list", "purchase-orders.list", "payments.list", "payments.cash-register", "payments.reports", "trade-in.list", "ecommerce.products.list", "ecommerce.orders", "dashboard.attention", "dashboard.inventory", "dashboard.sales", "admin.dashboard", "admin.stores.list", "admin.stores.edit", "admin.users.list", "admin.employees.list", "admin.employees.create", "admin.employees.edit", "admin.audit.list", "admin.config.statuses", "admin.config.devices", "admin.config.templates", "staff.profile", "staff.login"];
 let wrapper: ReturnType<typeof mount> | undefined;
 const originalWidth = window.innerWidth;
 
@@ -47,7 +47,10 @@ describe("navegacion de la aplicacion", () => {
     expect(view.find(".section-navigation").text()).toContain("Clientes");
     expect(view.find(".section-navigation").text()).not.toContain("Tiendas");
     await view.find('[aria-label="Ventas"]').trigger("click");
+    await flushPromises();
+    expect(router.currentRoute.value.name).toBe("dashboard.sales");
     expect(view.find(".section-sidebar").classes()).toContain("collapsed");
+    expect(view.find('.section-navigation a[aria-label="Resumen"]').exists()).toBe(true);
     expect(view.find('.section-navigation a[aria-label="Caja"]').exists()).toBe(true);
     expect(view.find('.section-navigation a[aria-label="Clientes"]').exists()).toBe(false);
     await view.find('.section-navigation a[aria-label="Compraventa"]').trigger("click");
@@ -66,7 +69,7 @@ describe("navegacion de la aplicacion", () => {
   });
 
   it("pliega a iconos accesibles y conserva la preferencia al elegir grupo", async () => {
-    const { view } = await render();
+    const { view, router } = await render();
     await view.find('[aria-label="Plegar menu lateral"]').trigger("click");
     expect(view.find(".section-sidebar").classes()).toContain("collapsed");
     expect(view.findAll(".item-label")).toHaveLength(0);
@@ -86,11 +89,17 @@ describe("navegacion de la aplicacion", () => {
 
   it("muestra la tienda del empleado y oculta modulos sin permiso", async () => {
     staffSession.value = { accessToken: "test", user: { id: "tech-1", displayName: "Eva Tecnica", email: "eva@example.test", role: "technician", storeId: "store-1" } };
-    const { view } = await render();
+    const { view, router } = await render();
     expect(view.find(".session-context").text()).toBe("Taller Centro");
     expect(mocks.getSessionStore).toHaveBeenCalledOnce();
-    expect(view.findAll(".main-navigation button")).toHaveLength(3);
-    expect(view.find('.main-navigation [aria-label="Administracion"]').exists()).toBe(false);
+    expect(view.findAll(".main-navigation button")).toHaveLength(4);
+    expect(view.find('.main-navigation [aria-label="Administracion"]').exists()).toBe(true);
+    await view.find('[aria-label="Administracion"]').trigger("click");
+    await flushPromises();
+    expect(view.find(".section-navigation").text()).toContain("Integraciones");
+    expect(view.find(".section-navigation").text()).not.toContain("Empleados");
+    expect(view.find(".section-navigation").text()).not.toContain("Tiendas");
+    expect(router.currentRoute.value.name).toBe("admin.integrations");
     expect(view.find('.main-navigation [aria-label="Almacen"]').exists()).toBe(true);
     await view.find('[aria-label="Almacen"]').trigger("click");
     expect(view.find(".section-navigation").text()).toContain("Materiales");

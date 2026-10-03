@@ -26,6 +26,7 @@ Este paquete contiene el contexto técnico y funcional completo del proyecto **x
 - `16-alta-tienda/alta-tienda.md` — Ficha de alta de tienda adaptada a la normativa española: dirección estructurada, identidad fiscal compartida por el negocio (NIF/razón social) salvo que una tienda sea una sociedad distinta, nota sobre VeriFactu y documentación de cumplimiento del establecimiento
 - `17-gestion-empleados/gestion-empleados.md` — Gestión de empleados separada de la gestión genérica de usuarios: alta/edición/baja, acceso a una o varias tiendas (resuelve la decisión abierta de `15-multitienda`), y tratamiento de los datos del empleado conforme a RGPD/LOPDGDD en el ámbito laboral
 - `18-gestion-clientes/gestion-clientes.md` — Unificación de direcciones de cliente (contacto y facturación) reutilizando el selector de provincia/ciudad/código postal, eliminación de la duplicación de datos entre el alta por staff y el autorregistro, nuevo flujo de verificación de email en tres pasos para el autorregistro público de la tienda (resuelve la decisión abierta nº4 de `13-ecommerce-compraventa`), y revisión del catálogo de campos del cliente frente a la legislación española
+- `19-catalogo-repuestos/catalogo-repuestos.md` — Ingesta automática del catálogo de precios de repuestos que envía una aplicación externa propia: endpoint y contrato de integración (clave de API, alta automática del proveedor si no existe, carga por lotes idempotente), nueva entidad `SupplierCatalogItem`, y catálogo buscable por cualquier campo desde el panel para generar pedidos de compra
 
 ## Uso recomendado
 
@@ -42,8 +43,9 @@ Este paquete contiene el contexto técnico y funcional completo del proyecto **x
 11. Para completar la ficha de alta de cada tienda (dirección estructurada, identidad fiscal, VeriFactu), pega `16-alta-tienda/alta-tienda.md` junto con `15-multitienda/multitienda.md`. Confirma antes con la gestoría la decisión abierta nº1 (si el NIF de facturación es único para todo el negocio o si alguna tienda factura con datos fiscales propios).
 12. Para la gestión de empleados separada de usuarios (alta/edición/baja, acceso a varias tiendas, datos conforme a RGPD/LOPDGDD laboral), pega `17-gestion-empleados/gestion-empleados.md` junto con `15-multitienda/multitienda.md` y `16-alta-tienda/alta-tienda.md` (reutiliza su selector de provincia/ciudad/código postal). Revisa antes sus decisiones abiertas (nómina/RRHH fuera de alcance, plazo de conservación, si se mantiene o no un listado genérico de "Usuarios").
 13. Para unificar las direcciones del cliente, eliminar la duplicación de datos entre el alta por staff y el autorregistro, y añadir la verificación de email obligatoria en la tienda, pega `18-gestion-clientes/gestion-clientes.md` junto con `11-alta-clientes/registro-cliente.md`, `13-ecommerce-compraventa/ecommerce.md` y `16-alta-tienda/alta-tienda.md` (reutiliza su selector de provincia/ciudad/código postal).
-14. `07-entregables/entregables.md` sirve como guion de las peticiones concretas a hacer a ChatGPT.
-15. **Siempre que se pida generar, revisar o modificar cualquier pantalla, pega
+14. Para la ingesta automática del catálogo de repuestos de proveedor (endpoint de integración, alta automática del proveedor, catálogo buscable por cualquier campo), pega `19-catalogo-repuestos/catalogo-repuestos.md` junto con `02-modulos-funcionales/modulos.md` (sección de almacén/stock actualizada). No depende de ningún otro fichero de `.context` para implementarse.
+15. `07-entregables/entregables.md` sirve como guion de las peticiones concretas a hacer a ChatGPT.
+16. **Siempre que se pida generar, revisar o modificar cualquier pantalla, pega
    `04-frontend/frontend.md` completo.** Su sección 2 ("Regla de oro de la UI")
    es normativa: prohíbe el patrón de listado y ficha editable en la misma
    pantalla, y obliga a rutas separadas de listado/detalle/edición con pestañas

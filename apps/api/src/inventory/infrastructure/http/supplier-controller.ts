@@ -7,7 +7,7 @@ import { PERMISSIONS } from "../../../users/domain/permission.js";
 import { PermissionRequired } from "../../../users/infrastructure/http/permission-guard.js";
 
 type ControllerReply = { code(statusCode: number): { send(payload: unknown): unknown } };
-const supplierSchema = z.object({ name: z.string().trim().min(1).max(180), email: z.string().trim().email().max(320).optional(), phone: z.string().trim().max(64).optional(), notes: z.string().trim().max(2000).optional() });
+const supplierSchema = z.object({ name: z.string().trim().min(1).max(180), email: z.string().trim().email().max(320).optional(), phone: z.string().trim().max(64).optional(), notes: z.string().trim().max(2000).optional(), externalRef: z.string().trim().max(320).optional().nullable(), website: z.string().trim().url().max(2000).optional() });
 
 @Authenticated()
 @Controller("/api/inventory/suppliers")

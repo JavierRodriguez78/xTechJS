@@ -15,7 +15,9 @@ export class CreateSupplier {
       name: input.name.trim(),
       email: input.email?.trim().toLowerCase(),
       phone: input.phone?.trim(),
-      notes: input.notes?.trim()
+      notes: input.notes?.trim(),
+      externalRef: input.externalRef?.trim().toLowerCase() || null,
+      website: input.website?.trim() || undefined
     });
   }
 }

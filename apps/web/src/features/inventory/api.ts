@@ -1,10 +1,28 @@
 import { staffSession } from "../auth/session";
 export interface Item { id: string; sku: string; name: string; description: string | null; unit: string; stock: number; minimumStock: number; salePriceCents: number; taxRate: number; }
 export interface Movement { id: string; inventoryItemId: string; repairOrderId: string | null; quantity: number; type: string; note: string | null; createdAt: string; }
-export interface Supplier { id: string; name: string; email: string | null; phone: string | null; notes: string | null; }
+export interface Supplier { id: string; name: string; email: string | null; phone: string | null; notes: string | null; externalRef?: string | null; website?: string | null; }
 export interface PurchaseOrder { id: string; supplierId: string; storeId: string; status: string; lines: { inventoryItemId: string; quantity: number; unitCostCents: number }[]; }
+export type CatalogItemAvailability = "in_stock" | "out_of_stock" | "unknown";
+export interface SupplierCatalogItem { id: string; supplierId: string; externalRef: string; name: string; category: string | null; brand: string | null; compatibleModels: string[]; sku: string | null; priceCents: number; currency: string; availability: CatalogItemAvailability; url: string; capturedAt: string; inventoryItemId: string | null; createdAt: string; updatedAt: string; }
+export interface SupplierCatalogPage { items: SupplierCatalogItem[]; total: number; page: number; pageSize: number; }
+export interface SupplierCatalogOptions { q?: string; supplierId?: string; category?: string; brand?: string; model?: string; availability?: CatalogItemAvailability; priceMin?: number; priceMax?: number; pagina?: number; pageSize?: number; }
+export interface IntegrationApiKey { id: string; name: string; scope: string; active: boolean; createdAt: string; lastUsedAt: string | null; }
 const headers = (withJsonBody: boolean): HeadersInit => ({ ...(withJsonBody ? { "content-type": "application/json" } : {}), authorization: `Bearer ${staffSession.value?.accessToken ?? ""}` });
 async function request<T>(url: string, init?: RequestInit): Promise<T> { const response = await fetch(url, { ...init, headers: { ...headers(init?.body !== undefined), ...init?.headers } }); if (!response.ok) throw new Error((await response.json().catch(() => ({ message: "No se pudo completar la operacion." }))).message); return response.json() as Promise<T>; }
 export const listItems = (storeId?: string) => request<Item[]>(`/api/inventory${storeId ? `?storeId=${encodeURIComponent(storeId)}` : ""}`); export const lowStock = (storeId?: string) => request<Item[]>(`/api/inventory/alerts/low-stock${storeId ? `?storeId=${encodeURIComponent(storeId)}` : ""}`); export const getMovements = (id: string, storeId?: string) => request<Movement[]>(`/api/inventory/${id}/movements${storeId ? `?storeId=${encodeURIComponent(storeId)}` : ""}`);
 export const createItem = (input: { sku: string; name: string; description?: string; unit?: string; minimumStock?: number; salePriceCents?: number; taxRate?: number }) => request<Item>("/api/inventory", { method: "POST", body: JSON.stringify(input) }); export const adjustStock = (id: string, quantity: number, storeId?: string) => request<Item>(`/api/inventory/${id}/stock`, { method: "PATCH", body: JSON.stringify({ storeId, quantity, type: "adjustment", note: "Ajuste desde almacen" }) });
 export const listSuppliers = () => request<Supplier[]>("/api/inventory/suppliers"); export const createSupplier = (input: Omit<Supplier, "id">) => request<Supplier>("/api/inventory/suppliers", { method: "POST", body: JSON.stringify(input) }); export const listOrders = (storeId?: string) => request<PurchaseOrder[]>(`/api/inventory/purchase-orders${storeId ? `?storeId=${encodeURIComponent(storeId)}` : ""}`); export const createOrder = (input: { storeId?: string; supplierId: string; lines: PurchaseOrder["lines"] }) => request<PurchaseOrder>("/api/inventory/purchase-orders", { method: "POST", body: JSON.stringify(input) }); export const receiveOrder = (id: string) => request<PurchaseOrder>(`/api/inventory/purchase-orders/${id}/receive`, { method: "POST" });
+
+export const listSupplierCatalog = (options: SupplierCatalogOptions = {}) => {
+	const search = new URLSearchParams();
+	for (const [key, value] of Object.entries(options)) if (value !== undefined && value !== "") search.set(key, String(value));
+	return request<SupplierCatalogPage>(`/api/inventory/catalog${search.size ? `?${search}` : ""}`);
+};
+export const getSupplierCatalogItem = (id: string) => request<SupplierCatalogItem>(`/api/inventory/catalog/${encodeURIComponent(id)}`);
+export const linkSupplierCatalogItem = (id: string, inventoryItemId: string) => request<SupplierCatalogItem>(`/api/inventory/catalog/${encodeURIComponent(id)}/link-inventory-item`, { method: "POST", body: JSON.stringify({ inventoryItemId }) });
+export const createInventoryItemFromSupplierCatalog = (id: string, sku?: string) => request<{ catalogItem: SupplierCatalogItem; inventoryItem: Item }>(`/api/inventory/catalog/${encodeURIComponent(id)}/create-inventory-item`, { method: "POST", body: JSON.stringify({ sku }) });
+export const createPurchaseOrderFromSupplierCatalog = (id: string, input: { storeId: string; quantity: number }) => request<PurchaseOrder>(`/api/inventory/catalog/${encodeURIComponent(id)}/purchase-order`, { method: "POST", body: JSON.stringify(input) });
+export const listIntegrationApiKeys = () => request<IntegrationApiKey[]>("/api/integrations/api-keys");
+export const createIntegrationApiKey = (name: string) => request<{ key: string; integration: IntegrationApiKey }>("/api/integrations/api-keys", { method: "POST", body: JSON.stringify({ name }) });
+export const revokeIntegrationApiKey = (id: string) => request<IntegrationApiKey>(`/api/integrations/api-keys/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify({ active: false }) });

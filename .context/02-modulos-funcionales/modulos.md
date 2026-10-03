@@ -62,6 +62,15 @@
 - Vinculación de consumo de stock directamente desde la orden de reparación cuando el técnico registra materiales usados.
 - Gestión de proveedores y, opcionalmente, órdenes de compra.
 - Trazabilidad: qué reparación consumió qué material y en qué cantidad.
+- **Catálogo de repuestos de proveedor alimentado automáticamente**: una
+  aplicación externa propia envía periódicamente, por API, los precios y
+  disponibilidad de repuestos que rastrea en varias tiendas especializadas;
+  si el proveedor no existe en xTechJS se crea automáticamente, y el
+  catálogo resultante se puede buscar por cualquier campo (nombre,
+  proveedor, categoría, marca, modelo compatible, precio, disponibilidad)
+  para decidir a quién comprar y generar el pedido de compra desde ahí.
+  Especificación completa, incluido el endpoint y el contrato de integración,
+  en `19-catalogo-repuestos/catalogo-repuestos.md`.
 
 ## Tienda online (ecommerce) y compra de equipos a particulares
 - **Autorregistro público sin invitación previa, con verificación de email obligatoria**: cualquier visitante puede darse de alta por su cuenta en tres pasos (solicitud del email → verificación del enlace recibido → contraseña, datos y aceptación LOPD/RGPD) para poder comprar, sin necesidad de que el staff lo haya dado de alta antes por una reparación. No se crea ningún registro de cliente hasta verificar el email. Reutiliza el mismo `Customer` y el mismo login de `/customer` ya existentes. Especificación completa en `18-gestion-clientes/gestion-clientes.md` sección 3.
@@ -76,6 +85,7 @@
 - Función de suplantación de usuario (ver `01-roles-permisos/roles.md`), con auditoría.
 - Configuración general (tipos de dispositivo, flujos de estado, plantillas de notificación, tarifas).
 - Dashboards/reportes (reparaciones por estado, facturación, stock crítico, rendimiento por técnico).
+- Al pulsar Atención, Almacén o Ventas en el menú superior se abre un dashboard del módulo con indicadores y gráficos; Administración conserva su panel general. Los datos se filtran por periodo y tienda según `storeAccess`: el administrador global puede agregar todas las tiendas y cada trabajador solo consulta su alcance. Las ventas online sin `storeId` solo se muestran al administrador global. Especificación y estado en `15-multitienda/multitienda.md` sección 6.
 - **Página principal del panel con indicadores clave** (nuevos clientes, ventas online, reparaciones en curso y finalizadas, stock bajo), agregable globalmente o filtrable por tienda. Especificación completa en `15-multitienda/multitienda.md` sección 6.
 
 ## Multitienda

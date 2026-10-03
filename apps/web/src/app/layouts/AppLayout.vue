@@ -8,19 +8,23 @@ import { startChatNotifications, stopChatNotifications, totalChatUnread } from "
 import ChatToastStack from "../../features/chat/ChatToastStack.vue";
 
 interface NavigationItem { label: string; route: string; icon: Component; adminOnly?: boolean; globalOnly?: boolean }
-interface NavigationGroup { id: string; label: string; shortLabel?: string; icon: Component; items: NavigationItem[] }
+interface NavigationGroup { id: string; label: string; shortLabel?: string; icon: Component; dashboardRoute: string; items: NavigationItem[] }
 const groups: NavigationGroup[] = [
-  { id: "attention", label: "Atencion", icon: Wrench, items: [
+  { id: "attention", label: "Atencion", icon: Wrench, dashboardRoute: "dashboard.attention", items: [
+    { label: "Resumen", route: "dashboard.attention", icon: LayoutDashboard },
     { label: "Clientes", route: "customers.list", icon: Users },
     { label: "Reparaciones", route: "repairs.list", icon: Wrench }
   ] },
-  { id: "inventory", label: "Almacen", icon: Boxes, items: [
+  { id: "inventory", label: "Almacen", icon: Boxes, dashboardRoute: "dashboard.inventory", items: [
+    { label: "Resumen", route: "dashboard.inventory", icon: LayoutDashboard },
     { label: "Materiales", route: "inventory.list", icon: Package },
+    { label: "Catálogo de repuestos", route: "inventory.catalog.list", icon: Tags },
     { label: "Alertas de stock", route: "inventory.alerts", icon: TriangleAlert },
     { label: "Proveedores", route: "suppliers.list", icon: Truck },
     { label: "Ordenes de compra", route: "purchase-orders.list", icon: ClipboardList }
   ] },
-  { id: "sales", label: "Ventas", icon: ShoppingCart, items: [
+  { id: "sales", label: "Ventas", icon: ShoppingCart, dashboardRoute: "dashboard.sales", items: [
+    { label: "Resumen", route: "dashboard.sales", icon: LayoutDashboard },
     { label: "TPV", route: "payments.list", icon: CreditCard },
     { label: "Caja", route: "payments.cash-register", icon: Landmark },
     { label: "Informes", route: "payments.reports", icon: ChartNoAxesCombined },
@@ -28,13 +32,14 @@ const groups: NavigationGroup[] = [
     { label: "Catalogo tienda", route: "ecommerce.products.list", icon: ShoppingBag, adminOnly: true, globalOnly: true },
     { label: "Pedidos tienda", route: "ecommerce.orders", icon: ClipboardList, adminOnly: true, globalOnly: true }
   ] },
-  { id: "administration", label: "Administracion", shortLabel: "Admin", icon: Settings, items: [
+  { id: "administration", label: "Administracion", shortLabel: "Admin", icon: Settings, dashboardRoute: "admin.dashboard", items: [
     { label: "Panel", route: "admin.dashboard", icon: LayoutDashboard, adminOnly: true },
     { label: "Tiendas", route: "admin.stores.list", icon: Store, adminOnly: true, globalOnly: true },
     { label: "Empleados", route: "admin.employees.list", icon: Users, adminOnly: true },
     { label: "Estados", route: "admin.config.statuses", icon: ListChecks, adminOnly: true, globalOnly: true },
     { label: "Dispositivos", route: "admin.config.devices", icon: Smartphone, adminOnly: true, globalOnly: true },
     { label: "Plantillas", route: "admin.config.templates", icon: Mail, adminOnly: true, globalOnly: true },
+    { label: "Integraciones", route: "admin.integrations", icon: Settings },
     { label: "Auditoria", route: "admin.audit.list", icon: ScrollText, adminOnly: true, globalOnly: true }
   ] }
 ];
@@ -61,7 +66,12 @@ const currentItem = computed(() => visibleGroups.value.flatMap((group) => group.
 watch([() => route.name, isAdmin], () => {
   selectedGroup.value = visibleGroups.value.find((group) => group.items.some(matchesItem))?.id ?? visibleGroups.value[0]?.id ?? "attention";
 }, { immediate: true });
-function selectGroup(group: NavigationGroup): void { selectedGroup.value = group.id; collapsed.value = true; }
+function selectGroup(group: NavigationGroup): void {
+  selectedGroup.value = group.id;
+  collapsed.value = true;
+  const dashboardRoute = group.id === "administration" && !isAdmin.value ? "admin.integrations" : group.dashboardRoute;
+  void router.push({ name: dashboardRoute });
+}
 const now = ref(new Date());
 const dateFormatter = new Intl.DateTimeFormat("es-ES", { timeZone: "Europe/Madrid", weekday: "long", day: "numeric", month: "long", year: "numeric" });
 const timeFormatter = new Intl.DateTimeFormat("es-ES", { timeZone: "Europe/Madrid", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
