@@ -5,6 +5,57 @@
 Este documento complementa la especificacion funcional. Describe exclusivamente lo que
 existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase.
 
+## Navegacion interna
+
+- **(2026-10-03) Menu superior y lateral contextual.** `AppLayout` agrupa
+  Atencion, Almacen, Ventas y Administracion, con opciones visibles segun
+  los permisos actuales y lateral independiente por grupo. Las rutas
+  profundas seleccionan su grupo y opcion. El lateral puede plegarse a
+  iconos Lucide, con tooltips y etiquetas accesibles, y conserva la
+  preferencia local. Cada seleccion del menu superior cambia las opciones
+  y deja el lateral plegado por defecto; el usuario puede expandirlo
+  expresamente. En movil se despliega sobre el contenido y se cierra al
+  navegar, pulsar el fondo o Escape.
+- Cabecera con perfil (nombre, correo, rol), salida y fecha/hora en
+  Europe/Madrid. Empleados ven la tienda de la sesion mediante
+  `GET /api/stores/session-store`, limitado al identificador del token y
+  a la identidad publica de esa tienda. Administradores ven
+  `Vista de administrador`. Se conservan avisos e indicadores de chat;
+  no se amplian permisos ni se modifica el portal de cliente.
+- Verificacion focalizada: 10 pruebas de layout y 10 de controlador de
+  tiendas, incluyendo alcance de la tienda, rutas profundas, rol,
+  persistencia del plegado, salida y limpieza del reloj.
+  Typechecks API/web correctos. Capturas y comprobaciones de layout en
+  1440 y 375 px sin desbordamiento horizontal, con sesiones y respuestas
+  simuladas; verificados perfil, salida y superposicion movil. La nueva
+  ruta requiere actualizar la API local; no se ha verificado contra
+  servicios Docker activos en esta fase.
+
+## Perfil propio
+
+- **(2026-10-03) Email y contrasena desde Mi perfil.** El desplegable de
+  cabecera enlaza con `/mi-perfil`, protegido por sesion interna para
+  administradores y tecnicos. Ficha con identidad de lectura y dos
+  formularios separados, errores por campo, confirmacion de contrasena,
+  mostrar/ocultar y aviso de cambios sin guardar.
+- `GET`/`PATCH /api/auth/staff/profile` usan CQRS y la identidad del token,
+  verifican cuenta activa y contrasena actual y no admiten editar otro
+  usuario, rol o tienda. Email normalizado y unico; nueva contrasena de
+  al menos 12 caracteres y maximo 72 bytes UTF-8, con hash bcrypt. Los
+  cambios estan bloqueados en sesiones de suplantacion.
+- Cambiar email renueva y persiste la sesion visible; cambiar contrasena
+  cierra la sesion local y vuelve al acceso con confirmacion. No hay
+  revocacion global de JWT anteriores, recuperacion sin sesion ni
+  verificacion del nuevo email por correo. No requiere migracion.
+- Verificacion focalizada: 9 pruebas de servicio, 7 de HTTP, 10 del perfil
+  web y 11 del layout; build API y typechecks API/web correctos. En navegador,
+  comprobados layout a 1440/375 px y cambios de email y contrasena con
+  respuestas simuladas; se actualiza el email de la sesion y se retorna
+  al login al cambiar contrasena. La herramienta no completo algunos clics
+  con emulacion activa; el envio nativo del formulario y las pruebas de
+  Vue completaron el flujo. La API local debe actualizarse para servir los
+  endpoints nuevos; no se han modificado credenciales reales en la prueba.
+
 ## Multitienda
 
 - **(2026-10-03) Horario semanal por tienda.** Casilla abierto/cerrado y

@@ -12,11 +12,33 @@ import {
   BootstrapAdminCommand,
   CreateUserCommand,
   FindActiveNonAdminUserQuery,
+  FindOwnStaffProfileQuery,
   ListAuditLogsQuery,
   ListTechniciansQuery,
   ListUsersQuery,
-  UpdateUserCommand
+  UpdateUserCommand,
+  UpdateOwnStaffCredentialsCommand
 } from "./user-messages.js";
+
+@Service()
+@QueryHandler(FindOwnStaffProfileQuery)
+export class FindOwnStaffProfileHandler implements IQueryHandler<FindOwnStaffProfileQuery, User | undefined> {
+  constructor(private readonly authenticationService: AuthenticationService) {}
+
+  execute(query: FindOwnStaffProfileQuery): Promise<User | undefined> {
+    return this.authenticationService.findOwnStaffProfile(query.id);
+  }
+}
+
+@Service()
+@CommandHandler(UpdateOwnStaffCredentialsCommand)
+export class UpdateOwnStaffCredentialsHandler implements ICommandHandler<UpdateOwnStaffCredentialsCommand, User> {
+  constructor(private readonly authenticationService: AuthenticationService) {}
+
+  execute(command: UpdateOwnStaffCredentialsCommand): Promise<User> {
+    return this.authenticationService.updateOwnCredentials(command.id, command.input);
+  }
+}
 
 @Service()
 @CommandHandler(BootstrapAdminCommand)

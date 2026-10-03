@@ -3,7 +3,7 @@ import { customerSession } from "../../features/customer-portal/session";
 import { staffSession } from "../../features/auth/session";
 
 declare module "vue-router" {
-  interface RouteMeta { permission?: "customers:read" | "customers:manage" | "repairs:read" | "repairs:manage" | "inventory:manage" | "payments:manage" | "users:manage" | "stores:manage" | "ecommerce:manage" | "tradein:manage"; customer?: boolean }
+  interface RouteMeta { permission?: "customers:read" | "customers:manage" | "repairs:read" | "repairs:manage" | "inventory:manage" | "payments:manage" | "users:manage" | "stores:manage" | "ecommerce:manage" | "tradein:manage"; customer?: boolean; staff?: boolean }
 }
 
 const routes: RouteRecordRaw[] = [
@@ -18,6 +18,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: "/", component: () => import("../layouts/AppLayout.vue"), children: [
       { path: "", redirect: { name: "admin.dashboard" } },
+      { path: "mi-perfil", name: "staff.profile", component: () => import("../../features/auth/OwnProfileView.vue"), meta: { staff: true } },
       { path: "admin", name: "admin.dashboard", component: () => import("../../features/admin/views/DashboardOverview.vue"), meta: { permission: "users:manage" } },
       { path: "clientes", name: "customers.list", component: () => import("../../features/customers/views/CustomerListView.vue"), meta: { permission: "customers:read" } },
       { path: "clientes/nuevo", name: "customers.create", component: () => import("../../features/customers/views/CustomerCreateView.vue"), meta: { permission: "customers:manage" } },
@@ -82,6 +83,7 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({ history: createWebHistory(), routes });
 router.beforeEach((to) => {
   if (to.meta.customer) return customerSession.value ? true : { name: "customer.login" };
+  if (to.meta.staff) return staffSession.value ? true : { name: "staff.login", query: { redirect: to.fullPath } };
   if (to.name === "staff.login" && staffSession.value) return { name: "customers.list" };
   if (to.name === "customer.login" && customerSession.value) return { name: "customer.portal" };
   if (!to.meta.permission) return true;

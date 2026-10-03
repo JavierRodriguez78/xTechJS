@@ -30,6 +30,12 @@ function readSession(): StaffSession | null {
 
 export const staffSession = ref<StaffSession | null>(readSession());
 
+export function setStaffSession(session: StaffSession): void {
+  if (session.user.role !== "admin" && session.user.role !== "technician") throw new Error("Esta cuenta no tiene acceso al portal interno.");
+  localStorage.setItem(storageKey, JSON.stringify(session));
+  staffSession.value = session;
+}
+
 export async function signIn(email: string, password: string): Promise<void> {
   const response = await fetch("/api/auth/staff/login", {
     method: "POST",
@@ -39,11 +45,7 @@ export async function signIn(email: string, password: string): Promise<void> {
   if (!response.ok) throw new Error("Credenciales no validas para el portal interno.");
 
   const session = await response.json() as StaffSession;
-  if (session.user.role !== "admin" && session.user.role !== "technician") {
-    throw new Error("Esta cuenta no tiene acceso al portal interno.");
-  }
-  localStorage.setItem(storageKey, JSON.stringify(session));
-  staffSession.value = session;
+  setStaffSession(session);
 }
 
 export function signOut(): void {

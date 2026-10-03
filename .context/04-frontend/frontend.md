@@ -223,19 +223,84 @@ historial con cada tecla del buscador).
 
 ## 5. Layout general y navegación
 
-- **Layout de aplicación** con navegación lateral persistente (sidebar) en
-  escritorio: CRM, Reparaciones, Almacén, TPV, Chat, Administración. Colapsable
-  a iconos.
-- En tablet y móvil, la navegación pasa a un menú desplegable o barra inferior.
-- **Cabecera superior** con: breadcrumb contextual, buscador global (fase
-  posterior), notificaciones, y menú de usuario (perfil, cerrar sesión, y el
-  indicador de suplantación cuando el admin está impersonando).
+- **Navegacion en dos niveles**, ordenada por flujo de trabajo. La cabecera
+  muestra los modulos principales; seleccionar uno despliega exclusivamente
+  sus opciones en el lateral izquierdo:
+  - **Atencion**: Clientes, Reparaciones (incluye el indicador de chat pendiente).
+  - **Almacen**: Materiales, Alertas de stock, Proveedores, Ordenes de compra.
+  - **Ventas**: TPV, Caja, Informes, Compraventa, Catalogo tienda, Pedidos tienda.
+  - **Administracion**: Panel, Tiendas, Usuarios, Estados, Dispositivos,
+    Plantillas, Auditoria.
+- Las opciones y los grupos vacios se ocultan segun los permisos actuales.
+  Esto no reemplaza los guards ni concede permisos nuevos: el tecnico ve
+  Atencion y Compraventa; el administrador tiene los cuatro grupos.
+- El grupo activo se deduce de la ruta, incluidas altas, ediciones y fichas
+  anidadas; recargar o utilizar atras/adelante conserva el contexto de
+  navegacion. Elegir un grupo superior cambia las opciones del lateral y lo
+  deja plegado; el contenido de la ficha no cambia hasta seleccionar una
+  opcion lateral. Los enlaces siguen siendo rutas reales.
+- **Lateral plegable** mediante un boton con icono: expandido muestra icono
+  y nombre; plegado conserva solo iconos, etiquetas accesibles y tooltips al
+  pasar el cursor o enfocar con teclado. La preferencia se guarda localmente.
+  Seleccionar cualquier grupo superior deja la lateral plegada aunque antes
+  estuviera expandida; el usuario la abre expresamente con su boton.
+- En movil, la lateral comienza plegada si no hay preferencia guardada y se
+  expande sobre el contenido, con fondo de cierre. Se pliega al navegar,
+  pulsar el fondo o Escape; no comprime las fichas. La cabecera y la salida
+  permanecen disponibles en todos los tamanos.
+- **Cabecera superior**: marca, modulos, perfil desplegable con nombre,
+  correo y rol, y boton de cerrar sesion. Una segunda franja muestra el
+  contexto de sesion y el dia/fecha y hora actual (24 h, Europe/Madrid),
+  actualizados automaticamente y con temporizador liberado al desmontar.
+  Los breadcrumbs permanecen en las fichas; el buscador global queda para
+  una fase posterior.
+- **Contexto de tienda**: el empleado ve el nombre de la tienda de su sesion
+  (o un estado explicito de carga, error o falta de asignacion). El
+  administrador ve **Vista de administrador**, sin presentar una tienda como
+  seleccionada. Este indicador no es un selector ni informa del horario
+  comercial abierto/cerrado. `GET /api/stores/session-store` es exclusivo de
+  sesiones internas: toma `storeId` del token y solo devuelve `id`, `name` y
+  `active`, sin aceptar otra tienda ni exponer la ficha fiscal.
 - **Indicador de suplantación**: cuando un admin está suplantando a otro
   usuario, una banda fija de color de advertencia en la parte superior con el
   texto "Estás viendo la aplicación como <usuario>" y un botón "Volver a mi
   sesión". Es un requisito de trazabilidad, no un adorno.
 - El portal de cliente (`/customer`) tiene **su propio layout**, mucho más
   simple, sin sidebar de módulos internos.
+
+### 5.1. Mi perfil y credenciales propias
+
+- El desplegable de perfil en la cabecera incluye **Gestionar mi perfil**,
+  que abre `/mi-perfil` (`staff.profile`) dentro del layout interno. Es
+  accesible a administradores y tecnicos autenticados, sin `users:manage`;
+  acceder sin sesion lleva al login conservando la ruta de destino.
+- La ficha consulta la identidad real con `GET /api/auth/staff/profile`.
+  Nombre y rol son de lectura; la tienda aparece en el contexto de cabecera.
+  Se muestran dos formularios independientes, adaptativos: email de acceso
+  y contrasena, con controles para mostrar/ocultar las contrasenas.
+- El cambio de email requiere el nuevo email y la contrasena actual.
+  `PATCH /api/auth/staff/profile` normaliza el email, rechaza duplicados y
+  devuelve la sesion con un JWT actualizado. La web sincroniza cabecera y
+  almacenamiento local, borra la contrasena escrita y confirma el cambio.
+- El cambio de contrasena requiere contrasena actual, nueva y confirmacion
+  en cliente. La nueva tiene al menos 12 caracteres y no supera 72 bytes
+  UTF-8 (limite de bcrypt); se almacena exclusivamente como hash bcrypt.
+  Tras guardar, se cierra la sesion local y se redirige al login con
+  confirmacion, para acceder con la nueva contrasena.
+- Ambos cambios toman el usuario exclusivamente de `sub` en el token;
+  el servidor verifica cuenta activa y rol interno y rechaza campos ajenos
+  como `id`, `role`, `storeId` o `active`. La contrasena actual se compara
+  con el hash antes de modificar datos. Las sesiones con `impersonatorId`
+  no pueden modificar credenciales.
+- Validacion en cliente al perder foco y enviar; errores de servidor junto
+  al campo correspondiente, estado de guardado sin envios duplicados,
+  reintento de carga y aviso al salir con cambios sin guardar. Las respuestas
+  tardias no reemplazan una sesion distinta y las contrasenas no se guardan
+  en localStorage ni se incluyen en URL o logs de trazas.
+- No incluye recuperacion de contrasena sin sesion, verificacion del nuevo
+  email por correo ni edicion del perfil de cliente. Los JWT ya emitidos
+  en otras sesiones conservan su validez hasta expirar: cerrar la sesion
+  actual no implica revocacion global de sesiones.
 
 ---
 

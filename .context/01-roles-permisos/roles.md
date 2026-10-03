@@ -25,9 +25,11 @@ La aplicación debe implementar **como mínimo 3 roles**, con separación estric
 
 ## Alcance por tienda (multitienda)
 
-Con varias tiendas (ver `15-multitienda/multitienda.md`), cada usuario queda
-acotado a una tienda (`storeId`), salvo el admin, que puede ser global
-(`storeId: null`, ve y gestiona todas las tiendas) o estar asignado a una
-tienda concreta. Los permisos de este documento no cambian, se interpretan
-siempre "dentro del alcance de la tienda del usuario". Los clientes siguen
-sin estar ligados a ninguna tienda: son compartidos entre todas.
+Con varias tiendas (ver `15-multitienda/multitienda.md` y, para el modelo de
+datos definitivo del empleado, `17-gestion-empleados/gestion-empleados.md`),
+cada empleado queda acotado a una o varias tiendas (`storeAccess`), con una
+tienda por defecto (`defaultStoreId`), salvo el admin global
+(`storeAccess: null`, ve y gestiona todas las tiendas). Los permisos de este
+documento no cambian, se interpretan siempre "dentro del alcance de las
+tiendas del usuario". Los clientes siguen sin estar ligados a ninguna
+tienda: son compartidos entre todas.

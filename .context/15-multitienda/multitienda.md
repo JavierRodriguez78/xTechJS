@@ -47,33 +47,24 @@ export interface Store {
 
 ## 2. Empleados por tienda (`users`)
 
-Hoy `User` no tiene ningún concepto de tienda. Se añade:
+> **Actualización:** la gestión completa del empleado (alta, datos
+> personales, DNI/NIE, protección de datos laborales) y el acceso a **varias**
+> tiendas por empleado se especifican en
+> `17-gestion-empleados/gestion-empleados.md`, que sustituye el modelo de
+> `storeId` único descrito originalmente aquí por `defaultStoreId` +
+> `storeAccess: string[] | null`. Lo que sigue queda como contexto histórico
+> de por qué se introdujo el concepto de tienda en `users`; para el modelo de
+> datos definitivo, usar siempre el documento 17.
 
-```ts
-export interface User {
-  id: string;
-  email: string;
-  displayName: string;
-  role: UserRole;
-  active: boolean;
-  storeId: string | null; // null = acceso global (todas las tiendas)
-}
-```
-
-- **Técnico**: `storeId` obligatorio en v1 — un técnico pertenece a una
-  tienda y solo ve/gestiona las reparaciones y el almacén de esa tienda. Que
-  un técnico trabaje en varias tiendas a la vez se dejada como extensión
-  futura (ver decisión abierta 6.1) para no complicar el modelo de permisos
-  en la primera versión.
-- **Admin**: `storeId` puede ser `null` (admin global, ve y gestiona todas
-  las tiendas, incluye el dashboard agregado de la sección 4) o puede
-  asignarse a una tienda concreta (admin "de tienda", con el mismo nivel de
-  permisos pero acotado a su tienda) — útil si en el futuro hay un
-  responsable por tienda sin ser dueño del negocio completo.
-- **Cliente**: no lleva `storeId` — ver sección 3.
-- Todo endpoint que hoy filtra "por usuario autenticado" debe empezar a
-  filtrar también "por `storeId` del usuario autenticado", salvo que sea
-  `null` (acceso global). Esto afecta sobre todo a `repairs` e `inventory`
+- **Técnico**: pertenece a una o varias tiendas (`storeAccess`) y solo ve/
+  gestiona las reparaciones y el almacén de esas tiendas.
+- **Admin**: `storeAccess: null` (acceso global, ve y gestiona todas las
+  tiendas, incluye el dashboard agregado de la sección 4) o acotado a una o
+  varias tiendas concretas (admin "de tienda").
+- **Cliente**: no lleva tienda asociada — ver sección 3.
+- Todo endpoint que hoy filtra "por usuario autenticado" debe filtrar por
+  pertenencia a `storeAccess` del usuario autenticado, salvo que sea `null`
+  (acceso global). Esto afecta sobre todo a `repairs` e `inventory`
   (secciones 4 y 5 de este documento).
 
 ## 3. Clientes: compartidos entre tiendas
@@ -285,11 +276,9 @@ alcance de `storeId` del usuario", sin necesidad de duplicarlos por tienda.
 
 ## 8. Decisiones abiertas
 
-1. **¿Un técnico puede pertenecer a más de una tienda?** Este documento
-   especifica v1 con una sola tienda por técnico (`storeId` único). Si el
-   negocio necesita técnicos itinerantes entre tiendas, habría que pasar a
-   `storeIds: string[]`, lo que afecta a todos los filtros de la sección 2 en
-   adelante — mejor decidirlo antes de implementar que migrarlo después.
+1. ~~¿Un técnico puede pertenecer a más de una tienda?~~ **Resuelta**: sí —
+   ver `17-gestion-empleados/gestion-empleados.md` sección 3
+   (`storeAccess: string[] | null`).
 2. **¿Catálogo de inventario compartido (sección 5.1) o completamente
    independiente por tienda?** Este documento recomienda catálogo
    compartido + stock por tienda (mismo SKU en todas partes, con precio de

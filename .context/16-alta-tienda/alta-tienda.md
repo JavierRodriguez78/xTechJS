@@ -2,26 +2,28 @@
 
 Este documento revisa y amplía el alta de tienda ya implementada
 (`Store`: `name`, `address`, `phone`, `taxId`, `invoiceSeriesPrefix`, `active`
-en `apps/api/src/stores`), tomando como referencia el formulario de alta de
-tienda de **RepairDesk** y adaptándolo a lo que exige/permite la normativa
-española, para un negocio con varios establecimientos físicos. Complementa
-`15-multitienda/multitienda.md` (que ya define el concepto de `Store` y su
-alcance sobre usuarios, reparaciones, almacén y facturación): este documento
-se centra solo en **qué datos recoge la ficha de cada tienda**.
+en `apps/api/src/stores`), tomando como referencia los formularios de alta de
+tienda habituales en el software de gestión multi-local y adaptándolo a lo
+que exige/permite la normativa española, para un negocio con varios
+establecimientos físicos. Complementa `15-multitienda/multitienda.md` (que ya
+define el concepto de `Store` y su alcance sobre usuarios, reparaciones,
+almacén y facturación): este documento se centra solo en **qué datos recoge
+la ficha de cada tienda**.
 
-## 1. Qué pide RepairDesk (resumen del análisis)
+## 1. Qué suele pedirse al dar de alta una tienda (resumen del análisis)
 
-El alta de tienda de RepairDesk pide, en tres bloques: **datos básicos**
-(nombre del negocio, nombre alternativo de la tienda, email, logo),
-**contacto** (teléfono, web, dirección, código postal, ciudad, provincia/
-estado, país) y **otros** (número de registro, horario de apertura/cierre,
-zona horaria, formato de hora, idioma, moneda por defecto, formato de precio,
-y un interruptor para sincronizar precios/inventario entre tiendas).
+El alta de tienda en este tipo de software suele pedirse, en tres bloques:
+**datos básicos** (nombre del negocio, nombre alternativo de la tienda,
+email, logo), **contacto** (teléfono, web, dirección, código postal, ciudad,
+provincia/estado, país) y **otros** (número de registro, horario de
+apertura/cierre, zona horaria, formato de hora, idioma, moneda por defecto,
+formato de precio, y un interruptor para sincronizar precios/inventario entre
+tiendas).
 
 ## 2. Qué sobra para xTechJS
 
-RepairDesk es un software multinacional pensado para cadenas que operan en
-varios países y monedas. Varios de sus campos no aportan nada a un negocio
+Buena parte de ese catálogo de campos está pensado para cadenas que operan en
+varios países y monedas. Varios de esos campos no aportan nada a un negocio
 español de una sola moneda y un solo país, y añadirlos sería complejidad sin
 beneficio:
 

@@ -33,6 +33,15 @@ export class StoreController {
   @PermissionRequired(PERMISSIONS.storesManage)
   list(): Promise<Store[]> { return this.dataSource.getRepository(StoreEntitySchema).find({ order: { name: "ASC" } }); }
 
+  @Get("/session-store")
+  async sessionStore(@Req() request: FastifyRequest, @Res() reply: Reply): Promise<unknown> {
+    const user = request.user as { role: string; storeId?: string | null };
+    if (user.role !== "admin" && user.role !== "technician") return reply.code(403).send({ message: "Forbidden" });
+    if (!user.storeId) return null;
+    const store = await this.dataSource.getRepository(StoreEntitySchema).findOneBy({ id: user.storeId });
+    return store ? { id: store.id, name: store.name, active: store.active } : null;
+  }
+
   @Post()
   @PermissionRequired(PERMISSIONS.storesManage)
   async create(@Body() body: unknown, @Res() reply: Reply): Promise<unknown> {

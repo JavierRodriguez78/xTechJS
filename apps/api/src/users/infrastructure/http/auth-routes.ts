@@ -1,16 +1,25 @@
 import type { FastifyRequest } from "fastify";
 import type { DataSource } from "typeorm";
 import type { CommandBus, QueryBus } from "@xtaskjs/cqrs";
-import { Controller, Body, Param, Post, Req, Res } from "@xtaskjs/common";
+import { Controller, Body, Get, Param, Patch, Post, Req, Res } from "@xtaskjs/common";
 import { InjectCommandBus, InjectQueryBus } from "@xtaskjs/cqrs";
 import { Authenticated } from "@xtaskjs/security";
 import { InjectDataSource } from "@xtaskjs/typeorm";
 import { isStaffRole, type UserRole } from "../../../shared/domain/user-role.js";
-import { AuthenticateUserCommand, BootstrapAdminCommand, FindActiveNonAdminUserQuery } from "../../application/cqrs/user-messages.js";
+import { AuthenticateUserCommand, BootstrapAdminCommand, FindActiveNonAdminUserQuery, FindOwnStaffProfileQuery, UpdateOwnStaffCredentialsCommand } from "../../application/cqrs/user-messages.js";
+import { OwnProfileError } from "../../application/authentication-service.js";
+import { z } from "zod";
 import { PERMISSIONS } from "../../domain/permission.js";
 import type { User } from "../../domain/user.js";
 import { recordImpersonation } from "../persistence/audit-log.js";
 import { PermissionRequired } from "./permission-guard.js";
+
+type ProfileReply = { code(status: number): ProfileReply; send(payload: unknown): unknown };
+const ownCredentialsSchema = z.object({
+  currentPassword: z.string().min(1).max(256),
+  email: z.string().trim().email().max(320).optional(),
+  newPassword: z.string().min(12).max(72).refine((value) => Buffer.byteLength(value, "utf8") <= 72, "La contrasena supera el limite de 72 bytes.").optional()
+}).strict().refine((input) => input.email !== undefined || input.newPassword !== undefined, "Selecciona un cambio de email o contrasena.");
 
 export interface AuthTokenPayload {
   sub: string;
@@ -77,6 +86,38 @@ export class AuthController {
     if (!user || user.role !== "customer") return reply.code(401).send({ message: "Invalid customer credentials" });
     const token = request.server.jwt.sign({ sub: user.id, email: user.email, role: user.role, storeId: user.storeId });
     return { accessToken: token, user: toPublicUser(user) };
+  }
+
+  @Get("/staff/profile")
+  @Authenticated()
+  async ownProfile(@Req() request: FastifyRequest, @Res() reply: ProfileReply): Promise<unknown> {
+    if (!isStaffRole(request.user.role)) return reply.code(403).send({ message: "Solo disponible para usuarios internos." });
+    const user: User | undefined = await this.queryBus.execute(new FindOwnStaffProfileQuery(request.user.sub));
+    return user ? toPublicUser(user) : reply.code(401).send({ message: "Tu cuenta ya no esta disponible." });
+  }
+
+  @Patch("/staff/profile")
+  @Authenticated()
+  async updateOwnProfile(@Body() body: unknown, @Req() request: FastifyRequest, @Res() reply: ProfileReply): Promise<unknown> {
+    if (!isStaffRole(request.user.role) || request.user.impersonatorId) return reply.code(403).send({ message: "No puedes modificar credenciales desde esta sesion." });
+    const parsed = ownCredentialsSchema.safeParse(body);
+    if (!parsed.success) return reply.code(400).send({ message: "Revisa los datos del perfil.", issues: parsed.error.flatten() });
+    try {
+      const user: User = await this.commandBus.execute(new UpdateOwnStaffCredentialsCommand(request.user.sub, parsed.data));
+      if (!user.active || !isStaffRole(user.role)) return reply.code(401).send({ message: "Tu cuenta ya no esta disponible." });
+      const accessToken = request.server.jwt.sign({ sub: user.id, email: user.email, role: user.role, storeId: user.storeId });
+      return { accessToken, user: toPublicUser(user) };
+    } catch (error) {
+      if (error instanceof OwnProfileError) {
+        if (error.reason === "unavailable") return reply.code(401).send({ message: "Tu cuenta ya no esta disponible." });
+        const field = error.reason;
+        const message = field === "currentPassword" ? "La contrasena actual no es correcta." : field === "email" ? "Ese email ya esta registrado." : "La nueva contrasena debe tener al menos 12 caracteres y como maximo 72 bytes.";
+        return reply.code(field === "email" ? 409 : 400).send({ message, issues: { fieldErrors: { [field]: [message] } } });
+      }
+      const databaseError = error as { code?: string; driverError?: { code?: string } } | null;
+      if (databaseError?.code === "23505" || databaseError?.driverError?.code === "23505") return reply.code(409).send({ message: "Ese email ya esta registrado.", issues: { fieldErrors: { email: ["Ese email ya esta registrado."] } } });
+      throw error;
+    }
   }
 
   @Post("/impersonate/:userId")

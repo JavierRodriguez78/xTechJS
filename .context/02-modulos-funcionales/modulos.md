@@ -20,7 +20,7 @@
 
 ## Gestión de equipos y reparaciones (taller)
 - Alta de "orden de reparación" (ticket): equipo, cliente, tipo de dispositivo, avería reportada, accesorios entregados, estado inicial.
-- **Ficha de recepción ampliada (inspirada en el flujo de ticket de RepairDesk)**: en el mismo alta, opcionalmente, PIN/contraseña de desbloqueo del equipo (cifrado, visible solo para staff), presupuesto inicial orientativo, checklist de condición del equipo pre-reparación (y post-reparación al entregar), firma táctil del cliente aceptando las condiciones del depósito, técnico asignado y fecha estimada de entrega, con resguardo de depósito descargable en PDF. Especificación completa en `14-alta-reparacion/alta-reparacion.md`.
+- **Ficha de recepción ampliada**: en el mismo alta, opcionalmente, PIN/contraseña de desbloqueo del equipo (cifrado, visible solo para staff), presupuesto inicial orientativo, checklist de condición del equipo pre-reparación (y post-reparación al entregar), firma táctil del cliente aceptando las condiciones del depósito, técnico asignado y fecha estimada de entrega, con resguardo de depósito descargable en PDF. Especificación completa en `14-alta-reparacion/alta-reparacion.md`.
 - Flujo de estados configurable (ej.: recibido → en diagnóstico → presupuestado → aprobado por cliente → en reparación → en pruebas → reparado → entregado / no reparable → cancelado).
 - Ficha técnica del equipo (marca, modelo, número de serie/identificador, tipo: consola actual, consola retro, móvil, electrodoméstico).
 - Adjuntos por reparación: fotografías y vídeos del proceso, subidos por el técnico, visibles para el cliente y el admin.
@@ -65,6 +65,7 @@
 - Especificación completa (modelo de datos, endpoints, decisiones abiertas sobre pasarela de pago y logística) en `13-ecommerce-compraventa/ecommerce.md`.
 
 ## Panel de administración
+- **Gestión de empleados** (alta, edición, roles, acceso a una o varias tiendas y baja), separada de cualquier gestión genérica de usuarios, con los datos del empleado tratados conforme a la normativa española de protección de datos en el ámbito laboral (RGPD/LOPDGDD). Especificación completa en `17-gestion-empleados/gestion-empleados.md`.
 - Gestión de usuarios y roles (alta, baja, edición, reseteo de credenciales).
 - Función de suplantación de usuario (ver `01-roles-permisos/roles.md`), con auditoría.
 - Configuración general (tipos de dispositivo, flujos de estado, plantillas de notificación, tarifas).

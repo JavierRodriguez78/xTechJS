@@ -33,6 +33,7 @@ async function submit(): Promise<void> {
       <a class="brand login-brand" href="#">xTech<span>JS</span></a>
       <p class="eyebrow">Portal interno</p>
       <h1 id="login-title">Accede al taller.</h1>
+      <p v-if="route.query.passwordChanged === '1'" class="feedback success" role="status">Contrasena actualizada. Inicia sesion con tu nueva contrasena.</p>
       <form @submit.prevent="submit">
         <label>
           <span>Email</span>

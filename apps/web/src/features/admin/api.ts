@@ -21,6 +21,7 @@ const request = async <T>(url: string, init?: RequestInit): Promise<T> => {
 export const listUsers = () => request<AdminUser[]>("/api/users");
 export const listAuditLogs = () => request<AuditLogEntry[]>("/api/users/audit");
 export const listStores = () => request<Store[]>("/api/stores");
+export const getSessionStore = () => request<Pick<Store, "id" | "name" | "active"> | null>("/api/stores/session-store");
 export interface AddressCountry { code: string; name: string; postalCoverage: boolean }
 export interface AddressProvince { code: string; name: string }
 export interface AddressPlace { city: string; postalCode: string }

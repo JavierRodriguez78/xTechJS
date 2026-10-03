@@ -1,3 +1,13 @@
+import type { UpdateOwnCredentialsInput } from "../authentication-service.js";
+
+export class FindOwnStaffProfileQuery {
+  constructor(public readonly id: string) {}
+}
+
+export class UpdateOwnStaffCredentialsCommand {
+  constructor(public readonly id: string, public readonly input: UpdateOwnCredentialsInput) {}
+}
+
 export class BootstrapAdminCommand {
   constructor(public readonly input: { email: string; displayName: string; password: string }) {}
 }

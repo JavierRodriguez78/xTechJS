@@ -1,18 +1,16 @@
 # Ficha de recepción de equipo (alta de orden de reparación) — xTechJS
 
 Este documento mejora el **alta de orden de reparación** (`POST /api/repairs`,
-caso de uso `CreateRepairOrder`), tomando como referencia el flujo de creación
-de ticket de **RepairDesk** (software de gestión de talleres de reparación de
-referencia en el sector), adaptado al alcance actual de xTechJS. No sustituye
-nada de lo ya implementado: añade campos y pasos opcionales sobre el mismo
-endpoint y la misma entidad `RepairOrder`.
+caso de uso `CreateRepairOrder`), tomando como referencia los flujos de alta
+de ticket habituales en el software de gestión de talleres de reparación,
+adaptado al alcance actual de xTechJS. No sustituye nada de lo ya
+implementado: añade campos y pasos opcionales sobre el mismo endpoint y la
+misma entidad `RepairOrder`.
 
+## 1. Qué resuelve un alta de ticket ágil (resumen del análisis)
 
-
-## 1. Qué hace RepairDesk (resumen del análisis)
-
-RepairDesk resuelve el alta de ticket **en una sola pantalla**, sin cambiar de
-pestaña, en este orden:
+Un alta de ticket ágil resuelve el alta **en una sola pantalla**, sin cambiar
+de pestaña, en este orden:
 
 1. **Cliente**: buscar por nombre/teléfono/email en la base de clientes
    existente, o darlo de alta sin salir de la pantalla ("walk-in" /
@@ -93,8 +91,8 @@ dispositivo de un cliente):
 
 ### 2.3. Precio orientativo en el alta (reutilizando `RepairQuote`)
 
-RepairDesk muestra un precio estimado ya en el alta porque tiene un catálogo
-de servicios con precio por avería. xTechJS no tiene ese catálogo todavía (ver
+Un catálogo de servicios con precio por avería permitiría mostrar un precio
+estimado ya en el alta. xTechJS no tiene ese catálogo todavía (ver
 decisión abierta 5.1), así que en vez de construirlo ahora, se reutiliza
 directamente lo que **ya existe**: `RepairQuote`/`SaveRepairQuote`
 (`03-backend` y código ya implementado). El alta de ticket permite,
@@ -130,8 +128,8 @@ export interface RepairConditionRecord {
 - La lista de ítems del checklist (`"Pantalla"`, `"Botones"`, etc.) puede
   empezar como una lista fija razonable para electrónica de consumo
   (pantalla, botones físicos, batería, carcasa/golpes, puertos de carga,
-  altavoz/micrófono, daño por líquido) y, si se quiere igualar a RepairDesk
-  del todo, hacerse configurable por tipo de dispositivo desde
+  altavoz/micrófono, daño por líquido) y, si se quiere llegar más lejos,
+  hacerse configurable por tipo de dispositivo desde
   `RepairWorkflowConfig` (mismo mecanismo ya usado para los tipos de
   dispositivo) — se deja como decisión abierta (5.2) para no sobredimensionar
   la primera versión.
@@ -139,8 +137,8 @@ export interface RepairConditionRecord {
   golpe ya existente) **no necesitan un nuevo enlace**: ya pueden adjuntarse
   usando `attachments` con el `repairOrderId` ya existente, tal como hoy.
 - Ambos checklists (pre y post) se incluyen impresos en el resguardo/factura,
-  igual que hace RepairDesk, para dejar constancia de qué daños existían ya
-  antes de que el taller tocase el equipo.
+  para dejar constancia de qué daños existían ya antes de que el taller
+  tocase el equipo.
 
 ### 2.5. Firma del cliente
 
@@ -187,7 +185,7 @@ ya usado para facturas (`11-alta-clientes/registro-cliente.md` sección 5.1).
 
 ## 3. Frontend
 
-Replicando la idea de "una sola pantalla" de RepairDesk, dentro de lo que ya
+Siguiendo la idea de "una sola pantalla" de la sección 1, dentro de lo que ya
 exige `04-frontend/frontend.md` (rutas separadas de listado/detalle): la
 pantalla de alta (`/repairs/new`, ruta de creación, no un listado) debe reunir
 en un único formulario, sin pestañas ni pasos separados, en este orden:
@@ -237,8 +235,8 @@ permiso separado en esta fase.
 
 ## 5. Decisiones abiertas
 
-1. **Catálogo de servicios de reparación con precio por avería** (lo que en
-   RepairDesk rellena el precio automáticamente al elegir la avería): no se
+1. **Catálogo de servicios de reparación con precio por avería** (que
+   permitiría rellenar el precio automáticamente al elegir la avería): no se
    construye en esta fase; el precio orientativo se sigue introduciendo a
    mano vía `initialQuoteLines` (sección 2.3). Construirlo implicaría un
    nuevo BC o extender `inventory`/`repairs` con una tabla de tarifas por
@@ -251,9 +249,8 @@ permiso separado en esta fase.
 3. **Firma táctil obligatoria u opcional**: se especifica opcional para no
    bloquear el alta en talleres que todavía trabajen con papel; si el negocio
    quiere hacerla obligatoria, basta con añadir la misma validación que ya
-   existe para forzar el diagnóstico obligatorio (`Store Settings` de
-   RepairDesk tiene un equivalente a forzar campos; aquí bastaría un flag en
-   `RepairWorkflowConfig`).
+   existe para forzar el diagnóstico obligatorio, con un flag equivalente en
+   `RepairWorkflowConfig`.
 
 ## 6. Petición para ChatGPT
 

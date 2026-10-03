@@ -94,3 +94,22 @@ test("invalid weekly schedules are rejected before persistence", async () => {
     assert.equal(saved.length, 0);
   }
 });
+
+test("session store uses the authenticated store ID and returns only its public identity", async () => {
+  const { controller, reply } = setup();
+  let requestedId: string | undefined;
+  Object.defineProperty(controller, "dataSource", { value: { getRepository: () => ({ findOneBy: async ({ id }: { id: string }) => {
+    requestedId = id;
+    return { id, name: "Taller Madrid", active: true, taxId: "PRIVATE" };
+  } }) }, configurable: true });
+  const result = await controller.sessionStore({ user: { role: "technician", storeId: "own-store" }, query: { storeId: "other-store" } } as unknown as FastifyRequest, reply);
+  assert.equal(requestedId, "own-store");
+  assert.deepEqual(result, { id: "own-store", name: "Taller Madrid", active: true });
+});
+
+test("session store rejects customers and handles unassigned staff", async () => {
+  const { controller, reply } = setup();
+  assert.equal(await controller.sessionStore({ user: { role: "technician", storeId: null } } as unknown as FastifyRequest, reply), null);
+  await controller.sessionStore({ user: { role: "customer", storeId: "store-1" } } as unknown as FastifyRequest, reply);
+  assert.equal(reply.status, 403);
+});
