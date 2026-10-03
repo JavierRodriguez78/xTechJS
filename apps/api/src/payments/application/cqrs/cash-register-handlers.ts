@@ -8,10 +8,10 @@ import { CloseCashRegisterCommand, GetCashRegisterQuery, OpenCashRegisterCommand
 
 @Service()
 @CommandHandler(OpenCashRegisterCommand)
-export class OpenCashRegisterHandler implements ICommandHandler<OpenCashRegisterCommand, CashRegister> { constructor(private readonly useCase: OpenCashRegister) {} execute(command: OpenCashRegisterCommand): Promise<CashRegister> { return this.useCase.execute(command.businessDate); } }
+export class OpenCashRegisterHandler implements ICommandHandler<OpenCashRegisterCommand, CashRegister> { constructor(private readonly useCase: OpenCashRegister) {} execute(command: OpenCashRegisterCommand): Promise<CashRegister> { return this.useCase.execute(command.businessDate, command.storeId); } }
 @Service()
 @QueryHandler(GetCashRegisterQuery)
-export class GetCashRegisterHandler implements IQueryHandler<GetCashRegisterQuery, CashRegister | undefined> { constructor(private readonly useCase: GetCashRegister) {} execute(query: GetCashRegisterQuery): Promise<CashRegister | undefined> { return this.useCase.execute(query.businessDate); } }
+export class GetCashRegisterHandler implements IQueryHandler<GetCashRegisterQuery, CashRegister | undefined> { constructor(private readonly useCase: GetCashRegister) {} execute(query: GetCashRegisterQuery): Promise<CashRegister | undefined> { return this.useCase.execute(query.businessDate, query.storeId); } }
 @Service()
 @CommandHandler(CloseCashRegisterCommand)
-export class CloseCashRegisterHandler implements ICommandHandler<CloseCashRegisterCommand, CashRegister | undefined> { constructor(private readonly useCase: CloseCashRegister) {} execute(command: CloseCashRegisterCommand): Promise<CashRegister | undefined> { return this.useCase.execute(command.businessDate); } }
+export class CloseCashRegisterHandler implements ICommandHandler<CloseCashRegisterCommand, CashRegister | undefined> { constructor(private readonly useCase: CloseCashRegister) {} execute(command: CloseCashRegisterCommand): Promise<CashRegister | undefined> { return this.useCase.execute(command.businessDate, command.storeId); } }

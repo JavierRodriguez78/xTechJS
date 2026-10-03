@@ -1,7 +1,7 @@
 import type { AdjustInventoryInput, CreateInventoryItemInput, InventoryItem, InventoryMovement } from "../domain/inventory-item.js";
 
 export interface InventoryRepository {
-  create(input: CreateInventoryItemInput & { id: string }): Promise<InventoryItem>;
+  create(input: CreateInventoryItemInput & { id: string; storeIds?: readonly string[] | null }): Promise<InventoryItem>;
   findAll(storeId: string): Promise<readonly InventoryItem[]>;
   findBelowMinimum(storeId: string): Promise<readonly InventoryItem[]>;
   findById(id: string): Promise<InventoryItem | undefined>;

@@ -23,14 +23,14 @@ export class CreatePaymentHandler implements ICommandHandler<CreatePaymentComman
 @QueryHandler(ListPaymentsQuery)
 export class ListPaymentsHandler implements IQueryHandler<ListPaymentsQuery, readonly Payment[]> {
   constructor(private readonly useCase: ListPayments) {}
-  execute(): Promise<readonly Payment[]> { return this.useCase.execute(); }
+  execute(query: ListPaymentsQuery): Promise<readonly Payment[]> { return this.useCase.execute(query.storeIds); }
 }
 
 @Service()
 @QueryHandler(ListTpvSalesQuery)
 export class ListTpvSalesHandler implements IQueryHandler<ListTpvSalesQuery, readonly TpvSale[]> {
   constructor(private readonly useCase: ListTpvSales) {}
-  execute(): Promise<readonly TpvSale[]> { return this.useCase.execute(); }
+  execute(query: ListTpvSalesQuery): Promise<readonly TpvSale[]> { return this.useCase.execute(query.storeIds); }
 }
 
 @Service()
@@ -58,14 +58,14 @@ export class GetPaymentReceiptHandler implements IQueryHandler<GetPaymentReceipt
 @QueryHandler(GetDailyPaymentSummaryQuery)
 export class GetDailyPaymentSummaryHandler implements IQueryHandler<GetDailyPaymentSummaryQuery, Awaited<ReturnType<GetDailyPaymentSummary["execute"]>>> {
   constructor(private readonly useCase: GetDailyPaymentSummary) {}
-  execute(query: GetDailyPaymentSummaryQuery): ReturnType<GetDailyPaymentSummary["execute"]> { return this.useCase.execute(query.date); }
+  execute(query: GetDailyPaymentSummaryQuery): ReturnType<GetDailyPaymentSummary["execute"]> { return this.useCase.execute(query.date, query.storeIds); }
 }
 
 @Service()
 @QueryHandler(GetPaymentReportQuery)
 export class GetPaymentReportHandler implements IQueryHandler<GetPaymentReportQuery, Awaited<ReturnType<GetPaymentReport["execute"]>>> {
   constructor(private readonly useCase: GetPaymentReport) {}
-  execute(query: GetPaymentReportQuery): ReturnType<GetPaymentReport["execute"]> { return this.useCase.execute(query.from, query.to); }
+  execute(query: GetPaymentReportQuery): ReturnType<GetPaymentReport["execute"]> { return this.useCase.execute(query.from, query.to, query.storeIds); }
 }
 
 @Service()

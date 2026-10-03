@@ -43,7 +43,8 @@ describe("ficha de tiendas", () => {
     await wrapper.findAll("select")[1].setValue("V");
     await flushPromises();
     expect(wrapper.findAll("select")[2].element.value).toBe("");
-    expect(wrapper.findAll("select")[3].element.value).toBe("");
+    const postal = wrapper.findAll(".address-fields label").find((label) => label.text().includes("Codigo postal"))?.find("input");
+    expect((postal?.element as HTMLInputElement).value).toBe("");
     await wrapper.findAll("select")[0].setValue("FR");
     await flushPromises();
     expect(wrapper.find("footer button").attributes("disabled")).toBeDefined();

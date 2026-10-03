@@ -11,7 +11,11 @@ export class PostgresPaymentRepository implements PaymentRepository {
   @InjectDataSource()
   private readonly dataSource!: DataSource;
   create(input: CreatePaymentInput & { id: string }): Promise<Payment> { return this.dataSource.getRepository(PaymentEntitySchema).save({ ...input, status: "paid" }); }
-  findAll(): Promise<readonly Payment[]> { return this.dataSource.getRepository(PaymentEntitySchema).find({ order: { createdAt: "DESC" } }); }
+  async findAll(storeIds?: readonly string[] | null): Promise<readonly Payment[]> {
+    if (storeIds?.length === 0) return [];
+    if (!storeIds) return this.dataSource.getRepository(PaymentEntitySchema).find({ order: { createdAt: "DESC" } });
+    return this.dataSource.getRepository(PaymentEntitySchema).createQueryBuilder("payment").innerJoin("repair_orders", "repair", "repair.id = payment.repair_order_id").where("repair.store_id IN (:...storeIds)", { storeIds }).orderBy("payment.created_at", "DESC").getMany();
+  }
   findByRepairOrderId(repairOrderId: string): Promise<readonly Payment[]> { return this.dataSource.getRepository(PaymentEntitySchema).find({ where: { repairOrderId }, order: { createdAt: "DESC" } }); }
   async createRectification(originalPaymentId: string, input: { id: string; reason: string }): Promise<Payment | undefined> {
     return this.dataSource.transaction(async (manager) => {
@@ -38,8 +42,11 @@ export class PostgresPaymentRepository implements PaymentRepository {
     });
   }
 
-  async findReportRows(from: Date, to: Date): Promise<readonly PaymentReportRow[]> {
-    const rows = await this.dataSource.query(`SELECT p.*, r.technician_id, r.device_type FROM payments p JOIN repair_orders r ON r.id = p.repair_order_id WHERE p.created_at BETWEEN $1 AND $2 ORDER BY p.created_at ASC`, [from, to]);
+  async findReportRows(from: Date, to: Date, storeIds?: readonly string[] | null): Promise<readonly PaymentReportRow[]> {
+    if (storeIds?.length === 0) return [];
+    const scope = storeIds ? "AND r.store_id = ANY($3::uuid[])" : "";
+    const params = storeIds ? [from, to, storeIds] : [from, to];
+    const rows = await this.dataSource.query(`SELECT p.*, r.technician_id, r.device_type FROM payments p JOIN repair_orders r ON r.id = p.repair_order_id WHERE p.created_at BETWEEN $1 AND $2 ${scope} ORDER BY p.created_at ASC`, params);
     return rows.map((row: Record<string, unknown>) => ({
       payment: this.mapPayment(row),
       technicianId: row.technician_id ? String(row.technician_id) : null,

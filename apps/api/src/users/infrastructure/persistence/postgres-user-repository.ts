@@ -1,7 +1,7 @@
 import { Service } from "@xtaskjs/core";
 import { DataSource, InjectDataSource } from "@xtaskjs/typeorm";
 import { Traceable } from "../../../shared/infrastructure/observability/trace.js";
-import type { AuditLogEntry, UserRepository } from "../../application/user-repository.js";
+import type { AuditLogEntry, UserRepository, UserUpdate } from "../../application/user-repository.js";
 import type { User, UserCredentials } from "../../domain/user.js";
 import { UserEntitySchema } from "./user-entity.js";
 
@@ -38,17 +38,25 @@ export class PostgresUserRepository implements UserRepository {
   }
 
   async create(user: UserCredentials): Promise<User> {
-    const { passwordHash: _, ...publicUser } = await this.dataSource.getRepository(UserEntitySchema).save(user);
+    const { passwordHash: _, nationalId: __, ...publicUser } = await this.dataSource.getRepository(UserEntitySchema).save(user);
     return publicUser;
   }
 
-  async update(id: string, input: Partial<Pick<User, "email" | "displayName" | "role" | "storeId" | "active">> & { passwordHash?: string }): Promise<User | undefined> {
+  async update(id: string, input: UserUpdate): Promise<User | undefined> {
     const repository = this.dataSource.getRepository(UserEntitySchema);
     const user = await repository.preload({ id, ...input });
     if (!user) return undefined;
     const saved = await repository.save(user);
-    const { passwordHash: _, ...publicUser } = saved;
+    const { passwordHash: _, nationalId: __, ...publicUser } = saved;
     return publicUser;
+  }
+
+  async recordAuditLog(actorId: string, targetId: string, action: string): Promise<void> {
+    await this.dataSource.query('INSERT INTO "audit_logs" ("id", "actor_id", "target_id", "action") VALUES (gen_random_uuid(), $1, $2, $3)', [actorId, targetId, action]);
+  }
+
+  findNationalId(id: string): Promise<string | null | undefined> {
+    return this.dataSource.getRepository(UserEntitySchema).createQueryBuilder("user").addSelect("user.nationalId").where("user.id = :id", { id }).getOne().then((user) => user?.nationalId);
   }
 
   async listAuditLogs(): Promise<readonly AuditLogEntry[]> {

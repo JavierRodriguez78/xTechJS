@@ -5,6 +5,8 @@ import { StoreInventoryStockEntitySchema, InventoryMovementEntitySchema } from "
 import { StockTransferLineEntitySchema, StockTransferOrderEntitySchema } from "../infrastructure/persistence/stock-transfer-entity.js";
 import type { StockTransferLine, StockTransferOrder } from "../domain/stock-transfer.js";
 
+type StoreAccess = readonly string[] | null;
+
 @Service()
 export class TransferStock {
   @InjectDataSource() private readonly dataSource!: DataSource;
@@ -20,11 +22,11 @@ export class TransferStock {
     });
   }
 
-  async send(id: string, actorStoreId: string | null): Promise<StockTransferOrder> {
+  async send(id: string, storeAccess: StoreAccess): Promise<StockTransferOrder> {
     return this.dataSource.transaction(async (manager) => {
       const transfer = await manager.getRepository(StockTransferOrderEntitySchema).findOneBy({ id });
       if (!transfer) throw new Error("Stock transfer not found");
-      if (actorStoreId && transfer.originStoreId !== actorStoreId) throw new Error("You can only send transfers from your store");
+      if (storeAccess && !storeAccess.includes(transfer.originStoreId)) throw new Error("You can only send transfers from a store you can access");
       if (transfer.status !== "draft") throw new Error("Only draft transfers can be sent");
       const lines = await manager.getRepository(StockTransferLineEntitySchema).findBy({ transferId: id });
       const stockRepository = manager.getRepository(StoreInventoryStockEntitySchema);
@@ -42,11 +44,11 @@ export class TransferStock {
     });
   }
 
-  async receive(id: string, actorStoreId: string | null): Promise<StockTransferOrder> {
+  async receive(id: string, storeAccess: StoreAccess): Promise<StockTransferOrder> {
     return this.dataSource.transaction(async (manager) => {
       const transfer = await manager.getRepository(StockTransferOrderEntitySchema).findOneBy({ id });
       if (!transfer) throw new Error("Stock transfer not found");
-      if (actorStoreId && transfer.destinationStoreId !== actorStoreId) throw new Error("You can only receive transfers for your store");
+      if (storeAccess && !storeAccess.includes(transfer.destinationStoreId)) throw new Error("You can only receive transfers for a store you can access");
       if (transfer.status !== "in_transit") throw new Error("Only transfers in transit can be received");
       const lines = await manager.getRepository(StockTransferLineEntitySchema).findBy({ transferId: id });
       const stockRepository = manager.getRepository(StoreInventoryStockEntitySchema);
@@ -64,18 +66,19 @@ export class TransferStock {
     });
   }
 
-  async cancel(id: string, actorStoreId: string | null): Promise<StockTransferOrder> {
+  async cancel(id: string, storeAccess: StoreAccess): Promise<StockTransferOrder> {
     const transfer = await this.dataSource.getRepository(StockTransferOrderEntitySchema).findOneBy({ id });
     if (!transfer) throw new Error("Stock transfer not found");
-    if (actorStoreId && transfer.originStoreId !== actorStoreId) throw new Error("You can only cancel transfers from your store");
+    if (storeAccess && !storeAccess.includes(transfer.originStoreId)) throw new Error("You can only cancel transfers from a store you can access");
     if (transfer.status !== "draft") throw new Error("Only draft transfers can be cancelled");
     transfer.status = "cancelled";
     return this.dataSource.getRepository(StockTransferOrderEntitySchema).save(transfer);
   }
 
-  async list(storeId: string | null): Promise<Array<StockTransferOrder & { lines: StockTransferLine[] }>> {
+  async list(storeAccess: StoreAccess): Promise<Array<StockTransferOrder & { lines: StockTransferLine[] }>> {
     const repository = this.dataSource.getRepository(StockTransferOrderEntitySchema);
-    const transfers = storeId ? await repository.createQueryBuilder("transfer").where("transfer.origin_store_id = :storeId OR transfer.destination_store_id = :storeId", { storeId }).orderBy("transfer.created_at", "DESC").getMany() : await repository.find({ order: { createdAt: "DESC" } });
+    if (storeAccess?.length === 0) return [];
+    const transfers = storeAccess ? await repository.createQueryBuilder("transfer").where("transfer.origin_store_id IN (:...storeAccess) OR transfer.destination_store_id IN (:...storeAccess)", { storeAccess }).orderBy("transfer.created_at", "DESC").getMany() : await repository.find({ order: { createdAt: "DESC" } });
     const lines = await this.dataSource.getRepository(StockTransferLineEntitySchema).find();
     return transfers.map((transfer) => ({ ...transfer, lines: lines.filter((line) => line.transferId === transfer.id) }));
   }

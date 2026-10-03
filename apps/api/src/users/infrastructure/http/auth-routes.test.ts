@@ -30,7 +30,7 @@ test("profile updates use the token identity and refresh the email claim", async
   const { controller, request, reply, commands, signed } = setup();
   const result = await controller.updateOwnProfile({ email: "new@example.test", currentPassword: "current-password" }, request, reply) as { accessToken: string; user: object };
   assert.deepEqual(commands, [new UpdateOwnStaffCredentialsCommand("staff-id", { email: "new@example.test", currentPassword: "current-password" })]);
-  assert.deepEqual(signed, [{ sub: "staff-id", email: "new@example.test", role: "technician", storeId: "store-id" }]);
+  assert.deepEqual(signed, [{ sub: "staff-id", email: "new@example.test", role: "technician", defaultStoreId: "store-id", storeAccess: ["store-id"], storeId: "store-id" }]);
   assert.equal(result.accessToken, "test-token");
   assert.equal(Object.hasOwn(result.user, "passwordHash"), false);
 });

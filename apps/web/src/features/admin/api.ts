@@ -1,6 +1,8 @@
 import { staffSession } from "../auth/session";
 
-export interface AdminUser { id: string; email: string; displayName: string; role: "admin" | "technician" | "customer"; storeId: string | null; active: boolean; }
+export interface AdminUser { id: string; email: string; displayName: string; role: "admin" | "technician" | "customer"; storeId: string | null; defaultStoreId?: string | null; storeAccess?: string[] | null; active: boolean; phone?: string | null; addressStreet?: string | null; addressPostalCode?: string | null; addressCity?: string | null; addressProvince?: string | null; addressCountry?: string | null; hiredAt?: string | null; deactivatedAt?: string | null; }
+export type Employee = Omit<AdminUser, "role"> & { role: "admin" | "technician"; nationalId?: string | null };
+export type SaveEmployeeInput = Pick<Employee, "email" | "displayName" | "role" | "defaultStoreId" | "storeAccess"> & Partial<Pick<Employee, "phone" | "nationalId" | "addressStreet" | "addressPostalCode" | "addressCity" | "addressProvince" | "addressCountry">> & { password?: string; active?: boolean };
 export interface AuditLogEntry { id: string; action: string; createdAt: string; actorName: string | null; actorEmail: string | null; targetName: string | null; targetEmail: string | null; }
 export interface NotificationTemplate { key: string; subject: string; body: string; enabled: boolean; updatedAt: string; }
 export interface RepairDeviceCatalogEntry { deviceType: string; brand: string; model: string; imageUrl?: string; }
@@ -19,9 +21,14 @@ const request = async <T>(url: string, init?: RequestInit): Promise<T> => {
   return response.json() as Promise<T>;
 };
 export const listUsers = () => request<AdminUser[]>("/api/users");
+export const listEmployees = () => request<Employee[]>("/api/employees");
+export const createEmployee = (input: SaveEmployeeInput & { password: string }) => request<Employee>("/api/employees", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
+export const updateEmployee = (id: string, input: Partial<SaveEmployeeInput>) => request<Employee>(`/api/employees/${id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
+export const getEmployeeNationalId = (id: string) => request<{ nationalId: string | null }>(`/api/employees/${id}/national-id`);
 export const listAuditLogs = () => request<AuditLogEntry[]>("/api/users/audit");
 export const listStores = () => request<Store[]>("/api/stores");
 export const getSessionStore = () => request<Pick<Store, "id" | "name" | "active"> | null>("/api/stores/session-store");
+export const listAccessibleStores = () => request<Array<Pick<Store, "id" | "name" | "active">>>("/api/stores/accessible");
 export interface AddressCountry { code: string; name: string; postalCoverage: boolean }
 export interface AddressProvince { code: string; name: string }
 export interface AddressPlace { city: string; postalCode: string }

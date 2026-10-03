@@ -4,16 +4,18 @@ import RepairCreateView from "./RepairCreateView.vue";
 
 // `vi.mock` se eleva por encima del modulo, asi que sus dobles deben declararse
 // con `vi.hoisted` para existir cuando la fabrica se ejecuta.
-const { createRepair, getWorkflowConfig, listCustomers, listTechnicians, push, back } = vi.hoisted(() => ({
+const { createRepair, getWorkflowConfig, listCustomers, listTechnicians, listAccessibleStores, push, back } = vi.hoisted(() => ({
   createRepair: vi.fn(),
   getWorkflowConfig: vi.fn(),
   listCustomers: vi.fn(),
   listTechnicians: vi.fn(),
+  listAccessibleStores: vi.fn(),
   push: vi.fn(),
   back: vi.fn()
 }));
 
 vi.mock("../api", () => ({ createRepair, getWorkflowConfig, listCustomers, listTechnicians }));
+vi.mock("../../admin/api", () => ({ listAccessibleStores }));
 vi.mock("vue-router", () => ({ useRouter: () => ({ push, back }) }));
 
 async function mountView() {
@@ -26,7 +28,8 @@ describe("alta de reparacion", () => {
   beforeEach(() => {
     listCustomers.mockResolvedValue({ items: [{ id: "customer-1", displayName: "Ada Lovelace" }] });
     getWorkflowConfig.mockResolvedValue({ statuses: [], deviceTypes: ["Consola", "Dron"] });
-    listTechnicians.mockResolvedValue([{ id: "technician-1", displayName: "Grace Hopper" }]);
+    listTechnicians.mockResolvedValue([{ id: "technician-1", displayName: "Grace Hopper", storeAccess: ["00000000-0000-4000-8000-000000000001"], defaultStoreId: "00000000-0000-4000-8000-000000000001" }]);
+    listAccessibleStores.mockResolvedValue([{ id: "00000000-0000-4000-8000-000000000001", name: "Tienda centro", active: true }]);
     createRepair.mockResolvedValue({ id: "repair-1" });
   });
 

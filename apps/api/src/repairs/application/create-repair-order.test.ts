@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { User, UserCredentials } from "../../users/domain/user.js";
-import type { UserRepository } from "../../users/application/user-repository.js";
+import type { UserRepository, UserUpdate } from "../../users/application/user-repository.js";
 import type { RepairOrderRepository, NewRepairOrderRecord } from "./repair-order-repository.js";
 import type { RepairOrder, RepairStatusEvent } from "../domain/repair-order.js";
 import type { RepairStatus } from "../domain/repair-status.js";
@@ -38,7 +38,9 @@ class TestUserRepository implements UserRepository {
   async findByEmail(): Promise<UserCredentials | undefined> { return undefined; }
   async count(): Promise<number> { return 0; }
   async create(user: UserCredentials): Promise<User> { return user; }
-  async update(id: string, input: Partial<Pick<User, "email" | "displayName" | "role" | "storeId" | "active">> & { passwordHash?: string }): Promise<User | undefined> { return this.findById(id).then((user) => user ? { ...user, ...input } : undefined); }
+  async update(id: string, input: UserUpdate): Promise<User | undefined> { return this.findById(id).then((user) => user ? { ...user, ...input } : undefined); }
+  async recordAuditLog(): Promise<void> {}
+  async findNationalId(): Promise<string | null | undefined> { return undefined; }
   async listAuditLogs(): Promise<readonly { id: string; action: string; createdAt: string; actorName: string | null; actorEmail: string | null; targetName: string | null; targetEmail: string | null }[]> { return []; }
 }
 
@@ -47,7 +49,7 @@ function createRepairOrderService(config = workflowConfig(), quoteSaver: Pick<Sa
 }
 
 test("repair orders start received and normalize supplied device details", async () => {
-  const repair = await createRepairOrderService().execute({ customerId: "customer-1", deviceType: " Consola ", brand: " Sony ", model: " PS5 ", reportedIssue: " No enciende " }, "staff-1");
+  const repair = await createRepairOrderService().execute({ customerId: "customer-1", storeId: "store-1", deviceType: " Consola ", brand: " Sony ", model: " PS5 ", reportedIssue: " No enciende " }, "staff-1");
   assert.equal(repair.status, "received");
   assert.equal(repair.brand, "Sony");
   assert.equal(repair.reportedIssue, "No enciende");
@@ -56,33 +58,33 @@ test("repair orders start received and normalize supplied device details", async
 test("a repair order rejects a device type that the administrator has not configured", async () => {
   const service = createRepairOrderService(workflowConfig({ deviceTypes: ["Consola"] }));
   await assert.rejects(
-    () => service.execute({ customerId: "customer-1", deviceType: "Dron", brand: "DJI", model: "Mini", reportedIssue: "No despega" }, "staff-1"),
+    () => service.execute({ customerId: "customer-1", storeId: "store-1", deviceType: "Dron", brand: "DJI", model: "Mini", reportedIssue: "No despega" }, "staff-1"),
     /Device type Dron is not configured/
   );
 });
 
 test("a repair order accepts a device type added by the administrator", async () => {
   const service = createRepairOrderService(workflowConfig({ deviceTypes: ["Consola", "Dron"] }));
-  const repair = await service.execute({ customerId: "customer-1", deviceType: "Dron", brand: "DJI", model: "Mini", reportedIssue: "No despega" }, "staff-1");
+  const repair = await service.execute({ customerId: "customer-1", storeId: "store-1", deviceType: "Dron", brand: "DJI", model: "Mini", reportedIssue: "No despega" }, "staff-1");
   assert.equal(repair.deviceType, "Dron");
 });
 
 test("an empty device type configuration does not block receiving equipment", async () => {
   const service = createRepairOrderService(workflowConfig({ deviceTypes: [] }));
-  const repair = await service.execute({ customerId: "customer-1", deviceType: "Cualquiera", brand: "Generica", model: "X", reportedIssue: "Revision" }, "staff-1");
+  const repair = await service.execute({ customerId: "customer-1", storeId: "store-1", deviceType: "Cualquiera", brand: "Generica", model: "X", reportedIssue: "Revision" }, "staff-1");
   assert.equal(repair.deviceType, "Cualquiera");
 });
 
 test("a repair can be received with an active technician and estimated completion", async () => {
   const estimatedCompletionAt = new Date("2026-10-05T10:00:00.000Z");
-  const repair = await createRepairOrderService().execute({ customerId: "customer-1", deviceType: "Consola", brand: "Sony", model: "PS5", reportedIssue: "No enciende", technicianId: "technician-1", estimatedCompletionAt }, "staff-1");
+  const repair = await createRepairOrderService().execute({ customerId: "customer-1", storeId: "store-1", deviceType: "Consola", brand: "Sony", model: "PS5", reportedIssue: "No enciende", technicianId: "technician-1", estimatedCompletionAt }, "staff-1");
   assert.equal(repair.estimatedCompletionAt, estimatedCompletionAt);
 });
 
 test("a repair can include an initial draft quote", async () => {
   let saved: { repairOrderId: string; status: string; lines: unknown[] } | undefined;
   const service = createRepairOrderService(workflowConfig(), { async execute(repairOrderId, input) { saved = { repairOrderId, status: input.status, lines: input.lines }; return undefined; } });
-  await service.execute({ customerId: "customer-1", deviceType: "Consola", brand: "Sony", model: "PS5", reportedIssue: "No enciende", initialQuoteLines: [{ description: "Diagnostico", quantity: 1, unitPriceCents: 2500 }] }, "staff-1");
+  await service.execute({ customerId: "customer-1", storeId: "store-1", deviceType: "Consola", brand: "Sony", model: "PS5", reportedIssue: "No enciende", initialQuoteLines: [{ description: "Diagnostico", quantity: 1, unitPriceCents: 2500 }] }, "staff-1");
   assert.equal(typeof saved?.repairOrderId, "string");
   assert.equal(saved?.status, "draft");
   assert.deepEqual(saved?.lines, [{ description: "Diagnostico", quantity: 1, unitPriceCents: 2500 }]);

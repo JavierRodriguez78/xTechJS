@@ -7,5 +7,5 @@ import type { CashRegisterRepository } from "./cash-register-repository.js";
 @Service()
 export class GetCashRegister {
   constructor(@Qualifier("cashRegisterRepository") private readonly repository: CashRegisterRepository) {}
-  execute(businessDate: string): Promise<CashRegister | undefined> { return this.repository.findByDate(businessDate); }
+  execute(businessDate: string, storeId: string): Promise<CashRegister | undefined> { return this.repository.findByDate(businessDate, storeId); }
 }

@@ -8,5 +8,5 @@ import type { CashRegisterRepository } from "./cash-register-repository.js";
 @Service()
 export class OpenCashRegister {
   constructor(@Qualifier("cashRegisterRepository") private readonly repository: CashRegisterRepository) {}
-  execute(businessDate: string): Promise<CashRegister> { return this.repository.open({ id: randomUUID(), businessDate }); }
+  execute(businessDate: string, storeId: string): Promise<CashRegister> { return this.repository.open({ id: randomUUID(), businessDate, storeId }); }
 }

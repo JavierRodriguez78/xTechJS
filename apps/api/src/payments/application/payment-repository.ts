@@ -14,9 +14,9 @@ export interface PaymentReceiptData {
 
 export interface PaymentRepository {
   create(input: CreatePaymentInput & { id: string }): Promise<Payment>;
-  findAll(): Promise<readonly Payment[]>;
+  findAll(storeIds?: readonly string[] | null): Promise<readonly Payment[]>;
   findByRepairOrderId(repairOrderId: string): Promise<readonly Payment[]>;
   createRectification(originalPaymentId: string, input: { id: string; reason: string }): Promise<Payment | undefined>;
-  findReportRows(from: Date, to: Date): Promise<readonly PaymentReportRow[]>;
+  findReportRows(from: Date, to: Date, storeIds?: readonly string[] | null): Promise<readonly PaymentReportRow[]>;
   findReceiptData(id: string): Promise<PaymentReceiptData | undefined>;
 }

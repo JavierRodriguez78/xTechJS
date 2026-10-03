@@ -10,6 +10,7 @@ export interface NewRepairOrderRecord extends Omit<CreateRepairOrderInput, "devi
 
 export interface RepairOrderListOptions {
   storeId?: string;
+  storeIds?: readonly string[];
   query?: string;
   status?: string;
   technicianId?: string;

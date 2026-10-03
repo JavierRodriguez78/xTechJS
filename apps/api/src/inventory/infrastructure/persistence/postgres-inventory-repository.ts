@@ -14,10 +14,13 @@ export class PostgresInventoryRepository implements InventoryRepository {
   @InjectDataSource()
   private readonly dataSource!: DataSource;
 
-  async create(input: CreateInventoryItemInput & { id: string }): Promise<InventoryItem> {
+  async create(input: CreateInventoryItemInput & { id: string; storeIds?: readonly string[] | null }): Promise<InventoryItem> {
     return this.dataSource.transaction(async (manager) => {
-      const item = await manager.getRepository(InventoryItemEntitySchema).save({ ...input, stock: 0 });
-      const stores = await manager.getRepository(StoreEntitySchema).find({ where: { active: true } });
+      const { storeIds, ...itemInput } = input;
+      const item = await manager.getRepository(InventoryItemEntitySchema).save({ ...itemInput, stock: 0 });
+      const activeStores = await manager.getRepository(StoreEntitySchema).find({ where: { active: true } });
+      const allowedStores = storeIds === null || storeIds === undefined ? null : new Set(storeIds);
+      const stores = activeStores.filter((store) => allowedStores === null || allowedStores.has(store.id));
       if (stores.length) await manager.getRepository(StoreInventoryStockEntitySchema).save(stores.map((store) => ({ storeId: store.id, inventoryItemId: item.id, stock: 0, minimumStock: input.minimumStock ?? 0 })));
       return item;
     });

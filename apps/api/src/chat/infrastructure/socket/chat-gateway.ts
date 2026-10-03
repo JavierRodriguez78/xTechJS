@@ -6,8 +6,9 @@ import type { RepairOrderRepository } from "../../../repairs/application/repair-
 import { PERMISSIONS } from "../../../users/domain/permission.js";
 import { hasPermission } from "../../../users/domain/permission.js";
 import type { AuthTokenPayload } from "../../../users/infrastructure/http/auth-routes.js";
-import { chatRoomName, customerNotificationRoom, staffNotificationRoom } from "./chat-room.js";
+import { chatRoomName, customerNotificationRoom, staffNotificationRoom, storeStaffNotificationRoom } from "./chat-room.js";
 import { verifySocketToken } from "./socket-auth.js";
+import { canAccessStore, getStoreAccess } from "../../../users/domain/store-access.js";
 
 interface AuthenticatedSocketData {
   user?: AuthTokenPayload;
@@ -42,7 +43,9 @@ export class ChatGateway {
       const customer = await this.customerRepository(context).findByEmail(user.email ?? "");
       if (customer) await socket.join(customerNotificationRoom(customer.id));
     } else {
-      await socket.join(staffNotificationRoom());
+      const access = getStoreAccess(user);
+      if (access === null) await socket.join(staffNotificationRoom());
+      else for (const storeId of access) await socket.join(storeStaffNotificationRoom(storeId));
     }
   }
 
@@ -63,8 +66,8 @@ export class ChatGateway {
 
   private async canAccessRepair(user: AuthTokenPayload, repairOrderId: string, context: SocketHandlerContext): Promise<boolean> {
     const repair = await this.repairOrderRepository(context).findById(repairOrderId);
-    if (!repair) return false;
-    if (user.role !== "customer") return true;
+    if (!repair?.storeId) return false;
+    if (user.role !== "customer") return canAccessStore(user, repair.storeId);
     const customer = await this.customerRepository(context).findByEmail(user.email ?? "");
     return !!customer && repair.customerId === customer.id;
   }

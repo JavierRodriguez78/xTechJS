@@ -13,7 +13,7 @@ vi.mock("../../features/auth/session", async () => {
 vi.mock("../../features/admin/api", () => ({ getSessionStore: mocks.getSessionStore }));
 vi.mock("../../features/chat/notifications", () => ({ startChatNotifications: mocks.start, stopChatNotifications: mocks.stop, totalChatUnread: () => 2 }));
 
-const routeNames = ["customers.list", "repairs.list", "repairs.detail.chat", "inventory.list", "inventory.alerts", "suppliers.list", "purchase-orders.list", "payments.list", "payments.cash-register", "payments.reports", "trade-in.list", "ecommerce.products.list", "ecommerce.orders", "admin.dashboard", "admin.stores.list", "admin.stores.edit", "admin.users.list", "admin.audit.list", "admin.config.statuses", "admin.config.devices", "admin.config.templates", "staff.profile", "staff.login"];
+const routeNames = ["customers.list", "repairs.list", "repairs.detail.chat", "inventory.list", "inventory.alerts", "suppliers.list", "purchase-orders.list", "payments.list", "payments.cash-register", "payments.reports", "trade-in.list", "ecommerce.products.list", "ecommerce.orders", "admin.dashboard", "admin.stores.list", "admin.stores.edit", "admin.users.list", "admin.employees.list", "admin.employees.create", "admin.employees.edit", "admin.audit.list", "admin.config.statuses", "admin.config.devices", "admin.config.templates", "staff.profile", "staff.login"];
 let wrapper: ReturnType<typeof mount> | undefined;
 const originalWidth = window.innerWidth;
 
@@ -89,11 +89,27 @@ describe("navegacion de la aplicacion", () => {
     const { view } = await render();
     expect(view.find(".session-context").text()).toBe("Taller Centro");
     expect(mocks.getSessionStore).toHaveBeenCalledOnce();
-    expect(view.findAll(".main-navigation button")).toHaveLength(2);
+    expect(view.findAll(".main-navigation button")).toHaveLength(3);
     expect(view.find('.main-navigation [aria-label="Administracion"]').exists()).toBe(false);
-    expect(view.find('.main-navigation [aria-label="Almacen"]').exists()).toBe(false);
+    expect(view.find('.main-navigation [aria-label="Almacen"]').exists()).toBe(true);
+    await view.find('[aria-label="Almacen"]').trigger("click");
+    expect(view.find(".section-navigation").text()).toContain("Materiales");
+    expect(view.find(".section-navigation").text()).toContain("Ordenes de compra");
     await view.find('[aria-label="Ventas"]').trigger("click");
-    expect(view.find(".section-navigation").text()).toBe("Compraventa");
+    expect(view.find(".section-navigation").text()).toContain("TPV");
+    expect(view.find(".section-navigation").text()).not.toContain("Compraventa");
+  });
+
+  it("un administrador limitado solo ve administracion de empleados y modulos de tienda", async () => {
+    staffSession.value = { accessToken: "test", user: { id: "store-admin", displayName: "Admin Centro", email: "centro@example.test", role: "admin", storeId: "store-1", defaultStoreId: "store-1", storeAccess: ["store-1"] } };
+    const { view } = await render("admin.employees.list");
+    expect(view.find(".main-navigation").text()).toContain("Administracion");
+    await view.find('[aria-label="Administracion"]').trigger("click");
+    expect(view.find(".section-navigation").text()).toContain("Empleados");
+    expect(view.find(".section-navigation").text()).toContain("Panel");
+    expect(view.find(".section-navigation").text()).not.toContain("Tiendas");
+    expect(view.find(".section-navigation").text()).not.toContain("Auditoria");
+    expect(view.find('.main-navigation button[aria-label="Ventas"]').exists()).toBe(true);
   });
 
   it("indica un fallo de tienda y no lo presenta como vista administrativa", async () => {

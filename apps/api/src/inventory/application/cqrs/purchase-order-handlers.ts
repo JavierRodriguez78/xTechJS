@@ -17,12 +17,12 @@ export class CreatePurchaseOrderHandler implements ICommandHandler<CreatePurchas
 @QueryHandler(ListPurchaseOrdersQuery)
 export class ListPurchaseOrdersHandler implements IQueryHandler<ListPurchaseOrdersQuery, readonly PurchaseOrder[]> {
   constructor(private readonly useCase: ListPurchaseOrders) {}
-  execute(): Promise<readonly PurchaseOrder[]> { return this.useCase.execute(); }
+  execute(query: ListPurchaseOrdersQuery): Promise<readonly PurchaseOrder[]> { return this.useCase.execute(query.storeIds); }
 }
 
 @Service()
 @CommandHandler(ReceivePurchaseOrderCommand)
 export class ReceivePurchaseOrderHandler implements ICommandHandler<ReceivePurchaseOrderCommand, PurchaseOrder | undefined> {
   constructor(private readonly useCase: ReceivePurchaseOrder) {}
-  execute(command: ReceivePurchaseOrderCommand): Promise<PurchaseOrder | undefined> { return this.useCase.execute(command.id); }
+  execute(command: ReceivePurchaseOrderCommand): Promise<PurchaseOrder | undefined> { return this.useCase.execute(command.id, command.storeIds); }
 }

@@ -7,7 +7,7 @@ import { getSessionStore } from "../../features/admin/api";
 import { startChatNotifications, stopChatNotifications, totalChatUnread } from "../../features/chat/notifications";
 import ChatToastStack from "../../features/chat/ChatToastStack.vue";
 
-interface NavigationItem { label: string; route: string; icon: Component; adminOnly?: boolean }
+interface NavigationItem { label: string; route: string; icon: Component; adminOnly?: boolean; globalOnly?: boolean }
 interface NavigationGroup { id: string; label: string; shortLabel?: string; icon: Component; items: NavigationItem[] }
 const groups: NavigationGroup[] = [
   { id: "attention", label: "Atencion", icon: Wrench, items: [
@@ -15,33 +15,34 @@ const groups: NavigationGroup[] = [
     { label: "Reparaciones", route: "repairs.list", icon: Wrench }
   ] },
   { id: "inventory", label: "Almacen", icon: Boxes, items: [
-    { label: "Materiales", route: "inventory.list", icon: Package, adminOnly: true },
-    { label: "Alertas de stock", route: "inventory.alerts", icon: TriangleAlert, adminOnly: true },
-    { label: "Proveedores", route: "suppliers.list", icon: Truck, adminOnly: true },
-    { label: "Ordenes de compra", route: "purchase-orders.list", icon: ClipboardList, adminOnly: true }
+    { label: "Materiales", route: "inventory.list", icon: Package },
+    { label: "Alertas de stock", route: "inventory.alerts", icon: TriangleAlert },
+    { label: "Proveedores", route: "suppliers.list", icon: Truck },
+    { label: "Ordenes de compra", route: "purchase-orders.list", icon: ClipboardList }
   ] },
   { id: "sales", label: "Ventas", icon: ShoppingCart, items: [
-    { label: "TPV", route: "payments.list", icon: CreditCard, adminOnly: true },
-    { label: "Caja", route: "payments.cash-register", icon: Landmark, adminOnly: true },
-    { label: "Informes", route: "payments.reports", icon: ChartNoAxesCombined, adminOnly: true },
-    { label: "Compraventa", route: "trade-in.list", icon: Tags },
-    { label: "Catalogo tienda", route: "ecommerce.products.list", icon: ShoppingBag, adminOnly: true },
-    { label: "Pedidos tienda", route: "ecommerce.orders", icon: ClipboardList, adminOnly: true }
+    { label: "TPV", route: "payments.list", icon: CreditCard },
+    { label: "Caja", route: "payments.cash-register", icon: Landmark },
+    { label: "Informes", route: "payments.reports", icon: ChartNoAxesCombined },
+    { label: "Compraventa", route: "trade-in.list", icon: Tags, adminOnly: true, globalOnly: true },
+    { label: "Catalogo tienda", route: "ecommerce.products.list", icon: ShoppingBag, adminOnly: true, globalOnly: true },
+    { label: "Pedidos tienda", route: "ecommerce.orders", icon: ClipboardList, adminOnly: true, globalOnly: true }
   ] },
   { id: "administration", label: "Administracion", shortLabel: "Admin", icon: Settings, items: [
     { label: "Panel", route: "admin.dashboard", icon: LayoutDashboard, adminOnly: true },
-    { label: "Tiendas", route: "admin.stores.list", icon: Store, adminOnly: true },
-    { label: "Usuarios", route: "admin.users.list", icon: Users, adminOnly: true },
-    { label: "Estados", route: "admin.config.statuses", icon: ListChecks, adminOnly: true },
-    { label: "Dispositivos", route: "admin.config.devices", icon: Smartphone, adminOnly: true },
-    { label: "Plantillas", route: "admin.config.templates", icon: Mail, adminOnly: true },
-    { label: "Auditoria", route: "admin.audit.list", icon: ScrollText, adminOnly: true }
+    { label: "Tiendas", route: "admin.stores.list", icon: Store, adminOnly: true, globalOnly: true },
+    { label: "Empleados", route: "admin.employees.list", icon: Users, adminOnly: true },
+    { label: "Estados", route: "admin.config.statuses", icon: ListChecks, adminOnly: true, globalOnly: true },
+    { label: "Dispositivos", route: "admin.config.devices", icon: Smartphone, adminOnly: true, globalOnly: true },
+    { label: "Plantillas", route: "admin.config.templates", icon: Mail, adminOnly: true, globalOnly: true },
+    { label: "Auditoria", route: "admin.audit.list", icon: ScrollText, adminOnly: true, globalOnly: true }
   ] }
 ];
 const route = useRoute();
 const router = useRouter();
 const isAdmin = computed(() => staffSession.value?.user.role === "admin");
-const visibleGroups = computed(() => groups.map((group) => ({ ...group, items: group.items.filter((item) => !item.adminOnly || isAdmin.value) })).filter((group) => group.items.length));
+const isGlobalAdmin = computed(() => isAdmin.value && (staffSession.value?.user.storeAccess === null || (staffSession.value?.user.storeAccess === undefined && !staffSession.value?.user.storeId)));
+const visibleGroups = computed(() => groups.map((group) => ({ ...group, items: group.items.filter((item) => (!item.adminOnly || isAdmin.value) && (!item.globalOnly || isGlobalAdmin.value)) })).filter((group) => group.items.length));
 const selectedGroup = ref("attention");
 const activeGroup = computed(() => visibleGroups.value.find((group) => group.id === selectedGroup.value) ?? visibleGroups.value[0]);
 const unread = computed(() => totalChatUnread());

@@ -1,6 +1,6 @@
 import type { AdjustInventoryInput, CreateInventoryItemInput } from "../../domain/inventory-item.js";
 
-export class CreateInventoryItemCommand { constructor(public readonly input: CreateInventoryItemInput) {} }
+export class CreateInventoryItemCommand { constructor(public readonly input: CreateInventoryItemInput, public readonly storeIds?: readonly string[] | null) {} }
 export class AdjustInventoryStockCommand { constructor(public readonly storeId: string, public readonly id: string, public readonly input: AdjustInventoryInput) {} }
 export class ConsumeInventoryForRepairCommand { constructor(public readonly repairOrderId: string, public readonly inventoryItemId: string, public readonly quantity: number, public readonly note?: string) {} }
 export class ListInventoryItemsQuery { constructor(public readonly storeId: string) {} }

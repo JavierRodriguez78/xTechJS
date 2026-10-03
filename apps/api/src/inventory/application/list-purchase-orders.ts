@@ -7,5 +7,5 @@ import type { PurchaseOrderRepository } from "./purchase-order-repository.js";
 @Service()
 export class ListPurchaseOrders {
   constructor(@Qualifier("purchaseOrderRepository") private readonly repository: PurchaseOrderRepository) {}
-  execute(): Promise<readonly PurchaseOrder[]> { return this.repository.findAll(); }
+  execute(storeIds?: readonly string[] | null): Promise<readonly PurchaseOrder[]> { return this.repository.findAll(storeIds); }
 }

@@ -11,6 +11,12 @@ export interface AuditLogEntry {
   targetEmail: string | null;
 }
 
+export type UserUpdate = Partial<Pick<User,
+  "email" | "displayName" | "role" | "storeId" | "defaultStoreId" | "storeAccess" | "active" |
+  "phone" | "nationalId" | "addressStreet" | "addressPostalCode" | "addressCity" | "addressProvince" |
+  "addressCountry" | "hiredAt" | "deactivatedAt"
+>> & { passwordHash?: string };
+
 export interface UserRepository {
   findAll(): Promise<readonly User[]>;
   findById(id: string): Promise<User | undefined>;
@@ -18,6 +24,8 @@ export interface UserRepository {
   findByEmail(email: string): Promise<UserCredentials | undefined>;
   count(): Promise<number>;
   create(user: UserCredentials): Promise<User>;
-  update(id: string, input: Partial<Pick<User, "email" | "displayName" | "role" | "storeId" | "active">> & { passwordHash?: string }): Promise<User | undefined>;
+  update(id: string, input: UserUpdate): Promise<User | undefined>;
+  recordAuditLog(actorId: string, targetId: string, action: string): Promise<void>;
+  findNationalId(id: string): Promise<string | null | undefined>;
   listAuditLogs(): Promise<readonly AuditLogEntry[]>;
 }

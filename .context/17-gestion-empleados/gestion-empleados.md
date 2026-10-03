@@ -129,8 +129,8 @@ a la de un cliente, y eso cambia cómo se recoge:
 
 ## 5. Frontend
 
-Pantalla `/admin/employees` (listado y ficha separados, según la regla de
-oro de `04-frontend/frontend.md`):
+Pantalla `/admin/empleados` (alias `/admin/employees`; listado y ficha
+separados, según la regla de oro de `04-frontend/frontend.md`):
 
 - **Listado**: filtros por tienda, rol y estado (activo/baja).
 - **Alta/edición**: nombre, email, teléfono, rol (admin/técnico), tienda por
@@ -143,6 +143,9 @@ oro de `04-frontend/frontend.md`):
 - Se recomienda que esta pantalla **sustituya** a la actual de "Usuarios" en
   el menú del panel admin (renombrándola a "Empleados"), ya que no existe
   ningún otro tipo de usuario interno que se dé de alta por ese camino.
+  La navegación ya muestra **Empleados**. Las rutas y API genéricas de
+  Usuarios se conservan para compatibilidad y quedan restringidas a
+  administradores globales.
 
 ### 5.1. Perfil propio del empleado
 
@@ -178,27 +181,39 @@ específico sin romper nada — se deja como mejora incremental, no bloqueante.
    RRHH, que no es su propósito.
 2. **Plazo de conservación exacto de los datos de un empleado dado de
    baja** — a confirmar con la gestoría/asesoría laboral del negocio.
-3. **¿Se mantiene un listado genérico de "Usuarios" aparte de "Empleados"**
-   por si en el futuro aparecen otros roles no estrictamente de taller, o se
-   renombra/sustituye definitivamente la pantalla y el endpoint? Este
-   documento recomienda sustituirla sin más, por simplicidad.
+3. **Listado genérico de "Usuarios"**: resuelto para la navegación; el panel
+  muestra Empleados y conserva las rutas/endpoints genéricos solo para
+  compatibilidad, restringidos al administrador global. Clientes continúan
+  su propio flujo de registro.
 
-## 8. Petición para ChatGPT
+## 8. Alcance de implementacion
 
-1. Extender `User`/`UserCredentials` y su migración con los campos de la
-   sección 2, sustituyendo `storeId` por `defaultStoreId` + `storeAccess`
-   según la migración de datos descrita en la sección 3.
-2. Actualizar todos los filtros de alcance por tienda ya implementados
-   (reparaciones, almacén, caja, traspasos, dashboard —
-   `15-multitienda/multitienda.md`) para comprobar pertenencia a
-   `storeAccess` (o `null` = acceso global) en vez de igualdad exacta con un
-   único `storeId`.
-3. Construir la pantalla `/admin/employees` de la sección 5, reutilizando el
-   componente de provincia/ciudad/código postal ya implementado para
-   `Store`, y renombrar/sustituir la pantalla de "Usuarios" por esta.
-4. Restringir la visualización del DNI/NIE a admin, con el mismo patrón ya
-   usado para el PIN del dispositivo.
-5. Registrar en el log de auditoría ya existente los cambios de rol, de
-   tiendas con acceso y las bajas de empleado.
-6. No implementar ningún campo ni lógica de nómina/Seguridad Social
-   (decisión abierta 7.1).
+La implementación sustituye `users.store_id` por `default_store_id` y
+`store_access`; emite ambos claims y mantiene `storeId` solo como alias de
+compatibilidad en JWT. Los endpoints operativos comprueban pertenencia al
+scope para reparaciones, técnico asignado, adjuntos/chat/notificaciones,
+almacén, traspasos, pedidos de compra, pagos, caja y dashboard.
+
+`/api/employees` y `/api/employees/:id` alimentan la pantalla separada de
+listado y ficha. El selector de dirección reutiliza el catálogo postal de
+tiendas. El DNI/NIE se excluye de consultas/listados generales y solo se
+obtiene con una llamada explícita de administración. Altas, cambios de rol,
+alcance, bajas y reactivaciones se registran en `audit_logs`.
+
+`national_id` está excluido por defecto de TypeORM y solo se devuelve en el
+endpoint explícito de consulta. El valor se almacena sin cifrado de aplicación
+en PostgreSQL; cifrado en reposo, rotación de claves y plazo de purga siguen
+pendientes de una decisión específica de protección de datos.
+
+Los administradores globales usan `storeAccess: null`; los administradores
+de tienda tienen arrays acotados. Estos últimos no pueden gestionar tiendas
+globales, configuración, auditoría, usuarios genéricos, ecommerce,
+compraventa transversal ni suplantación. Al dar de baja al propio usuario,
+la API lo rechaza. No se añadieron datos de nómina ni Seguridad Social.
+
+Migraciones: `AddEmployeeProfileAndStoreAccessMigration1740900000000`,
+`ScopePurchasesAndCashByStoreMigration1741000000000` y la correctiva
+`RemoveLegacyUserStoreIdMigration1741100000000` para instalaciones donde
+la migración anterior ya estaba registrada. Los empleados históricos sin
+fecha fiable conservan `hiredAt`/`deactivatedAt` nulos; los técnicos sin
+tienda se asignan a la tienda principal creada por la migración multitienda.

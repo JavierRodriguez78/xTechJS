@@ -2,6 +2,6 @@ import type { CreatePurchaseOrderInput, PurchaseOrder } from "../domain/purchase
 
 export interface PurchaseOrderRepository {
   create(input: CreatePurchaseOrderInput & { id: string }): Promise<PurchaseOrder>;
-  findAll(): Promise<readonly PurchaseOrder[]>;
-  receive(id: string): Promise<PurchaseOrder | undefined>;
+  findAll(storeIds?: readonly string[] | null): Promise<readonly PurchaseOrder[]>;
+  receive(id: string, storeIds?: readonly string[] | null): Promise<PurchaseOrder | undefined>;
 }

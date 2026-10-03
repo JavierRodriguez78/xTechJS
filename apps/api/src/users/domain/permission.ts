@@ -23,7 +23,7 @@ const allPermissions = Object.values(PERMISSIONS);
 
 const permissionsByRole: Record<UserRole, readonly Permission[]> = {
   admin: allPermissions,
-  technician: [PERMISSIONS.customersRead, PERMISSIONS.repairsRead, PERMISSIONS.repairsManage, PERMISSIONS.tradeInManage, PERMISSIONS.chatUse],
+  technician: [PERMISSIONS.customersRead, PERMISSIONS.repairsRead, PERMISSIONS.repairsManage, PERMISSIONS.inventoryManage, PERMISSIONS.inventoryTransfer, PERMISSIONS.paymentsManage, PERMISSIONS.chatUse],
   customer: [PERMISSIONS.repairsRead, PERMISSIONS.repairsApproveQuote, PERMISSIONS.chatUse]
 };
 

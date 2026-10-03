@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { User, UserCredentials } from "../domain/user.js";
 import type { UserRepository } from "./user-repository.js";
+import type { UserUpdate } from "./user-repository.js";
 import { AuthenticationService, OwnProfileError } from "./authentication-service.js";
 import { isStaffRole } from "../../shared/domain/user-role.js";
 
@@ -33,12 +34,16 @@ class TestUserRepository implements UserRepository {
     return user;
   }
 
-  async update(id: string, input: Partial<Pick<User, "email" | "displayName" | "role" | "active">> & { passwordHash?: string }): Promise<User | undefined> {
+  async update(id: string, input: UserUpdate): Promise<User | undefined> {
     const user = this.users.find((item) => item.id === id);
     if (!user) return undefined;
     Object.assign(user, input);
     return user;
   }
+
+  async recordAuditLog(): Promise<void> {}
+
+  async findNationalId(id: string): Promise<string | null | undefined> { return this.users.find((user) => user.id === id)?.nationalId; }
 
   async listAuditLogs(): Promise<readonly { id: string; action: string; createdAt: string; actorName: string | null; actorEmail: string | null; targetName: string | null; targetEmail: string | null }[]> {
     return [];

@@ -1,7 +1,7 @@
-import { Service } from "@xtaskjs/core";
+import { Qualifier, Service } from "@xtaskjs/core";
 import { CommandHandler, type ICommandHandler, type IQueryHandler, QueryHandler } from "@xtaskjs/cqrs";
 import type { User, UserCredentials } from "../../domain/user.js";
-import type { AuditLogEntry } from "../user-repository.js";
+import type { AuditLogEntry, UserRepository } from "../user-repository.js";
 import { AuthenticationService } from "../authentication-service.js";
 import { ListAuditLogs } from "../list-audit-logs.js";
 import { ManageUser } from "../manage-user.js";
@@ -10,13 +10,16 @@ import { ListUsers } from "../list-users.js";
 import {
   AuthenticateUserCommand,
   BootstrapAdminCommand,
+  CreateEmployeeCommand,
   CreateUserCommand,
   FindActiveNonAdminUserQuery,
+  FindUserByIdQuery,
   FindOwnStaffProfileQuery,
   ListAuditLogsQuery,
   ListTechniciansQuery,
   ListUsersQuery,
   UpdateUserCommand,
+  UpdateEmployeeCommand,
   UpdateOwnStaffCredentialsCommand
 } from "./user-messages.js";
 
@@ -101,12 +104,22 @@ export class FindActiveNonAdminUserHandler implements IQueryHandler<FindActiveNo
 }
 
 @Service()
+@QueryHandler(FindUserByIdQuery)
+export class FindUserByIdHandler implements IQueryHandler<FindUserByIdQuery, User | undefined> {
+  constructor(@Qualifier("userRepository") private readonly repository: UserRepository) {}
+
+  execute(query: FindUserByIdQuery): Promise<User | undefined> {
+    return this.repository.findById(query.id);
+  }
+}
+
+@Service()
 @CommandHandler(CreateUserCommand)
 export class CreateUserHandler implements ICommandHandler<CreateUserCommand, User> {
   constructor(private readonly manageUser: ManageUser) {}
 
   execute(command: CreateUserCommand): Promise<User> {
-    return this.manageUser.create(command.input);
+    return this.manageUser.create(command.input, command.actorId);
   }
 }
 
@@ -116,6 +129,26 @@ export class UpdateUserHandler implements ICommandHandler<UpdateUserCommand, Use
   constructor(private readonly manageUser: ManageUser) {}
 
   execute(command: UpdateUserCommand): Promise<User | undefined> {
-    return this.manageUser.update(command.id, command.input);
+    return this.manageUser.update(command.id, command.input, command.actorId);
+  }
+}
+
+@Service()
+@CommandHandler(CreateEmployeeCommand)
+export class CreateEmployeeHandler implements ICommandHandler<CreateEmployeeCommand, User> {
+  constructor(private readonly manageUser: ManageUser) {}
+
+  execute(command: CreateEmployeeCommand): Promise<User> {
+    return this.manageUser.create(command.input, command.actorId);
+  }
+}
+
+@Service()
+@CommandHandler(UpdateEmployeeCommand)
+export class UpdateEmployeeHandler implements ICommandHandler<UpdateEmployeeCommand, User | undefined> {
+  constructor(private readonly manageUser: ManageUser) {}
+
+  execute(command: UpdateEmployeeCommand): Promise<User | undefined> {
+    return this.manageUser.update(command.id, command.input, command.actorId);
   }
 }

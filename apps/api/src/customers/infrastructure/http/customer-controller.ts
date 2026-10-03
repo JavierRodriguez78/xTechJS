@@ -171,7 +171,8 @@ export class CustomerController {
     if (!parsed.success) {
       return reply.code(400).send({ message: "Invalid customer data", issues: parsed.error.flatten() });
     }
-    const customer = await this.commandBus.execute(new CreateCustomerCommand({ ...parsed.data, originStoreId: (request.user as AuthTokenPayload).storeId } as CreateCustomerInput));
+    const user = request.user as AuthTokenPayload;
+    const customer = await this.commandBus.execute(new CreateCustomerCommand({ ...parsed.data, originStoreId: user.defaultStoreId ?? user.storeId ?? null } as CreateCustomerInput));
     return reply.code(201).send(customer);
   }
 

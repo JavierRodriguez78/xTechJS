@@ -13,7 +13,7 @@ import { AdjustInventoryStockCommand, ConsumeInventoryForRepairCommand, CreateIn
 @CommandHandler(CreateInventoryItemCommand)
 export class CreateInventoryItemHandler implements ICommandHandler<CreateInventoryItemCommand, InventoryItem> {
   constructor(private readonly useCase: CreateInventoryItem) {}
-  execute(command: CreateInventoryItemCommand): Promise<InventoryItem> { return this.useCase.execute(command.input); }
+  execute(command: CreateInventoryItemCommand): Promise<InventoryItem> { return this.useCase.execute(command.input, command.storeIds); }
 }
 
 @Service()

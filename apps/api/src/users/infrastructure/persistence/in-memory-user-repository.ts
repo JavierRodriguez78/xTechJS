@@ -1,4 +1,4 @@
-import type { AuditLogEntry, UserRepository } from "../../application/user-repository.js";
+import type { AuditLogEntry, UserRepository, UserUpdate } from "../../application/user-repository.js";
 import type { User, UserCredentials } from "../../domain/user.js";
 
 const users: UserCredentials[] = [
@@ -33,11 +33,17 @@ export class InMemoryUserRepository implements UserRepository {
     return user;
   }
 
-  async update(id: string, input: Partial<Pick<User, "email" | "displayName" | "role" | "storeId" | "active">> & { passwordHash?: string }): Promise<User | undefined> {
+  async update(id: string, input: UserUpdate): Promise<User | undefined> {
     const user = users.find((item) => item.id === id);
     if (!user) return undefined;
     Object.assign(user, input);
     return user;
+  }
+
+  async recordAuditLog(): Promise<void> {}
+
+  async findNationalId(id: string): Promise<string | null | undefined> {
+    return users.find((user) => user.id === id)?.nationalId;
   }
 
   async listAuditLogs(): Promise<readonly AuditLogEntry[]> {

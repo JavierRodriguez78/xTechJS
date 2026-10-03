@@ -11,6 +11,8 @@ export interface StaffSession {
     email: string;
     role: StaffRole;
     storeId: string | null;
+    defaultStoreId?: string | null;
+    storeAccess?: string[] | null;
   };
 }
 

@@ -97,18 +97,19 @@ export interface RepairOrder {
 }
 ```
 
-- `CreateRepairOrder` pasa a requerir `storeId`. En la práctica, el frontend
-  lo rellena solo con la tienda del usuario autenticado (`req.user.storeId`)
-  si no es `null`; si es un admin global, se le deja elegir la tienda en el
-  propio formulario de alta (`14-alta-reparacion/alta-reparacion.md`).
-- Los listados de reparaciones (`ListRepairOrders`, portal de cliente) deben
-  filtrar por `storeId` del usuario cuando no sea `null`, y permitir filtrar
-  explícitamente por tienda cuando sí lo sea (admin global). El cliente, al
+- `CreateRepairOrder` requiere `storeId`. El frontend preselecciona
+  `req.user.defaultStoreId` y permite elegir otra tienda de `storeAccess`;
+  admin global elige entre todas. La API verifica el acceso del actor y que
+  el técnico asignado también pertenezca al alcance de esa tienda.
+- Los listados de reparaciones filtran por `storeAccess` (`null` significa
+  alcance global); los selectores de recepción solo ofrecen tiendas
+  accesibles. El cliente, al
   ver sus propias reparaciones, las ve todas independientemente de la
   tienda (son suyas), pero cada una muestra en qué tienda se gestiona.
-- El chat (`chat`) y los adjuntos (`attachments`) cuelgan de `repairOrderId`,
-  así que no necesitan cambio: ya quedan acotados a la tienda de forma
-  indirecta a través de la reparación.
+- El chat (`chat`) y los adjuntos (`attachments`) cuelgan de `repairOrderId`;
+  HTTP y websockets comprueban igualmente que `repair.storeId` pertenezca a
+  `storeAccess`. Los avisos staff se envían a una sala por tienda más la sala
+  general exclusiva del admin global; el portal de cliente valida propiedad.
 
 ## 5. Almacén por tienda, con traspasos (`inventory`)
 
@@ -152,8 +153,9 @@ export interface StoreInventoryStock {
 - `AdjustInventoryStock`, `ConsumeInventoryForRepair`,
   `ListLowStockItems`, `GetInventoryMovements` pasan a operar sobre
   `StoreInventoryStock` filtrado por `storeId` (el de la reparación en el
-  caso de `ConsumeInventoryForRepair`, el del usuario autenticado en el resto,
-  salvo admin global).
+  caso de `ConsumeInventoryForRepair`, el seleccionado dentro de
+  `storeAccess` en el resto, salvo admin global). La creación del artículo
+  compartido solo inicializa stock en las tiendas autorizadas para el actor.
 - `InventoryMovement` gana un campo `storeId` (en qué tienda ocurrió el
   movimiento), que para un consumo ligado a una reparación debe coincidir con
   el `storeId` de esa reparación — si no coincide, debe rechazarse (no se
@@ -190,27 +192,25 @@ export interface StockTransferOrder {
   para no perder trazabilidad de dónde está físicamente el material.
 - `InventoryMovementType` pasa de `"receipt" | "adjustment" | "consumption"` a
   incluir `"transfer_out" | "transfer_in"`.
-- Endpoints: `POST /api/stock-transfers`, `POST
-  /api/stock-transfers/:id/send`, `POST /api/stock-transfers/:id/receive`,
-  `POST /api/stock-transfers/:id/cancel`, `GET /api/stock-transfers` (filtrado
+- Endpoints actuales: `POST /api/inventory/transfers`, `POST
+  /api/inventory/transfers/:id/send`, `POST /api/inventory/transfers/:id/receive`,
+  `POST /api/inventory/transfers/:id/cancel`, `GET /api/inventory/transfers` (filtrado
   por tienda de origen o destino del usuario autenticado).
-- Permiso nuevo: `inventory:transfer` (admin siempre; técnico solo si el
-  negocio quiere delegarlo, configurable igual que el resto de permisos).
+- Permiso nuevo: `inventory:transfer`; técnico y admin pueden operar dentro
+  de su alcance. Origen y destino del traspaso deben estar en las tiendas
+  accesibles del usuario.
 
 ### 5.3. Proveedores y compras
 
-`Supplier` y `PurchaseOrder` (ya implementados) pueden seguir siendo
-compartidos (el mismo proveedor sirve a varias tiendas) añadiendo únicamente
-`storeId` a `PurchaseOrder` (la tienda que recibe ese pedido de compra), sin
-tocar `Supplier`.
+`Supplier` permanece compartido. `PurchaseOrder.storeId` es la tienda que
+recibe el pedido; las consultas y recepciones quedan filtradas por `storeAccess`
+y la recepción aumenta el stock de esa tienda.
 
 ### 5.4. Facturación por tienda
 
-`CashRegister` (cierre de caja) es, en la práctica, una caja física por
-tienda: se añade `storeId` y la clave de apertura pasa a ser
-`storeId + businessDate` en vez de solo `businessDate` (hoy solo puede haber
-una caja abierta por día en todo el sistema, lo cual ya no tiene sentido con
-varias tiendas cobrando a la vez).
+`CashRegister` es una caja física por tienda: se añade `storeId` y la clave de
+apertura pasa a ser `storeId + businessDate`. Los listados, resúmenes y cierres
+usan pagos de reparaciones de la tienda seleccionada.
 
 `InvoiceDraft`/factura también gana `storeId` (heredado de la reparación o
 del pedido online que la origina). La numeración de factura por serie fiscal
@@ -259,7 +259,7 @@ global ve el agregado de todas las tiendas; con `storeId`, filtra a una):
   llama a los repositorios/queries ya implementados de cada BC y compone el
   resultado.
 - Frontend: `DashboardOverview.vue`, con un selector de tienda visible solo
-  para admin global (para el resto de usuarios, queda fijo a su `storeId`), y
+  para admin global (para el resto, los datos se limitan a `storeAccess`), y
   un selector de rango de fechas. Tarjetas/contadores simples primero;
   gráficas (evolución de reparaciones o ventas en el tiempo) se dejan como
   mejora posterior si se pide explícitamente, para no sobredimensionar la
@@ -267,12 +267,13 @@ global ve el agregado de todas las tiendas; con `storeId`, filtra a una):
 
 ## 7. Permisos
 
-No se añade un rol nuevo: se añade la noción de **alcance** (`storeId`) sobre
+No se añade un rol nuevo: se añade la noción de **alcance** (`storeAccess`) sobre
 los roles ya existentes (sección 2). Nuevo permiso `stores:manage` (alta y
 edición de tiendas, solo admin global). Nuevo permiso `inventory:transfer`
-(sección 5.2). El resto de permisos ya existentes (`repairs:manage`,
-`ecommerce:manage`, `tradein:manage`, etc.) se interpretan ahora "dentro del
-alcance de `storeId` del usuario", sin necesidad de duplicarlos por tienda.
+(sección 5.2). Los permisos operativos (`repairs:manage`, `inventory:manage`,
+`inventory:transfer` y `payments:manage`) se aplican dentro del alcance de
+`storeAccess`. Tiendas/configuración globales, auditoría, ecommerce,
+compraventa y suplantación permanecen restringidos a administradores globales.
 
 ## 8. Decisiones abiertas
 
@@ -292,36 +293,30 @@ alcance de `storeId` del usuario", sin necesidad de duplicarlos por tienda.
    tiendas según stock disponible, o cada producto pertenece siempre a una
    tienda fija?** Este documento especifica la opción simple (tienda fija por
    producto) para la v1.
-5. **Migración de datos**: antes de aplicar este documento hace falta decidir
-   qué tienda es "la tienda por defecto" a la que se asignan todos los datos
-   ya existentes (reparaciones, stock, empleados) en el momento de migrar,
-   ya que hoy no existe ese concepto. Recomendado: crear una única `Store`
-   con los datos fiscales actuales del negocio y asignarle todo lo existente
-   antes de dar de alta una segunda tienda.
+5. **Migración de datos**: resuelta en la primera migración multitienda; se
+  crea `Tienda principal` con ID estable y se asignan los datos anteriores.
+  Empleados con `store_id` previo conservan esa tienda; técnicos históricos
+  sin tienda reciben la principal. Nuevos administradores globales usan
+  `storeAccess: null`.
 
-## 9. Petición para ChatGPT
+## 9. Estado de implementación y pendientes
 
-1. Crear el BC `stores` con el CRUD básico de la sección 1.
-2. Añadir `storeId` a `User` (sección 2) y a los guards/filtros de
-   autorización existentes, de forma que cada consulta y mutación quede
-   acotada al `storeId` del usuario autenticado salvo que sea `null`.
-3. Añadir `storeId`/`originStoreId` a `RepairOrder` y `Customer`
-   respectivamente (secciones 3 y 4), con la migración de datos de la
-   decisión abierta 5.
-4. Separar `InventoryItem` (catálogo) de `StoreInventoryStock` (stock por
-   tienda), migrando los datos existentes a la tienda por defecto, e
-   implementar `StockTransferOrder` con su flujo completo (sección 5.1 y
-   5.2), sin romper `ConsumeInventoryForRepair` ni los tests ya existentes
-   (`adjust-inventory-stock`, `consume-inventory-for-repair`, etc. — revisar
-   y actualizar los tests afectados).
-5. Añadir `storeId` a `CashRegister`, `InvoiceDraft`/factura y
-   `PurchaseOrder` (sección 5.3 y 5.4), y el prefijo de serie de factura por
-   tienda si se confirma la decisión abierta 3.
-6. Añadir `fulfillingStoreId`/`storeId` a `EcommerceProduct`/`EcommerceOrder`
-   (sección 5.5).
-7. Implementar `GetAdminDashboardSummary` y la pantalla `DashboardOverview.vue`
-   de la sección 6, como página de inicio del panel admin.
-8. Actualizar `01-roles-permisos/roles.md` y el resto de documentos de
-   `.context` que mencionen permisos para reflejar el alcance por `storeId`
-   (no hace falta duplicarlos, basta con la nota de que se interpretan dentro
-   del alcance del usuario).
+1. Implementado: BC `stores` con CRUD y control de permisos.
+2. Implementado: los guards y filtros usan `defaultStoreId` y
+  `storeAccess` (`null` = global); `storeId` se conserva como alias JWT
+  de compatibilidad, no como columna en `users`.
+3. Implementado: `RepairOrder.storeId` y `Customer.originStoreId`, con
+  migración de históricos a `Tienda principal`.
+4. Implementado: catálogo compartido, `StoreInventoryStock` y traspasos con
+  ciclo draft/en tránsito/recibido/cancelado.
+5. Implementado: `PurchaseOrder.storeId`, `CashRegister.storeId` y caja
+  independiente por tienda. El `InvoiceDraft`/numerador fiscal online
+  continúa sin tienda hasta que los pedidos ecommerce tengan fulfillment.
+6. Pendiente: añadir `fulfillingStoreId`/`storeId` a
+  `EcommerceProduct`/`EcommerceOrder` según la decisión abierta 4.
+7. Implementado: dashboard `DashboardOverview.vue` y resumen limitado por
+  `storeAccess` o agregado global.
+8. Los módulos operativos aplican el scope; ecommerce, tienda global,
+  configuración, auditoría, compraventa transversal y suplantación siguen
+  reservados a administradores globales. El fulfillment de ecommerce por
+  tienda y el `storeId` de factura online continúan pendientes, según 5.5.

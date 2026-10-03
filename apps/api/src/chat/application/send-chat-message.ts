@@ -5,7 +5,7 @@ import { Traceable } from "../../shared/infrastructure/observability/trace.js";
 import type { ChatMessage, NewChatMessageInput } from "../domain/chat-message.js";
 import type { ChatMessageRepository } from "./chat-message-repository.js";
 import type { RepairOrderRepository } from "../../repairs/application/repair-order-repository.js";
-import { chatRoomName, customerNotificationRoom, staffNotificationRoom } from "../infrastructure/socket/chat-room.js";
+import { chatRoomName, customerNotificationRoom, staffNotificationRoom, storeStaffNotificationRoom } from "../infrastructure/socket/chat-room.js";
 
 @Traceable("SendChatMessage")
 @Service()
@@ -18,7 +18,7 @@ export class SendChatMessage {
 
   async execute(input: NewChatMessageInput): Promise<ChatMessage | undefined> {
     const repair = await this.repairOrderRepository.findById(input.repairOrderId);
-    if (!repair) return undefined;
+    if (!repair?.storeId) return undefined;
     const body = input.body.trim();
     if (!body) return undefined;
     const message = await this.chatMessageRepository.create({ ...input, id: randomUUID(), body });
@@ -28,7 +28,7 @@ export class SendChatMessage {
     this.sockets.emit(
       "chat.notification",
       { repairOrderId: message.repairOrderId, senderId: message.senderId, senderName: message.senderName, senderRole: message.senderRole, preview: message.body.slice(0, 140), createdAt: message.createdAt },
-      { namespace: "/chat", room: [staffNotificationRoom(), customerNotificationRoom(repair.customerId)] }
+      { namespace: "/chat", room: [staffNotificationRoom(), storeStaffNotificationRoom(repair.storeId), customerNotificationRoom(repair.customerId)] }
     );
     return message;
   }

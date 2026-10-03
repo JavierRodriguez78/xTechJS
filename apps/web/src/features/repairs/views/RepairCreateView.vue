@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { staffSession } from "../../auth/session";
-import { listStores, type Store } from "../../admin/api";
+import { listAccessibleStores, type Store } from "../../admin/api";
 import { createRepair, getWorkflowConfig, listCustomers, listTechnicians } from "../api";
 
 type IntakeCustomer = { id: string; displayName: string; email?: string | null; phone?: string | null };
@@ -10,18 +10,20 @@ const router = useRouter();
 const customers = ref<IntakeCustomer[]>([]);
 const selectedCustomer = ref<IntakeCustomer | null>(null);
 const customerQuery = ref("");
-const technicians = ref<{ id: string; displayName: string }[]>([]);
-const stores = ref<Store[]>([]);
+const technicians = ref<{ id: string; displayName: string; storeAccess?: string[] | null; defaultStoreId?: string | null }[]>([]);
+const stores = ref<Array<Pick<Store, "id" | "name" | "active">>>([]);
 const deviceTypes = ref<string[]>([]);
 const deviceCatalog = ref<{ deviceType: string; brand: string; model: string; imageUrl?: string }[]>([]);
 const catalogStep = ref<"brands" | "models" | null>(null);
 const selectedBrand = ref("");
 const showPasscode = ref(false);
-const form = ref({ customerId: "", storeId: "", deviceType: "", brand: "", model: "", serialNumber: "", reportedIssue: "", deliveredAccessories: "", devicePasscode: "", technicianId: "", estimatedCompletionAt: "", conditionNotes: "" });
+const form = ref({ customerId: "", storeId: staffSession.value?.user.defaultStoreId ?? staffSession.value?.user.storeId ?? "", deviceType: "", brand: "", model: "", serialNumber: "", reportedIssue: "", deliveredAccessories: "", devicePasscode: "", technicianId: "", estimatedCompletionAt: "", conditionNotes: "" });
 const initialQuoteLines = ref<{ description: string; quantity: number; unitPriceCents: number }[]>([]);
 const conditionItems = ref([{ label: "Pantalla", ok: true }, { label: "Botones fisicos", ok: true }, { label: "Bateria", ok: true }, { label: "Carcasa y golpes", ok: true }, { label: "Puertos de carga", ok: true }, { label: "Altavoz y microfono", ok: true }, { label: "Dano por liquido", ok: true }]);
 const error = ref("");
+const eligibleTechnicians = computed(() => technicians.value.filter((technician) => !form.value.storeId || technician.storeAccess === null || technician.storeAccess?.includes(form.value.storeId) || technician.defaultStoreId === form.value.storeId));
 let customerSearchTimer: number | undefined;
+watch(() => form.value.storeId, () => { if (!eligibleTechnicians.value.some((technician) => technician.id === form.value.technicianId)) form.value.technicianId = ""; });
 
 async function loadCustomers(): Promise<void> { try { customers.value = (await listCustomers({ q: customerQuery.value })).items; } catch (reason) { error.value = (reason as Error).message; } }
 function searchCustomers(): void { window.clearTimeout(customerSearchTimer); customerSearchTimer = window.setTimeout(() => void loadCustomers(), 250); }
@@ -39,7 +41,7 @@ function createCustomer(): void { void router.push({ name: "customers.create" })
 function cancel(): void { router.back(); }
 async function save(): Promise<void> { error.value = ""; try { const repair = await createRepair({ ...form.value, storeId: form.value.storeId || undefined, serialNumber: form.value.serialNumber || undefined, deliveredAccessories: form.value.deliveredAccessories || undefined, devicePasscode: form.value.devicePasscode || undefined, technicianId: form.value.technicianId || undefined, estimatedCompletionAt: form.value.estimatedCompletionAt ? new Date(form.value.estimatedCompletionAt).toISOString() : undefined, initialQuoteLines: initialQuoteLines.value.length ? initialQuoteLines.value : undefined, preRepairCondition: { items: conditionItems.value, notes: form.value.conditionNotes || undefined } }); void router.push({ name: "repairs.detail.general", params: { id: repair.id } }); } catch (reason) { error.value = (reason as Error).message; } }
 
-onMounted(async () => { try { const [config, staff] = await Promise.all([getWorkflowConfig(), listTechnicians(), loadCustomers()]); deviceTypes.value = config.deviceTypes; deviceCatalog.value = config.deviceCatalog ?? []; technicians.value = staff; if (staffSession.value?.user.role === "admin") stores.value = (await listStores()).filter((store) => store.active); } catch (reason) { error.value = (reason as Error).message; } });
+onMounted(async () => { try { const [config, staff, accessibleStores] = await Promise.all([getWorkflowConfig(), listTechnicians(), loadCustomers().then(() => listAccessibleStores())]); deviceTypes.value = config.deviceTypes; deviceCatalog.value = config.deviceCatalog ?? []; technicians.value = staff; stores.value = accessibleStores; if (!form.value.storeId && stores.value.length === 1) form.value.storeId = stores.value[0].id; } catch (reason) { error.value = (reason as Error).message; } });
 </script>
 <template>
 	<form class="repair-intake" @submit.prevent="save">
@@ -50,7 +52,7 @@ onMounted(async () => { try { const [config, staff] = await Promise.all([getWork
 		</aside>
 		<main class="intake-workbench">
 			<section class="intake-section"><p class="eyebrow">Tipo de reparacion</p><div class="repair-type-grid"><button v-for="deviceType in deviceTypes" :key="deviceType" :class="['repair-type-card', { selected: form.deviceType === deviceType }]" type="button" :aria-pressed="form.deviceType === deviceType" @click="selectDeviceType(deviceType)"><span>{{ deviceType.slice(0, 1) }}</span><strong>{{ deviceType }}</strong></button></div></section>
-			<section class="intake-section intake-device-fields"><h2>Equipo y recepcion</h2><label v-if="staffSession?.user.role === 'admin'">Tienda<select v-model="form.storeId" required><option value="">Selecciona una tienda</option><option v-for="store in stores" :key="store.id" :value="store.id">{{ store.name }}</option></select></label><label v-else>Tienda<input :value="staffSession?.user.storeId ? 'Tienda asignada' : 'Sin tienda asignada'" disabled /></label><label>Marca<input v-model="form.brand" data-test="brand" required /></label><label>Modelo<input v-model="form.model" data-test="model" required /></label><label>Numero de serie<input v-model="form.serialNumber" /></label><label>Averia reportada<textarea v-model="form.reportedIssue" data-test="reported-issue" required rows="3" /></label><label>Accesorios entregados<input v-model="form.deliveredAccessories" /></label><label>PIN o patron de desbloqueo<span class="input-action"><input v-model="form.devicePasscode" :type="showPasscode ? 'text' : 'password'" autocomplete="off" /><button class="secondary" type="button" @click="showPasscode = !showPasscode">{{ showPasscode ? "Ocultar" : "Mostrar" }}</button></span></label><label>Tecnico asignado<select v-model="form.technicianId"><option value="">Sin asignar</option><option v-for="technician in technicians" :key="technician.id" :value="technician.id">{{ technician.displayName }}</option></select></label><label>Fecha estimada de finalizacion<input v-model="form.estimatedCompletionAt" type="datetime-local" /></label></section>
+			<section class="intake-section intake-device-fields"><h2>Equipo y recepcion</h2><label v-if="staffSession?.user.role === 'admin' || stores.length > 1">Tienda<select v-model="form.storeId" required><option value="">Selecciona una tienda</option><option v-for="store in stores" :key="store.id" :value="store.id">{{ store.name }}</option></select></label><label v-else>Tienda<input :value="stores[0]?.name ?? 'Sin tienda asignada'" disabled /></label><label>Marca<input v-model="form.brand" data-test="brand" required /></label><label>Modelo<input v-model="form.model" data-test="model" required /></label><label>Numero de serie<input v-model="form.serialNumber" /></label><label>Averia reportada<textarea v-model="form.reportedIssue" data-test="reported-issue" required rows="3" /></label><label>Accesorios entregados<input v-model="form.deliveredAccessories" /></label><label>PIN o patron de desbloqueo<span class="input-action"><input v-model="form.devicePasscode" :type="showPasscode ? 'text' : 'password'" autocomplete="off" /><button class="secondary" type="button" @click="showPasscode = !showPasscode">{{ showPasscode ? "Ocultar" : "Mostrar" }}</button></span></label><label>Tecnico asignado<select v-model="form.technicianId"><option value="">Sin asignar</option><option v-for="technician in eligibleTechnicians" :key="technician.id" :value="technician.id">{{ technician.displayName }}</option></select></label><label>Fecha estimada de finalizacion<input v-model="form.estimatedCompletionAt" type="datetime-local" /></label></section>
 			<section class="intake-section intake-condition"><h2>Estado previo del equipo</h2><label v-for="item in conditionItems" :key="item.label" class="checkbox-row"><input v-model="item.ok" type="checkbox" /><span>{{ item.label }} correcto</span></label><label>Observaciones<textarea v-model="form.conditionNotes" rows="3" /></label></section>
 			<p v-if="error" class="feedback error">{{ error }}</p>
 			<footer class="intake-actions"><button class="secondary" type="button" :disabled="!form.customerId" @click="viewCustomerRepairs">Ver tickets</button><button class="secondary" type="button" @click="createCustomer">Nuevo cliente</button><button class="secondary" type="button" @click="cancel">Cancelar</button><button class="intake-create" :disabled="!form.customerId || !form.deviceType">Crear ticket</button></footer>

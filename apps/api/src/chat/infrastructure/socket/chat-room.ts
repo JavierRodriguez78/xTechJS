@@ -8,6 +8,10 @@ export function staffNotificationRoom(): string {
   return "chat:staff";
 }
 
+export function storeStaffNotificationRoom(storeId: string): string {
+  return `chat:staff:${storeId}`;
+}
+
 export function customerNotificationRoom(customerId: string): string {
   return `chat:customer:${customerId}`;
 }

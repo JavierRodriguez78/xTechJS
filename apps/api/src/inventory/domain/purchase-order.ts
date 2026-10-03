@@ -14,9 +14,11 @@ export interface PurchaseOrder {
   lines: PurchaseOrderLine[];
   createdAt: Date;
   receivedAt: Date | null;
+  storeId: string;
 }
 
 export interface CreatePurchaseOrderInput {
   supplierId: string;
   lines: Array<{ inventoryItemId: string; quantity: number; unitCostCents: number }>;
+  storeId: string;
 }

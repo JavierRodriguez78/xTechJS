@@ -12,11 +12,11 @@ export class CloseCashRegister {
     private readonly dailySummary: GetDailyPaymentSummary
   ) {}
 
-  async execute(businessDate: string): Promise<CashRegister | undefined> {
-    const register = await this.repository.findByDate(businessDate);
+  async execute(businessDate: string, storeId: string): Promise<CashRegister | undefined> {
+    const register = await this.repository.findByDate(businessDate, storeId);
     if (!register) return undefined;
     if (register.status === "closed") throw new Error("Cash register is already closed");
-    const summary = await this.dailySummary.execute(businessDate);
+    const summary = await this.dailySummary.execute(businessDate, [storeId]);
     return this.repository.close(register.id, {
       paidCents: summary.paidCents,
       refundedCents: summary.refundedCents,

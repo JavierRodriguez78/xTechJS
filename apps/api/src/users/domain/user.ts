@@ -5,8 +5,19 @@ export interface User {
   email: string;
   displayName: string;
   role: UserRole;
-  storeId: string | null;
+  defaultStoreId?: string | null;
+  storeAccess?: string[] | null;
+  storeId?: string | null;
   active: boolean;
+  phone?: string | null;
+  nationalId?: string | null;
+  addressStreet?: string | null;
+  addressPostalCode?: string | null;
+  addressCity?: string | null;
+  addressProvince?: string | null;
+  addressCountry?: string | null;
+  hiredAt?: Date | null;
+  deactivatedAt?: Date | null;
 }
 
 export interface UserCredentials extends User {

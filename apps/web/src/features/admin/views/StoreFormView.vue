@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { createStore, listStores, updateStore, listAddressCountries, listAddressProvinces, listAddressPlaces, STORE_WEEK_DAYS, type StoreDayOpeningHours, type AddressCountry, type AddressProvince, type AddressPlace } from "../api";
+import { createStore, listStores, updateStore, STORE_WEEK_DAYS, type StoreDayOpeningHours } from "../api";
+import AddressFields, { type AddressFieldsValue } from "./AddressFields.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -13,23 +14,18 @@ const ready = ref(!editing.value);
 const dayLabels = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"];
 const weeklyHours = ref(STORE_WEEK_DAYS.map((day, index) => ({ day, label: dayLabels[index], open: false, opensAt: "", closesAt: "" })));
 const weeklyConfigured = ref(!editing.value);
-const countries = ref<AddressCountry[]>([]);
-const provinces = ref<AddressProvince[]>([]);
-const places = ref<AddressPlace[]>([]);
-const countryCode = ref("ES");
-const provinceCode = ref("");
-const cityQuery = ref("");
-const catalogLoading = ref(false);
-const catalogError = ref("");
-let requestVersion = 0;
-const cities = computed(() => [...new Set(places.value.map((place) => place.city))].filter((city) => city.toLocaleLowerCase("es").includes(cityQuery.value.toLocaleLowerCase("es")) || city === form.value.addressCity));
-const postalCodes = computed(() => [...new Set(places.value.filter((place) => place.city === form.value.addressCity).map((place) => place.postalCode))]);
-const hasCoverage = computed(() => countries.value.find((country) => country.code === countryCode.value)?.postalCoverage === true);
 const form = ref({ name: "", legalName: "", addressStreet: "", addressPostalCode: "", addressCity: "", addressProvince: "", addressCountry: "España", phone: "", email: "", taxId: "", openingHours: "", invoiceSeriesPrefix: "", logoUrl: "", veriFactuSystemId: "" });
+const address = computed<AddressFieldsValue>({
+  get: () => form.value,
+  set: (value) => Object.assign(form.value, value)
+});
+const catalogLoading = ref(true);
+const hasCoverage = ref(false);
+const postalValid = ref(false);
+function updateAddressCatalog(state: { loading: boolean; covered: boolean; postalValid: boolean }): void { catalogLoading.value = state.loading; hasCoverage.value = state.covered; postalValid.value = state.postalValid; }
 onMounted(async () => {
   loading.value = true;
   try {
-    countries.value = await listAddressCountries();
     if (editing.value) {
       const store = (await listStores()).find((item) => item.id === route.params.id);
       if (!store) throw new Error("No se encuentra la tienda.");
@@ -42,44 +38,9 @@ onMounted(async () => {
         }
       }
     }
-    countryCode.value = countries.value.find((country) => country.name === form.value.addressCountry)?.code ?? "";
-    if (countryCode.value) provinces.value = await listAddressProvinces(countryCode.value);
-    provinceCode.value = provinces.value.find((province) => province.name === form.value.addressProvince)?.code ?? "";
-    if (provinceCode.value) places.value = await listAddressPlaces(provinceCode.value);
     ready.value = true;
   } catch (reason) { error.value = (reason as Error).message; } finally { loading.value = false; }
 });
-async function changeCountry(): Promise<void> {
-  const version = ++requestVersion;
-  form.value.addressCountry = countries.value.find((country) => country.code === countryCode.value)?.name ?? "";
-  provinceCode.value = "";
-  form.value.addressProvince = "";
-  form.value.addressCity = "";
-  form.value.addressPostalCode = "";
-  cityQuery.value = "";
-  provinces.value = [];
-  places.value = [];
-  catalogError.value = "";
-  catalogLoading.value = true;
-  try { const result = await listAddressProvinces(countryCode.value); if (version === requestVersion) provinces.value = result; }
-  catch (reason) { if (version === requestVersion) catalogError.value = (reason as Error).message; }
-  finally { if (version === requestVersion) catalogLoading.value = false; }
-}
-async function changeProvince(): Promise<void> {
-  const version = ++requestVersion;
-  form.value.addressProvince = provinces.value.find((province) => province.code === provinceCode.value)?.name ?? "";
-  form.value.addressCity = "";
-  form.value.addressPostalCode = "";
-  cityQuery.value = "";
-  places.value = [];
-  catalogError.value = "";
-  if (!provinceCode.value) { catalogLoading.value = false; return; }
-  catalogLoading.value = true;
-  try { const result = await listAddressPlaces(provinceCode.value); if (version === requestVersion) places.value = result; }
-  catch (reason) { if (version === requestVersion) catalogError.value = (reason as Error).message; }
-  finally { if (version === requestVersion) catalogLoading.value = false; }
-}
-function changeCity(): void { form.value.addressPostalCode = postalCodes.value.length === 1 ? postalCodes.value[0] : ""; }
 async function save(): Promise<void> {
   error.value = "";
   if (weeklyConfigured.value) {
@@ -125,20 +86,11 @@ async function save(): Promise<void> {
           </div>
         </div>
       </fieldset>
-      <fieldset><legend>Direccion del establecimiento</legend>
-        <label class="wide">Via y numero<input v-model="form.addressStreet" required maxlength="500" autocomplete="street-address" /></label>
-        <label>Pais<select v-model="countryCode" required @change="changeCountry"><option disabled value="">Selecciona un pais</option><option v-for="country in countries" :key="country.code" :value="country.code">{{ country.name }}</option></select></label>
-        <label>Provincia<select v-model="provinceCode" required :disabled="!hasCoverage || catalogLoading" @change="changeProvince"><option value="">Selecciona una provincia</option><option v-for="province in provinces" :key="province.code" :value="province.code">{{ province.name }}</option></select></label>
-        <label>Buscar poblacion<input v-model="cityQuery" :disabled="!places.length" type="search" /></label>
-        <label>Poblacion<select v-model="form.addressCity" required :disabled="!places.length || catalogLoading" @change="changeCity"><option value="">Selecciona una poblacion</option><option v-if="form.addressCity && !places.some((place) => place.city === form.addressCity)" :value="form.addressCity" disabled>{{ form.addressCity }} (dato historico)</option><option v-for="city in cities" :key="city" :value="city">{{ city }}</option></select></label>
-        <label>Codigo postal<select v-model="form.addressPostalCode" required :disabled="!postalCodes.length"><option value="">Selecciona un codigo postal</option><option v-for="postalCode in postalCodes" :key="postalCode" :value="postalCode">{{ postalCode }}</option></select></label>
-        <p v-if="catalogLoading" class="catalog-message" role="status">Cargando direcciones...</p>
-        <p v-if="!hasCoverage" class="catalog-message error">El catalogo postal disponible cubre Espana.</p>
-        <p v-if="catalogError" class="catalog-message error" role="alert">{{ catalogError }}</p>
-      </fieldset>
+      <AddressFields v-model="address" :required="true" @catalog-state="updateAddressCatalog" />
+      <p v-if="!hasCoverage" class="catalog-message error">El catalogo postal disponible cubre Espana.</p>
       <details><summary>Excepcion fiscal: emisor distinto del negocio</summary><fieldset><legend>Identidad fiscal propia (opcional)</legend><label>Razon social<input v-model="form.legalName" maxlength="200" /></label><label>NIF/CIF<input v-model="form.taxId" maxlength="80" /></label></fieldset></details>
       <details><summary>VeriFactu</summary><fieldset><legend>Identificacion (opcional)</legend><label>Identificador del sistema<input v-model="form.veriFactuSystemId" maxlength="120" /></label></fieldset></details>
-      <footer><a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer">Datos postales: GeoNames (CC BY)</a><RouterLink class="button-link secondary" :to="{ name: 'admin.stores.list' }">Cancelar</RouterLink><button :disabled="saving || catalogLoading || !hasCoverage || !postalCodes.includes(form.addressPostalCode)">{{ saving ? 'Guardando...' : editing ? 'Guardar cambios' : 'Crear tienda' }}</button></footer>
+      <footer><a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer">Datos postales: GeoNames (CC BY)</a><RouterLink class="button-link secondary" :to="{ name: 'admin.stores.list' }">Cancelar</RouterLink><button :disabled="saving || catalogLoading || !hasCoverage || !postalValid">{{ saving ? 'Guardando...' : editing ? 'Guardar cambios' : 'Crear tienda' }}</button></footer>
     </form>
   </section>
 </template>

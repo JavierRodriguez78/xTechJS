@@ -31,6 +31,8 @@ export class AuthenticationService {
       passwordHash: await hash(input.password, 12),
       role: "admin",
       storeId: null,
+      defaultStoreId: null,
+      storeAccess: null,
       active: true
     });
   }
@@ -51,7 +53,15 @@ export class AuthenticationService {
   async findOwnStaffProfile(id: string): Promise<User | undefined> {
     const user = await this.userRepository.findById(id);
     if (!user?.active || !isStaffRole(user.role)) return undefined;
-    return { id: user.id, email: user.email, displayName: user.displayName, role: user.role, storeId: user.storeId, active: user.active };
+    return {
+      id: user.id, email: user.email, displayName: user.displayName, role: user.role, active: user.active,
+      storeId: user.defaultStoreId ?? user.storeId ?? null,
+      defaultStoreId: user.defaultStoreId ?? user.storeId ?? null,
+      storeAccess: user.storeAccess !== undefined ? user.storeAccess : user.role === "admin" && !user.storeId ? null : user.storeId ? [user.storeId] : [],
+      phone: user.phone ?? null, addressStreet: user.addressStreet ?? null, addressPostalCode: user.addressPostalCode ?? null,
+      addressCity: user.addressCity ?? null, addressProvince: user.addressProvince ?? null, addressCountry: user.addressCountry ?? null,
+      hiredAt: user.hiredAt ?? null, deactivatedAt: user.deactivatedAt ?? null
+    };
   }
 
   async updateOwnCredentials(id: string, input: UpdateOwnCredentialsInput): Promise<User> {
@@ -73,6 +83,14 @@ export class AuthenticationService {
     }
     const user = await this.userRepository.update(id, update);
     if (!user) throw new OwnProfileError("unavailable");
-    return { id: user.id, email: user.email, displayName: user.displayName, role: user.role, storeId: user.storeId, active: user.active };
+    return {
+      id: user.id, email: user.email, displayName: user.displayName, role: user.role, active: user.active,
+      storeId: user.defaultStoreId ?? user.storeId ?? null,
+      defaultStoreId: user.defaultStoreId ?? user.storeId ?? null,
+      storeAccess: user.storeAccess !== undefined ? user.storeAccess : user.role === "admin" && !user.storeId ? null : user.storeId ? [user.storeId] : [],
+      phone: user.phone ?? null, addressStreet: user.addressStreet ?? null, addressPostalCode: user.addressPostalCode ?? null,
+      addressCity: user.addressCity ?? null, addressProvince: user.addressProvince ?? null, addressCountry: user.addressCountry ?? null,
+      hiredAt: user.hiredAt ?? null, deactivatedAt: user.deactivatedAt ?? null
+    };
   }
 }

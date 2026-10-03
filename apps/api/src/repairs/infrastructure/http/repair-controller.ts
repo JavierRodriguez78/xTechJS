@@ -32,6 +32,8 @@ import { RepairStatusNotConfiguredError } from "../../domain/repair-status.js";
 import { PERMISSIONS } from "../../../users/domain/permission.js";
 import { PermissionRequired } from "../../../users/infrastructure/http/permission-guard.js";
 import type { AuthTokenPayload } from "../../../users/infrastructure/http/auth-routes.js";
+import { canAccessStore, getStoreAccess } from "../../../users/domain/store-access.js";
+import { FindUserByIdQuery } from "../../../users/application/cqrs/user-messages.js";
 
 const conditionChecklistSchema = z.object({ items: z.array(z.object({ label: z.string().trim().min(1).max(160), ok: z.boolean() })).min(1).max(30), notes: z.string().trim().max(2000).optional() });
 const quoteLineSchema = z.object({ description: z.string().trim().min(1).max(500), quantity: z.number().int().min(1).max(1000), unitPriceCents: z.number().int().min(0).max(100000000) });
@@ -68,10 +70,17 @@ export class RepairController {
 
   private async canAccessRepair(request: FastifyRequest, repairOrderId: string): Promise<boolean> {
     const user = request.user as AuthTokenPayload;
-    if (user.role !== "technician") return true;
-    if (!user.storeId) return false;
+    const access = getStoreAccess(user);
+    if (access === null) return true;
+    if (!access.length) return false;
     const repair = await this.queryBus.execute(new GetRepairOrderQuery(repairOrderId));
-    return repair?.storeId === user.storeId;
+    return Boolean(repair && canAccessStore(user, repair.storeId));
+  }
+
+  private async canAssignTechnician(technicianId: string | null | undefined, storeId: string): Promise<boolean> {
+    if (!technicianId) return true;
+    const technician = await this.queryBus.execute(new FindUserByIdQuery(technicianId));
+    return Boolean(technician && technician.role === "technician" && technician.active && canAccessStore(technician, storeId));
   }
 
   @Get()
@@ -89,7 +98,7 @@ export class RepairController {
       technicianId: tecnico,
       deviceType: tipo,
       customerId: cliente,
-      storeId: user.role === "technician" ? user.storeId ?? undefined : undefined,
+      storeIds: getStoreAccess(user) ?? undefined,
       receivedFrom: desde ? new Date(`${desde}T00:00:00.000Z`) : undefined,
       receivedTo,
       sort: orden,
@@ -206,8 +215,12 @@ export class RepairController {
     if (!parsed.success) return reply.code(400).send({ message: "Invalid repair order", issues: parsed.error.flatten() });
     try {
       const user = request.user as AuthTokenPayload;
-      const storeId = user.role === "technician" ? user.storeId : parsed.data.storeId;
+      const access = getStoreAccess(user);
+      const selectedStore = parsed.data.storeId ?? user.defaultStoreId ?? user.storeId ?? (access?.length === 1 ? access[0] : undefined);
+      if (selectedStore && access && !access.includes(selectedStore)) return reply.code(403).send({ message: "No tienes acceso a la tienda seleccionada." });
+      const storeId = selectedStore;
       if (!storeId) return reply.code(400).send({ message: "Selecciona una tienda para la reparacion." });
+      if (!await this.canAssignTechnician(parsed.data.technicianId, storeId)) return reply.code(400).send({ message: "El tecnico asignado no tiene acceso a esa tienda." });
       return reply.code(201).send(await this.commandBus.execute(new CreateRepairOrderCommand({ ...parsed.data, storeId } as CreateRepairOrderInput, user.sub)));
     } catch (error) {
       if (error instanceof DeviceTypeNotConfiguredError) return reply.code(400).send({ message: `El tipo de dispositivo "${error.deviceType}" no esta configurado.` });
@@ -237,6 +250,9 @@ export class RepairController {
     if (!await this.canAccessRepair(request, id)) return reply.code(404).send({ message: "Repair order not found" });
     const parsed = technicalSchema.safeParse(body);
     if (!parsed.success) return reply.code(400).send({ message: "Invalid technical details", issues: parsed.error.flatten() });
+    const current = await this.queryBus.execute(new GetRepairOrderQuery(id));
+    if (!current) return reply.code(404).send({ message: "Repair order not found" });
+    if (!await this.canAssignTechnician(parsed.data.technicianId, current.storeId)) return reply.code(400).send({ message: "El tecnico asignado no tiene acceso a esa tienda." });
     try {
       const repair = await this.commandBus.execute(new UpdateRepairTechnicalCommand(id, parsed.data as UpdateRepairTechnicalInput));
       return repair ?? reply.code(404).send({ message: "Repair order not found" });

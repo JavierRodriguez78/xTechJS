@@ -7,5 +7,5 @@ import type { PaymentRepository } from "./payment-repository.js";
 @Service()
 export class ListPayments {
   constructor(@Qualifier("paymentRepository") private readonly repository: PaymentRepository) {}
-  execute(): Promise<readonly Payment[]> { return this.repository.findAll(); }
+  execute(storeIds?: readonly string[] | null): Promise<readonly Payment[]> { return this.repository.findAll(storeIds); }
 }

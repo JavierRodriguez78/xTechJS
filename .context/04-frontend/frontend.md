@@ -229,11 +229,14 @@ historial con cada tecla del buscador).
   - **Atencion**: Clientes, Reparaciones (incluye el indicador de chat pendiente).
   - **Almacen**: Materiales, Alertas de stock, Proveedores, Ordenes de compra.
   - **Ventas**: TPV, Caja, Informes, Compraventa, Catalogo tienda, Pedidos tienda.
-  - **Administracion**: Panel, Tiendas, Usuarios, Estados, Dispositivos,
-    Plantillas, Auditoria.
-- Las opciones y los grupos vacios se ocultan segun los permisos actuales.
-  Esto no reemplaza los guards ni concede permisos nuevos: el tecnico ve
-  Atencion y Compraventa; el administrador tiene los cuatro grupos.
+  - **Administracion**: Panel, Empleados, Tiendas, Estados,
+    Dispositivos, Plantillas, Auditoria.
+- Las opciones y los grupos vacios se ocultan segun los permisos y alcance.
+  El tecnico ve Atencion, Almacen y TPV/caja/informes solo de sus tiendas;
+  Compraventa es global y no aparece a usuarios sin alcance global. El
+  administrador global ve los cuatro grupos. El administrador de tienda
+  ve operaciones dentro de `storeAccess` y Empleados/Panel, pero no gestion
+  global de tiendas, configuracion, auditoria, ecommerce o compraventa global.
 - El grupo activo se deduce de la ruta, incluidas altas, ediciones y fichas
   anidadas; recargar o utilizar atras/adelante conserva el contexto de
   navegacion. Elegir un grupo superior cambia las opciones del lateral y lo

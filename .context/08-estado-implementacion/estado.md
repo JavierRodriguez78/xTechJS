@@ -21,15 +21,15 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   `GET /api/stores/session-store`, limitado al identificador del token y
   a la identidad publica de esa tienda. Administradores ven
   `Vista de administrador`. Se conservan avisos e indicadores de chat;
-  no se amplian permisos ni se modifica el portal de cliente.
-- Verificacion focalizada: 10 pruebas de layout y 10 de controlador de
+  el portal de cliente conserva su layout. Técnicos tienen acceso operativo
+  a almacén, traspasos y caja, siempre limitado a `storeAccess`.
+- Verificacion focalizada: 12 pruebas de layout y 11 de controlador de
   tiendas, incluyendo alcance de la tienda, rutas profundas, rol,
   persistencia del plegado, salida y limpieza del reloj.
   Typechecks API/web correctos. Capturas y comprobaciones de layout en
   1440 y 375 px sin desbordamiento horizontal, con sesiones y respuestas
-  simuladas; verificados perfil, salida y superposicion movil. La nueva
-  ruta requiere actualizar la API local; no se ha verificado contra
-  servicios Docker activos en esta fase.
+  simuladas; verificados perfil, salida y superposicion movil. El menú del
+  administrador de tienda oculta opciones globales sin alcance.
 
 ## Perfil propio
 
@@ -48,13 +48,57 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   revocacion global de JWT anteriores, recuperacion sin sesion ni
   verificacion del nuevo email por correo. No requiere migracion.
 - Verificacion focalizada: 9 pruebas de servicio, 7 de HTTP, 10 del perfil
-  web y 11 del layout; build API y typechecks API/web correctos. En navegador,
+  web y 12 del layout; build API y typechecks API/web correctos. En navegador,
   comprobados layout a 1440/375 px y cambios de email y contrasena con
   respuestas simuladas; se actualiza el email de la sesion y se retorna
   al login al cambiar contrasena. La herramienta no completo algunos clics
   con emulacion activa; el envio nativo del formulario y las pruebas de
-  Vue completaron el flujo. La API local debe actualizarse para servir los
-  endpoints nuevos; no se han modificado credenciales reales en la prueba.
+  Vue completaron el flujo. La interfaz de credenciales se probó con
+  respuestas simuladas; no se modificaron credenciales reales.
+
+## Gestion de empleados
+
+- **(2026-10-03) Alta, edición y baja de empleados con scope multi-tienda.**
+  `/admin/empleados` (alias `/admin/employees`) sustituye Usuarios en la
+  navegación y tiene listado/ficha en rutas separadas, filtros persistidos
+  en URL, asignación múltiple y tienda por defecto, dirección postal
+  reutilizada, cambios de rol, activación/baja y suplantación de activos.
+- API `GET/POST /api/employees`, `PATCH /api/employees/:id` y lectura
+  explícita `GET /api/employees/:id/national-id`. Nombre/rol/contacto/
+  direcciones son editables; el DNI/NIE solo se obtiene tras petición
+  explícita de administración, no se incluye en listados ni respuestas
+  comunes. Los cambios de rol, alcance, alta, baja y reactivación dejan
+  auditoría. Un administrador no puede darse de baja ni cambiar su propio
+  rol/alcance.
+- `national_id` usa selección explícita y endpoint separado, pero aún no
+  tiene cifrado de aplicación en PostgreSQL; definir cifrado/rotación y
+  purga requiere decisión de protección de datos.
+- Tienda y empleado comparten `AddressFields.vue` para país, provincia,
+  población y códigos postales; la dirección laboral es opcional y la
+  dirección de tienda exige cobertura postal de España.
+- `174090...` amplía usuarios a `default_store_id`, `store_access` y campos
+  laborales, migra el scope anterior y elimina `users.store_id`.
+  `174100...` asocia compras y cajas a tienda; `174110...` limpia el alias
+  de columna en bases donde `174090` ya se había registrado. Histórico de
+  contratación/baja permanece nulo cuando la base no contiene una fecha
+  fiable; los técnicos heredados sin asignación reciben la tienda principal.
+- JWT incluye `defaultStoreId`/`storeAccess`; el alias de claim `storeId`
+  apunta a la tienda por defecto para compatibilidad. Reparaciones,
+  técnicos asignados, adjuntos, chat y notificaciones, stock, movimientos,
+  transferencias, compras, pagos, caja y dashboard limitan el acceso al
+  scope. Los módulos de configuración global, tiendas, auditoría,
+  ecommerce, compraventa y suplantación se reservan al admin global.
+- Migraciones aplicadas a PostgreSQL local sin borrar volúmenes. Verificado:
+  ningún técnico sin alcance, pedidos/cajas históricos asignados y ninguna
+  columna `users.store_id` restante; contenedor API saludable. Se aplicaron
+  `AddEmployeeProfileAndStoreAccessMigration1740900000000`,
+  `ScopePurchasesAndCashByStoreMigration1741000000000` y
+  `RemoveLegacyUserStoreIdMigration1741100000000`.
+- Verificación final: build API; 124 pruebas API y 82 pruebas web completas;
+  typechecks API/web y `git diff --check` correctos.
+- Las decisiones de RRHH/nómina, Seguridad Social, plazo exacto de
+  conservación y verificación legal del tratamiento continúan abiertas;
+  no se agregan campos de nómina ni borrado físico.
 
 ## Multitienda
 

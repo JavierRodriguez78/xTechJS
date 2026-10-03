@@ -9,7 +9,7 @@ import type { InventoryRepository } from "./inventory-repository.js";
 export class CreateInventoryItem {
   constructor(@Qualifier("inventoryRepository") private readonly inventoryRepository: InventoryRepository) {}
 
-  execute(input: CreateInventoryItemInput): Promise<InventoryItem> {
+  execute(input: CreateInventoryItemInput, storeIds?: readonly string[] | null): Promise<InventoryItem> {
     return this.inventoryRepository.create({
       ...input,
       id: randomUUID(),
@@ -19,7 +19,8 @@ export class CreateInventoryItem {
       unit: input.unit?.trim() || "unidad",
       minimumStock: input.minimumStock ?? 0,
       salePriceCents: input.salePriceCents ?? 0,
-      taxRate: input.taxRate ?? 21
+      taxRate: input.taxRate ?? 21,
+      storeIds
     });
   }
 }

@@ -11,8 +11,9 @@ import { OwnProfileError } from "../../application/authentication-service.js";
 import { z } from "zod";
 import { PERMISSIONS } from "../../domain/permission.js";
 import type { User } from "../../domain/user.js";
+import { toStoreAccessClaims } from "../../domain/store-access.js";
 import { recordImpersonation } from "../persistence/audit-log.js";
-import { PermissionRequired } from "./permission-guard.js";
+import { GlobalPermissionRequired } from "./permission-guard.js";
 
 type ProfileReply = { code(status: number): ProfileReply; send(payload: unknown): unknown };
 const ownCredentialsSchema = z.object({
@@ -26,6 +27,8 @@ export interface AuthTokenPayload {
   email?: string;
   role: UserRole;
   storeId: string | null;
+  defaultStoreId?: string | null;
+  storeAccess?: string[] | null;
   impersonatorId?: string;
 }
 
@@ -36,8 +39,8 @@ declare module "@fastify/jwt" {
 }
 
 function toPublicUser(user: User): User {
-  const { passwordHash: _, ...publicUser } = user as User & { passwordHash?: string };
-  return publicUser;
+  const { passwordHash: _, nationalId: __, ...publicUser } = user as User & { passwordHash?: string };
+  return { ...publicUser, ...toStoreAccessClaims(user) };
 }
 
 @Controller("/api/auth")
@@ -66,7 +69,7 @@ export class AuthController {
     if (!user) {
       return reply.code(401).send({ message: "Invalid credentials" });
     }
-    const token = request.server.jwt.sign({ sub: user.id, role: user.role, storeId: user.storeId });
+    const token = request.server.jwt.sign({ sub: user.id, role: user.role, ...toStoreAccessClaims(user) });
     return { accessToken: token, user: toPublicUser(user) };
   }
 
@@ -76,7 +79,7 @@ export class AuthController {
     if (!user || !isStaffRole(user.role)) {
       return reply.code(401).send({ message: "Invalid staff credentials" });
     }
-    const token = request.server.jwt.sign({ sub: user.id, email: user.email, role: user.role, storeId: user.storeId });
+    const token = request.server.jwt.sign({ sub: user.id, email: user.email, role: user.role, ...toStoreAccessClaims(user) });
     return { accessToken: token, user: toPublicUser(user) };
   }
 
@@ -84,7 +87,7 @@ export class AuthController {
   async customerLogin(@Body() input: { email: string; password: string }, @Req() request: FastifyRequest, @Res() reply: { code(statusCode: number): { send(payload: unknown): unknown } }): Promise<unknown> {
     const user = await this.commandBus.execute(new AuthenticateUserCommand(input?.email ?? "", input?.password ?? ""));
     if (!user || user.role !== "customer") return reply.code(401).send({ message: "Invalid customer credentials" });
-    const token = request.server.jwt.sign({ sub: user.id, email: user.email, role: user.role, storeId: user.storeId });
+    const token = request.server.jwt.sign({ sub: user.id, email: user.email, role: user.role, ...toStoreAccessClaims(user) });
     return { accessToken: token, user: toPublicUser(user) };
   }
 
@@ -105,7 +108,7 @@ export class AuthController {
     try {
       const user: User = await this.commandBus.execute(new UpdateOwnStaffCredentialsCommand(request.user.sub, parsed.data));
       if (!user.active || !isStaffRole(user.role)) return reply.code(401).send({ message: "Tu cuenta ya no esta disponible." });
-      const accessToken = request.server.jwt.sign({ sub: user.id, email: user.email, role: user.role, storeId: user.storeId });
+      const accessToken = request.server.jwt.sign({ sub: user.id, email: user.email, role: user.role, ...toStoreAccessClaims(user) });
       return { accessToken, user: toPublicUser(user) };
     } catch (error) {
       if (error instanceof OwnProfileError) {
@@ -121,8 +124,7 @@ export class AuthController {
   }
 
   @Post("/impersonate/:userId")
-  @Authenticated()
-  @PermissionRequired(PERMISSIONS.impersonationUse)
+  @GlobalPermissionRequired(PERMISSIONS.impersonationUse)
   async impersonate(@Param("userId") targetId: string, @Req() request: FastifyRequest, @Res() reply: { code(statusCode: number): { send(payload: unknown): unknown } }): Promise<unknown> {
     const target = await this.queryBus.execute(new FindActiveNonAdminUserQuery(targetId));
     if (!target) {
@@ -130,7 +132,7 @@ export class AuthController {
     }
 
     await recordImpersonation(this.dataSource, request.user.sub, target.id);
-    const accessToken = request.server.jwt.sign({ sub: target.id, role: target.role, storeId: target.storeId, impersonatorId: request.user.sub });
+    const accessToken = request.server.jwt.sign({ sub: target.id, role: target.role, ...toStoreAccessClaims(target), impersonatorId: request.user.sub });
     return { accessToken, user: toPublicUser(target), impersonatedBy: request.user.sub };
   }
 }

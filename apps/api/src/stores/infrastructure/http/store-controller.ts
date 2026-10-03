@@ -5,7 +5,8 @@ import { Authenticated } from "@xtaskjs/security";
 import { DataSource, InjectDataSource } from "@xtaskjs/typeorm";
 import { z } from "zod";
 import { PERMISSIONS } from "../../../users/domain/permission.js";
-import { PermissionRequired } from "../../../users/infrastructure/http/permission-guard.js";
+import { getStoreAccess } from "../../../users/domain/store-access.js";
+import { GlobalPermissionRequired, PermissionRequired } from "../../../users/infrastructure/http/permission-guard.js";
 import type { SaveStoreInput, Store } from "../../domain/store.js";
 import { STORE_WEEK_DAYS } from "../../domain/store.js";
 import { StoreEntitySchema } from "../persistence/store-entity.js";
@@ -30,20 +31,31 @@ export class StoreController {
   @InjectDataSource() private readonly dataSource!: DataSource;
 
   @Get()
-  @PermissionRequired(PERMISSIONS.storesManage)
+  @GlobalPermissionRequired(PERMISSIONS.storesManage)
   list(): Promise<Store[]> { return this.dataSource.getRepository(StoreEntitySchema).find({ order: { name: "ASC" } }); }
 
   @Get("/session-store")
   async sessionStore(@Req() request: FastifyRequest, @Res() reply: Reply): Promise<unknown> {
-    const user = request.user as { role: string; storeId?: string | null };
+    const user = request.user as { role: string; storeId?: string | null; defaultStoreId?: string | null; storeAccess?: string[] | null };
     if (user.role !== "admin" && user.role !== "technician") return reply.code(403).send({ message: "Forbidden" });
-    if (!user.storeId) return null;
-    const store = await this.dataSource.getRepository(StoreEntitySchema).findOneBy({ id: user.storeId });
+    const defaultStoreId = user.defaultStoreId ?? user.storeId ?? user.storeAccess?.[0] ?? null;
+    if (!defaultStoreId) return null;
+    const store = await this.dataSource.getRepository(StoreEntitySchema).findOneBy({ id: defaultStoreId });
     return store ? { id: store.id, name: store.name, active: store.active } : null;
   }
 
+    @Get("/accessible")
+    async accessibleStores(@Req() request: FastifyRequest, @Res() reply: Reply): Promise<unknown> {
+      const user = request.user as { role: string; storeId?: string | null; defaultStoreId?: string | null; storeAccess?: string[] | null };
+      if (user.role !== "admin" && user.role !== "technician") return reply.code(403).send({ message: "Forbidden" });
+      const access = getStoreAccess(user);
+      if (access?.length === 0) return [];
+      if (access === null) return this.dataSource.query('SELECT id, name, active FROM stores WHERE active = true ORDER BY name');
+      return this.dataSource.query('SELECT id, name, active FROM stores WHERE active = true AND id = ANY($1::uuid[]) ORDER BY name', [access]);
+    }
+
   @Post()
-  @PermissionRequired(PERMISSIONS.storesManage)
+  @GlobalPermissionRequired(PERMISSIONS.storesManage)
   async create(@Body() body: unknown, @Res() reply: Reply): Promise<unknown> {
     const parsed = schema.safeParse(body);
     if (!parsed.success) return reply.code(400).send({ message: "Invalid store", issues: parsed.error.flatten() });
@@ -52,7 +64,7 @@ export class StoreController {
   }
 
   @Patch("/:id")
-  @PermissionRequired(PERMISSIONS.storesManage)
+  @GlobalPermissionRequired(PERMISSIONS.storesManage)
   async update(@Param("id") id: string, @Body() body: unknown, @Res() reply: Reply): Promise<unknown> {
     const parsed = schema.partial().refine((value) => Object.keys(value).length > 0).safeParse(body);
     if (!parsed.success) return reply.code(400).send({ message: "Invalid store", issues: parsed.error.flatten() });
@@ -68,13 +80,13 @@ export class StoreController {
   }
 
   @Get("/address-catalog/countries")
-  @PermissionRequired(PERMISSIONS.storesManage)
+  @PermissionRequired(PERMISSIONS.usersManage)
   countries(): Promise<unknown> {
     return this.dataSource.query('SELECT code, name, code = \'ES\' AS "postalCoverage" FROM address_countries ORDER BY name');
   }
 
   @Get("/address-catalog/provinces")
-  @PermissionRequired(PERMISSIONS.storesManage)
+  @PermissionRequired(PERMISSIONS.usersManage)
   provinces(@Req() request: FastifyRequest, @Res() reply: Reply): Promise<unknown> | unknown {
     const parsed = z.object({ countryCode: z.string().regex(/^[A-Z]{2}$/) }).safeParse(request.query);
     if (!parsed.success) return reply.code(400).send({ message: "Invalid country code" });
@@ -82,7 +94,7 @@ export class StoreController {
   }
 
   @Get("/address-catalog/places")
-  @PermissionRequired(PERMISSIONS.storesManage)
+  @PermissionRequired(PERMISSIONS.usersManage)
   places(@Req() request: FastifyRequest, @Res() reply: Reply): Promise<unknown> | unknown {
     const parsed = z.object({ provinceCode: z.string().regex(/^[A-Z0-9]{1,2}$/) }).safeParse(request.query);
     if (!parsed.success) return reply.code(400).send({ message: "Invalid province code" });

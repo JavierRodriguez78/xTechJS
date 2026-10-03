@@ -12,6 +12,8 @@ class TestUserRepository implements UserRepository {
   async count(): Promise<number> { return 0; }
   async create(): Promise<User> { throw new Error("not implemented"); }
   async update(): Promise<User | undefined> { return undefined; }
+  async recordAuditLog(): Promise<void> {}
+  async findNationalId(): Promise<string | null | undefined> { return undefined; }
   async listAuditLogs() {
     return [
       { id: "a-1", action: "user.impersonated", createdAt: "2026-09-15T00:00:00Z", actorName: "Admin", actorEmail: "admin@xtechjs.local", targetName: "Tecnico", targetEmail: "tech@xtechjs.local" }

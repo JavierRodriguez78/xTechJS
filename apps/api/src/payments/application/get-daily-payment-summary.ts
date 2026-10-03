@@ -16,10 +16,10 @@ export interface DailyPaymentSummary {
 export class GetDailyPaymentSummary {
   constructor(@Qualifier("paymentRepository") private readonly repository: PaymentRepository) {}
 
-  async execute(date: string): Promise<DailyPaymentSummary> {
+  async execute(date: string, storeIds?: readonly string[] | null): Promise<DailyPaymentSummary> {
     const start = new Date(`${date}T00:00:00.000Z`);
     const end = new Date(`${date}T23:59:59.999Z`);
-    const payments = (await this.repository.findAll()).filter((payment) => payment.createdAt >= start && payment.createdAt <= end);
+    const payments = (await this.repository.findAll(storeIds)).filter((payment) => payment.createdAt >= start && payment.createdAt <= end);
     const byMethod = { cash: { paidCents: 0, refundedCents: 0, netCents: 0 }, card: { paidCents: 0, refundedCents: 0, netCents: 0 }, transfer: { paidCents: 0, refundedCents: 0, netCents: 0 } };
     for (const payment of payments) {
       const bucket = byMethod[payment.method];

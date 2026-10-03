@@ -2,6 +2,7 @@ export type CashRegisterStatus = "open" | "closed";
 
 export interface CashRegister {
   id: string;
+  storeId: string;
   businessDate: string;
   status: CashRegisterStatus;
   openedAt: Date;
@@ -11,4 +12,4 @@ export interface CashRegister {
   netCents: number;
 }
 
-export interface OpenCashRegisterInput { businessDate: string; }
+export interface OpenCashRegisterInput { businessDate: string; storeId: string; }

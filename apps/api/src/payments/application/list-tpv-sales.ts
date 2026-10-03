@@ -7,6 +7,7 @@ import { PaymentEntitySchema } from "../infrastructure/persistence/payment-entit
 export interface TpvSale {
   id: string;
   source: "repair" | "online";
+  repairOrderId: string | null;
   amountCents: number;
   status: "paid" | "refunded";
   method: string;
@@ -22,19 +23,22 @@ export class ListTpvSales {
   @InjectDataSource()
   private readonly dataSource!: DataSource;
 
-  async execute(): Promise<readonly TpvSale[]> {
-    const [repairPayments, onlineOrders] = await Promise.all([
-      this.dataSource.getRepository(PaymentEntitySchema).find({ order: { createdAt: "DESC" } }),
-      this.dataSource.getRepository(EcommerceOrderEntitySchema).find({
+  async execute(storeIds?: readonly string[] | null): Promise<readonly TpvSale[]> {
+    if (storeIds?.length === 0) return [];
+    const repairPaymentsPromise = storeIds
+      ? this.dataSource.getRepository(PaymentEntitySchema).createQueryBuilder("payment").innerJoin("repair_orders", "repair", "repair.id = payment.repair_order_id").where("repair.store_id IN (:...storeIds)", { storeIds }).orderBy("payment.created_at", "DESC").getMany()
+      : this.dataSource.getRepository(PaymentEntitySchema).find({ order: { createdAt: "DESC" } });
+    const onlineOrdersPromise = storeIds ? Promise.resolve([]) : this.dataSource.getRepository(EcommerceOrderEntitySchema).find({
         where: [{ status: "paid" }, { status: "preparing" }, { status: "shipped" }, { status: "delivered" }, { status: "refunded" }],
         order: { createdAt: "DESC" }
-      })
-    ]);
+      });
+    const [repairPayments, onlineOrders] = await Promise.all([repairPaymentsPromise, onlineOrdersPromise]);
 
     return [
       ...repairPayments.map((payment): TpvSale => ({
         id: payment.id,
         source: "repair",
+        repairOrderId: payment.repairOrderId,
         amountCents: payment.amountCents,
         status: payment.status,
         method: payment.method,
@@ -46,6 +50,7 @@ export class ListTpvSales {
       ...onlineOrders.map((order): TpvSale => ({
         id: order.id,
         source: "online",
+        repairOrderId: null,
         amountCents: order.totalCents,
         status: order.status === "refunded" ? "refunded" : "paid",
         method: "online",

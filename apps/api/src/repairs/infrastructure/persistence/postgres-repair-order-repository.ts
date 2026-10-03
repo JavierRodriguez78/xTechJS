@@ -29,8 +29,10 @@ export class PostgresRepairOrderRepository implements RepairOrderRepository {
   }
 
   async findPage(options: RepairOrderListOptions): Promise<RepairOrderPage> {
+    if (options.storeIds?.length === 0) return { items: [], total: 0, page: options.page, pageSize: options.pageSize };
     const query = this.dataSource.getRepository(RepairOrderEntitySchema).createQueryBuilder("repair");
-    if (options.storeId) query.andWhere("repair.store_id = :storeId", { storeId: options.storeId });
+    if (options.storeIds) query.andWhere("repair.store_id IN (:...storeIds)", { storeIds: options.storeIds });
+    else if (options.storeId) query.andWhere("repair.store_id = :storeId", { storeId: options.storeId });
     if (options.query) {
       query.andWhere("(repair.brand ILIKE :query OR repair.model ILIKE :query OR repair.device_type ILIKE :query OR repair.serial_number ILIKE :query OR repair.reported_issue ILIKE :query)", { query: `%${options.query}%` });
     }

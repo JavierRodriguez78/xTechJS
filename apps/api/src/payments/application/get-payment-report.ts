@@ -27,10 +27,10 @@ export interface PaymentReport {
 export class GetPaymentReport {
   constructor(@Qualifier("paymentRepository") private readonly repository: PaymentRepository) {}
 
-  async execute(from: string, to: string): Promise<PaymentReport> {
+  async execute(from: string, to: string, storeIds?: readonly string[] | null): Promise<PaymentReport> {
     const start = new Date(`${from}T00:00:00.000Z`);
     const end = new Date(`${to}T23:59:59.999Z`);
-    const rows = await this.repository.findReportRows(start, end);
+    const rows = await this.repository.findReportRows(start, end, storeIds);
     const payments = rows.map((row) => row.payment);
     const grouped = new Map<string, PaymentReportDay>();
     const byTechnician: PaymentReport["byTechnician"] = {};

@@ -17,7 +17,7 @@ test("a chat message is persisted and broadcast when the repair order exists", a
     async create(input) { saved.push(input); return { ...input, createdAt: new Date() }; },
     async listByRepairOrder() { return []; }
   };
-  const repairs = { async findById() { return { id: "repair-1", customerId: "customer-1" }; } } as unknown as RepairOrderRepository;
+  const repairs = { async findById() { return { id: "repair-1", storeId: "store-1", customerId: "customer-1" }; } } as unknown as RepairOrderRepository;
   const sockets = fakeSockets();
 
   const message = await new SendChatMessage(chatMessages, repairs, sockets as never).execute({

@@ -113,3 +113,17 @@ test("session store rejects customers and handles unassigned staff", async () =>
   await controller.sessionStore({ user: { role: "customer", storeId: "store-1" } } as unknown as FastifyRequest, reply);
   assert.equal(reply.status, 403);
 });
+
+test("accessible store catalog is restricted to token claims, while global admins see active stores", async () => {
+  const { controller, reply } = setup();
+  const calls: unknown[][] = [];
+  Object.defineProperty(controller, "dataSource", { value: { query: async (_sql: string, params?: unknown[]) => { calls.push(params ?? []); return params ? [{ id: "store-a" }, { id: "store-b" }] : [{ id: "store-a" }, { id: "store-b" }, { id: "store-c" }]; } }, configurable: true });
+  const scoped = await controller.accessibleStores({ user: { role: "technician", storeAccess: ["store-a", "store-b"] } } as unknown as FastifyRequest, reply);
+  assert.deepEqual(scoped, [{ id: "store-a" }, { id: "store-b" }]);
+  assert.deepEqual(calls[0], [["store-a", "store-b"]]);
+  const global = await controller.accessibleStores({ user: { role: "admin", storeAccess: null, defaultStoreId: "store-a" } } as unknown as FastifyRequest, reply);
+  assert.equal((global as unknown[]).length, 3);
+  assert.deepEqual(calls[1], []);
+  await controller.accessibleStores({ user: { role: "customer", storeAccess: [] } } as unknown as FastifyRequest, reply);
+  assert.equal(reply.status, 403);
+});

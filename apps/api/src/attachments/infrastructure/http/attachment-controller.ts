@@ -14,6 +14,7 @@ import { PERMISSIONS } from "../../../users/domain/permission.js";
 import { PermissionRequired } from "../../../users/infrastructure/http/permission-guard.js";
 import type { AuthTokenPayload } from "../../../users/infrastructure/http/auth-routes.js";
 import { GetRepairOrderQuery } from "../../../repairs/application/cqrs/repair-messages.js";
+import { canAccessStore, getStoreAccess } from "../../../users/domain/store-access.js";
 
 const idSchema = z.string().uuid();
 
@@ -29,10 +30,11 @@ export class AttachmentController {
 
   private async canAccessRepair(request: FastifyRequest, repairOrderId: string): Promise<boolean> {
     const user = request.user as AuthTokenPayload;
-    if (user.role !== "technician") return true;
-    if (!user.storeId) return false;
+    const access = getStoreAccess(user);
+    if (access === null) return true;
+    if (!access.length) return false;
     const repair = await this.queryBus.execute(new GetRepairOrderQuery(repairOrderId));
-    return repair?.storeId === user.storeId;
+    return Boolean(repair && canAccessStore(user, repair.storeId));
   }
 
   @Get("/:id/attachments")
