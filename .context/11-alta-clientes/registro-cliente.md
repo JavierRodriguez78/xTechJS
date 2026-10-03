@@ -204,6 +204,16 @@ Makefile, `make mail-up`) en paralelo a Postgres/Redis.
   de cada cliente (pendiente/completado) y un botón de "Reenviar invitación" para
   los que sigan `pending`.
 
+## 7bis. Actualización: direcciones estructuradas y datos ya precargados
+
+**Actualización:** la dirección de facturación aquí descrita y el formulario
+de autorregistro pasan a seguir el modelo definido en
+`18-gestion-clientes/gestion-clientes.md`: direcciones estructuradas
+reutilizando `AddressFields.vue` (igual que en `Store` y en el empleado), y
+el formulario de autorregistro solo pide lo que el staff no haya introducido
+ya en el alta, en vez de volver a pedir todos los datos de facturación desde
+cero. Consultar ese documento antes de implementar los puntos 2 a 6 de aquí.
+
 ## 7. Petición para ChatGPT
 
 1. Añadir el servicio `mailhog` a `compose.yaml` y las variables SMTP a la API,

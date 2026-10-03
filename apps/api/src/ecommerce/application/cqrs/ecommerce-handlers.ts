@@ -5,8 +5,9 @@ import type { EcommerceOrder, EcommerceProduct } from "../../domain/ecommerce.js
 import type { TradeInRequest } from "../../domain/trade-in-request.js";
 import { EcommerceService, type EcommerceOrderPage, type EcommerceOrderView, type ProductPage } from "../ecommerce-service.js";
 import { RegisterShopCustomer } from "../register-shop-customer.js";
+import { ShopRegistrationVerification } from "../shop-registration-verification.js";
 import { TradeInService } from "../trade-in-service.js";
-import { CompleteTradeInRequestCommand, CreateEcommerceProductCommand, CreateTradeInRequestCommand, DecideTradeInRequestCommand, GetCustomerEcommerceOrderQuery, GetEcommerceProductQuery, GetOwnTradeInRequestQuery, GetPublicProductQuery, GetTradeInRequestQuery, ListCustomerEcommerceOrdersQuery, ListEcommerceOrdersQuery, ListEcommerceProductsQuery, ListOwnTradeInRequestsQuery, ListPublicProductsQuery, ListTradeInRequestsQuery, PlaceEcommerceOrderCommand, ProposeTradeInRequestCommand, RegisterShopCustomerCommand, ReviewTradeInRequestCommand, SubmitTradeInRequestCommand, UpdateEcommerceOrderStatusCommand, UpdateEcommerceProductCommand } from "./ecommerce-messages.js";
+import { CompleteTradeInRequestCommand, CreateEcommerceProductCommand, CreateTradeInRequestCommand, DecideTradeInRequestCommand, GetCustomerEcommerceOrderQuery, GetEcommerceProductQuery, GetOwnTradeInRequestQuery, GetPublicProductQuery, GetShopRegistrationVerificationQuery, GetTradeInRequestQuery, ListCustomerEcommerceOrdersQuery, ListEcommerceOrdersQuery, ListEcommerceProductsQuery, ListOwnTradeInRequestsQuery, ListPublicProductsQuery, ListTradeInRequestsQuery, PlaceEcommerceOrderCommand, ProposeTradeInRequestCommand, RegisterShopCustomerCommand, RequestShopRegistrationVerificationCommand, ReviewTradeInRequestCommand, SubmitTradeInRequestCommand, UpdateEcommerceOrderStatusCommand, UpdateEcommerceProductCommand } from "./ecommerce-messages.js";
 
 @Service()
 @CommandHandler(RegisterShopCustomerCommand)
@@ -14,8 +15,20 @@ export class RegisterShopCustomerHandler implements ICommandHandler<RegisterShop
   constructor(private readonly useCase: RegisterShopCustomer) {}
 
   execute(command: RegisterShopCustomerCommand): Promise<Customer> {
-    return this.useCase.execute(command.input, command.ipAddress);
+    return this.useCase.execute(command.input, command.ipAddress, command.verificationToken);
   }
+}
+
+@Service() @CommandHandler(RequestShopRegistrationVerificationCommand)
+export class RequestShopRegistrationVerificationHandler implements ICommandHandler<RequestShopRegistrationVerificationCommand, void> {
+  constructor(private readonly verification: ShopRegistrationVerification) {}
+  execute(command: RequestShopRegistrationVerificationCommand): Promise<void> { return this.verification.request(command.email); }
+}
+
+@Service() @QueryHandler(GetShopRegistrationVerificationQuery)
+export class GetShopRegistrationVerificationHandler implements IQueryHandler<GetShopRegistrationVerificationQuery, string | undefined> {
+  constructor(private readonly verification: ShopRegistrationVerification) {}
+  execute(query: GetShopRegistrationVerificationQuery): Promise<string | undefined> { return this.verification.verify(query.token); }
 }
 
 @Service() @QueryHandler(ListPublicProductsQuery)

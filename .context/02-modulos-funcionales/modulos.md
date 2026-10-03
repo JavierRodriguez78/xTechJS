@@ -14,6 +14,12 @@
   cliente queda en estado `pending` hasta completar el registro; el staff puede
   reenviar la invitación si el token caduca. Especificación completa en
   `11-alta-clientes/registro-cliente.md`.
+- **Direcciones de contacto y facturación estructuradas** (calle, código
+  postal, ciudad, provincia, país), reutilizando el mismo selector ya usado
+  en tienda y empleado, con opción de "usar la misma dirección para
+  facturación"; el formulario de autorregistro solo pide los datos que el
+  staff no haya introducido ya. Especificación completa en
+  `18-gestion-clientes/gestion-clientes.md`.
 - Histórico de interacciones y reparaciones por cliente.
 - Segmentación/etiquetado de clientes (particular, empresa, recurrente, etc.).
 - Comunicaciones: registro de notificaciones enviadas (email, y opcionalmente SMS/WhatsApp) sobre cambios de estado de sus equipos.
@@ -58,7 +64,7 @@
 - Trazabilidad: qué reparación consumió qué material y en qué cantidad.
 
 ## Tienda online (ecommerce) y compra de equipos a particulares
-- **Autorregistro público sin invitación previa**: cualquier visitante puede darse de alta por su cuenta (email, contraseña, aceptación LOPD/RGPD) para poder comprar, sin necesidad de que el staff lo haya dado de alta antes por una reparación. Reutiliza el mismo `Customer` y el mismo login de `/customer` ya existentes.
+- **Autorregistro público sin invitación previa, con verificación de email obligatoria**: cualquier visitante puede darse de alta por su cuenta en tres pasos (solicitud del email → verificación del enlace recibido → contraseña, datos y aceptación LOPD/RGPD) para poder comprar, sin necesidad de que el staff lo haya dado de alta antes por una reparación. No se crea ningún registro de cliente hasta verificar el email. Reutiliza el mismo `Customer` y el mismo login de `/customer` ya existentes. Especificación completa en `18-gestion-clientes/gestion-clientes.md` sección 3.
 - **Catálogo público de productos a la venta**: consolas, consolas retro, juegos, móviles reparados/reacondicionados y accesorios, con fotos, condición (nuevo/reacondicionado/usado) y precio. Carrito, checkout y pago online (con una pasarela a decidir; arranca en modo manual/transferencia hasta integrarla).
 - **Pedidos online**: historial de pedidos del cliente en su portal, descuento de stock al confirmar, factura generada y enviada automáticamente igual que en el TPV interno.
 - **"Vende tu equipo" (valoración de compra a particulares)**: el cliente envía fotos y documentación de una consola, móvil, tablet o juego que quiere vender; el staff revisa, envía una propuesta económica y el cliente la acepta o rechaza. Al completarse, se registra el pago al cliente y, opcionalmente, el equipo pasa a formar parte del catálogo de venta.

@@ -46,8 +46,9 @@ export class GetPaymentPdf {
       if (receipt.payment.rectificationReason) document.text(`Motivo: ${receipt.payment.rectificationReason}`);
       document.moveDown().fontSize(11).text("Destinatario");
       document.fontSize(10).text(receipt.customer.billingName || receipt.customer.displayName);
-      if (receipt.customer.taxId) document.text(`NIF/CIF: ${receipt.customer.taxId}`);
-      const fiscalAddress = [receipt.customer.billingAddress, receipt.customer.billingPostalCode, receipt.customer.billingCity, receipt.customer.billingProvince].filter(Boolean).join(", ");
+        const billingTaxId = receipt.customer.billingTaxId || receipt.customer.taxId;
+        if (billingTaxId) document.fontSize(10).text(`NIF/CIF: ${billingTaxId}`);
+      const fiscalAddress = [receipt.customer.billingAddressStreet, receipt.customer.billingAddressPostalCode, receipt.customer.billingAddressCity, receipt.customer.billingAddressProvince, receipt.customer.billingAddressCountry].filter(Boolean).join(", ");
       if (fiscalAddress) document.text(`Domicilio fiscal: ${fiscalAddress}`);
       if (receipt.customer.email) document.text(`Email: ${receipt.customer.email}`);
       document.moveDown().fontSize(10).text(`Reparacion: ${receipt.repair.brand} ${receipt.repair.model} (${receipt.repair.deviceType})`);

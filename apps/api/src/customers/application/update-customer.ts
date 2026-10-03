@@ -13,9 +13,21 @@ export class UpdateCustomer {
       displayName: input.displayName?.trim(),
       email: input.email?.trim().toLowerCase(),
       phone: input.phone?.trim(),
-      address: input.address?.trim(),
+      addressStreet: input.addressStreet?.trim(),
+      addressPostalCode: input.addressPostalCode?.trim(),
+      addressCity: input.addressCity?.trim(),
+      addressProvince: input.addressProvince?.trim(),
+      addressCountry: input.addressCountry?.trim(),
       taxId: input.taxId?.trim().toUpperCase(),
+      customerType: input.customerType,
       internalNotes: input.internalNotes?.trim(),
+      billingName: input.billingName?.trim(),
+      billingTaxId: input.billingTaxId?.trim().toUpperCase(),
+      billingAddressStreet: input.billingAddressStreet?.trim(),
+      billingAddressPostalCode: input.billingAddressPostalCode?.trim(),
+      billingAddressCity: input.billingAddressCity?.trim(),
+      billingAddressProvince: input.billingAddressProvince?.trim(),
+      billingAddressCountry: input.billingAddressCountry?.trim(),
       tags: input.tags ? [...new Set(input.tags.map((tag) => tag.trim().toLowerCase()).filter(Boolean))] : undefined
     });
   }

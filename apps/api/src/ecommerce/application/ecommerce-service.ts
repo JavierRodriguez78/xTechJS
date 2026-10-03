@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { Service } from "@xtaskjs/core";
 import { DataSource, InjectDataSource } from "@xtaskjs/typeorm";
 import { Traceable } from "../../shared/infrastructure/observability/trace.js";
+import { CustomerEntitySchema } from "../../customers/infrastructure/persistence/customer-entity.js";
 import type { EcommerceCategory, EcommerceCondition, EcommerceOrder, EcommerceOrderLine, EcommerceOrderStatus, EcommerceProduct, ShippingAddress } from "../domain/ecommerce.js";
 import { EcommerceOrderEntitySchema, EcommerceOrderLineEntitySchema, EcommerceProductEntitySchema } from "../infrastructure/persistence/ecommerce-entity.js";
 
@@ -11,9 +12,22 @@ export interface ManagedProductListOptions { query?: string; category?: Ecommerc
 export interface EcommerceOrderPage { items: readonly EcommerceOrderView[]; total: number; page: number; pageSize: number; }
 export interface EcommerceOrderListOptions { status?: EcommerceOrderStatus; page: number; pageSize: number; }
 export interface CreateProductInput { sku: string; title: string; description: string; category: EcommerceCategory; condition: EcommerceCondition; priceCents: number; stockQuantity: number; published?: boolean; }
-export interface PlaceOrderInput { lines: readonly { productId: string; quantity: number }[]; shippingAddress: ShippingAddress; }
+export interface PlaceOrderInput {
+  lines: readonly { productId: string; quantity: number }[];
+  shippingAddress: ShippingAddress;
+  customerType?: "individual" | "business";
+  billingName?: string;
+  billingTaxId?: string;
+  billingAddressStreet?: string;
+  billingAddressPostalCode?: string;
+  billingAddressCity?: string;
+  billingAddressProvince?: string;
+  billingAddressCountry?: string;
+  useContactAddressForBilling?: boolean;
+}
 export interface EcommerceOrderView extends EcommerceOrder { lines: readonly EcommerceOrderLine[]; }
 export class ProductStockUnavailableError extends Error {}
+export class EcommerceCustomerNotFoundError extends Error {}
 export class EcommerceOrderTransitionError extends Error {}
 
 @Traceable("EcommerceService")
@@ -57,6 +71,32 @@ export class EcommerceService {
     const quantities = new Map<string, number>();
     for (const line of input.lines) quantities.set(line.productId, (quantities.get(line.productId) ?? 0) + line.quantity);
     return this.dataSource.transaction(async (manager) => {
+      const hasBillingInput = input.customerType !== undefined || input.useContactAddressForBilling || [input.billingName, input.billingTaxId, input.billingAddressStreet, input.billingAddressPostalCode, input.billingAddressCity, input.billingAddressProvince, input.billingAddressCountry].some((value) => value !== undefined);
+      if (hasBillingInput) {
+        const customerRepository = manager.getRepository(CustomerEntitySchema);
+        const customer = await customerRepository.findOneBy({ id: customerId });
+        if (!customer) throw new EcommerceCustomerNotFoundError("Customer not found");
+        const billing = input.useContactAddressForBilling ? {
+          billingAddressStreet: customer.addressStreet ?? null,
+          billingAddressPostalCode: customer.addressPostalCode ?? null,
+          billingAddressCity: customer.addressCity ?? null,
+          billingAddressProvince: customer.addressProvince ?? null,
+          billingAddressCountry: customer.addressCountry ?? null
+        } : {
+          billingAddressStreet: input.billingAddressStreet,
+          billingAddressPostalCode: input.billingAddressPostalCode,
+          billingAddressCity: input.billingAddressCity,
+          billingAddressProvince: input.billingAddressProvince,
+          billingAddressCountry: input.billingAddressCountry
+        };
+        const updates = {
+          ...(input.customerType === undefined ? {} : { customerType: input.customerType }),
+          ...(input.billingName === undefined ? {} : { billingName: input.billingName.trim() || null }),
+          ...(input.billingTaxId === undefined ? {} : { billingTaxId: input.billingTaxId.trim().toUpperCase() || null }),
+          ...(input.useContactAddressForBilling ? billing : Object.fromEntries(Object.entries(billing).filter(([, value]) => value !== undefined && value !== null && String(value).trim() !== "")))
+        };
+        if (Object.keys(updates).length) await customerRepository.update(customerId, updates);
+      }
       const productRepository = manager.getRepository(EcommerceProductEntitySchema);
       const snapshots: EcommerceOrderLine[] = [];
       let totalCents = 0;

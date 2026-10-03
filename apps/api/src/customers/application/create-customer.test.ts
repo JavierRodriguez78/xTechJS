@@ -12,8 +12,21 @@ class TestCustomerRepository implements CustomerRepository {
       displayName: input.displayName,
       email: input.email ?? null,
       phone: input.phone ?? null,
-      address: input.address ?? null,
+      address: null,
+      addressStreet: input.addressStreet ?? null,
+      addressPostalCode: input.addressPostalCode ?? null,
+      addressCity: input.addressCity ?? null,
+      addressProvince: input.addressProvince ?? null,
+      addressCountry: input.addressCountry ?? null,
       taxId: input.taxId ?? null,
+      customerType: input.customerType ?? null,
+      billingName: input.billingName ?? null,
+      billingTaxId: input.billingTaxId ?? null,
+      billingAddressStreet: input.billingAddressStreet ?? null,
+      billingAddressPostalCode: input.billingAddressPostalCode ?? null,
+      billingAddressCity: input.billingAddressCity ?? null,
+      billingAddressProvince: input.billingAddressProvince ?? null,
+      billingAddressCountry: input.billingAddressCountry ?? null,
       internalNotes: input.internalNotes ?? null,
       registrationStatus: "pending",
       acquisitionChannel: input.acquisitionChannel ?? "staff",
@@ -46,8 +59,21 @@ class TestCustomerRepository implements CustomerRepository {
       displayName: input.displayName ?? "Marta Ruiz",
       email: input.email ?? null,
       phone: input.phone ?? null,
-      address: input.address ?? null,
+      address: null,
+      addressStreet: input.addressStreet ?? null,
+      addressPostalCode: input.addressPostalCode ?? null,
+      addressCity: input.addressCity ?? null,
+      addressProvince: input.addressProvince ?? null,
+      addressCountry: input.addressCountry ?? null,
       taxId: input.taxId ?? null,
+      customerType: input.customerType ?? null,
+      billingName: input.billingName ?? null,
+      billingTaxId: input.billingTaxId ?? null,
+      billingAddressStreet: input.billingAddressStreet ?? null,
+      billingAddressPostalCode: input.billingAddressPostalCode ?? null,
+      billingAddressCity: input.billingAddressCity ?? null,
+      billingAddressProvince: input.billingAddressProvince ?? null,
+      billingAddressCountry: input.billingAddressCountry ?? null,
       internalNotes: input.internalNotes ?? null,
       registrationStatus: "pending",
       acquisitionChannel: input.acquisitionChannel ?? "staff",
@@ -86,4 +112,24 @@ test("customer updates normalize contact data and tags", async () => {
 
   assert.equal(customer?.email, "marta@example.com");
   assert.deepEqual(customer?.tags, ["vip"]);
+});
+
+test("customer creation normalizes structured contact and billing details", async () => {
+  const customer = await new CreateCustomer(new TestCustomerRepository()).execute({
+    displayName: "Ada Cliente",
+    email: "ada@example.test",
+    customerType: "business",
+    addressStreet: "  Calle Uno 1 ",
+    addressCity: " Madrid ",
+    billingName: " Empresa Ada ",
+    billingTaxId: " x1234 ",
+    billingAddressStreet: " Avenida Dos 4 "
+  });
+
+  assert.equal(customer.addressStreet, "Calle Uno 1");
+  assert.equal(customer.addressCity, "Madrid");
+  assert.equal(customer.customerType, "business");
+  assert.equal(customer.billingName, "Empresa Ada");
+  assert.equal(customer.billingTaxId, "X1234");
+  assert.equal(customer.billingAddressStreet, "Avenida Dos 4");
 });

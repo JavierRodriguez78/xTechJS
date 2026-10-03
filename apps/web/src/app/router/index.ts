@@ -9,6 +9,8 @@ declare module "vue-router" {
 const routes: RouteRecordRaw[] = [
   { path: "/shop", name: "shop.catalog", component: () => import("../../features/ecommerce/views/ShopCatalogView.vue") },
   { path: "/shop/register", name: "shop.register", component: () => import("../../features/ecommerce/views/ShopRegistrationView.vue") },
+  { path: "/shop/register/verify", name: "shop.register.verify", component: () => import("../../features/ecommerce/views/ShopRegistrationVerifyView.vue") },
+  { path: "/shop/register/complete", name: "shop.register.complete", component: () => import("../../features/ecommerce/views/ShopRegistrationCompleteView.vue") },
   { path: "/shop/products/:id", name: "shop.product", component: () => import("../../features/ecommerce/views/ShopProductView.vue") },
   { path: "/shop/cart", name: "shop.cart", component: () => import("../../features/ecommerce/views/ShopCartView.vue") },
   { path: "/shop/checkout", name: "shop.checkout", component: () => import("../../features/ecommerce/views/ShopCheckoutView.vue") },

@@ -9,7 +9,7 @@ export interface PaymentReceipt {
   invoiceNumber: number;
   payment: Payment;
   repair: { id: string; deviceType: string; brand: string; model: string; reportedIssue: string };
-  customer: { displayName: string; email: string | null; taxId: string | null; billingName: string | null; billingAddress: string | null; billingPostalCode: string | null; billingCity: string | null; billingProvince: string | null };
+  customer: { displayName: string; email: string | null; taxId: string | null; billingName: string | null; billingTaxId: string | null; billingAddressStreet: string | null; billingAddressPostalCode: string | null; billingAddressCity: string | null; billingAddressProvince: string | null; billingAddressCountry: string | null };
   issuedAt: Date;
 }
 

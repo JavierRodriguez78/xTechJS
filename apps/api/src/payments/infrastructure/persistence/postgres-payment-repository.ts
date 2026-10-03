@@ -55,7 +55,7 @@ export class PostgresPaymentRepository implements PaymentRepository {
   }
 
   async findReceiptData(id: string): Promise<PaymentReceiptData | undefined> {
-    const rows = await this.dataSource.query(`SELECT p.*, r.device_type, r.brand, r.model, r.reported_issue, c.display_name, c.email, c.tax_id, c.billing_name, c.billing_address, c.billing_postal_code, c.billing_city, c.billing_province FROM payments p JOIN repair_orders r ON r.id = p.repair_order_id JOIN customers c ON c.id = r.customer_id WHERE p.id = $1`, [id]);
+    const rows = await this.dataSource.query(`SELECT p.*, r.device_type, r.brand, r.model, r.reported_issue, c.display_name, c.email, c.tax_id, c.billing_name, c.billing_tax_id, c.billing_address_street, c.billing_address_postal_code, c.billing_address_city, c.billing_address_province, c.billing_address_country FROM payments p JOIN repair_orders r ON r.id = p.repair_order_id JOIN customers c ON c.id = r.customer_id WHERE p.id = $1`, [id]);
     const row = rows[0] as Record<string, unknown> | undefined;
     if (!row) return undefined;
     return {
@@ -63,9 +63,10 @@ export class PostgresPaymentRepository implements PaymentRepository {
       repair: { id: String(row.repair_order_id), deviceType: String(row.device_type), brand: String(row.brand), model: String(row.model), reportedIssue: String(row.reported_issue) },
       customer: {
         displayName: String(row.display_name), email: row.email ? String(row.email) : null, taxId: row.tax_id ? String(row.tax_id) : null,
-        billingName: row.billing_name ? String(row.billing_name) : null, billingAddress: row.billing_address ? String(row.billing_address) : null,
-        billingPostalCode: row.billing_postal_code ? String(row.billing_postal_code) : null, billingCity: row.billing_city ? String(row.billing_city) : null,
-        billingProvince: row.billing_province ? String(row.billing_province) : null
+        billingName: row.billing_name ? String(row.billing_name) : null, billingTaxId: row.billing_tax_id ? String(row.billing_tax_id) : null,
+        billingAddressStreet: row.billing_address_street ? String(row.billing_address_street) : null, billingAddressPostalCode: row.billing_address_postal_code ? String(row.billing_address_postal_code) : null,
+        billingAddressCity: row.billing_address_city ? String(row.billing_address_city) : null, billingAddressProvince: row.billing_address_province ? String(row.billing_address_province) : null,
+        billingAddressCountry: row.billing_address_country ? String(row.billing_address_country) : null
       }
     };
   }

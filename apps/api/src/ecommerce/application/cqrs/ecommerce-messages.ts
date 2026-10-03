@@ -5,8 +5,10 @@ import type { RegisterShopCustomerInput } from "../register-shop-customer.js";
 import type { CreateTradeInRequestInput } from "../trade-in-service.js";
 
 export class RegisterShopCustomerCommand {
-  constructor(public readonly input: RegisterShopCustomerInput, public readonly ipAddress: string | null) {}
+  constructor(public readonly input: RegisterShopCustomerInput, public readonly ipAddress: string | null, public readonly verificationToken: string) {}
 }
+export class RequestShopRegistrationVerificationCommand { constructor(public readonly email: string) {} }
+export class GetShopRegistrationVerificationQuery { constructor(public readonly token: string) {} }
 
 export class ListPublicProductsQuery { constructor(public readonly options: ProductListOptions) {} }
 export class GetPublicProductQuery { constructor(public readonly id: string) {} }

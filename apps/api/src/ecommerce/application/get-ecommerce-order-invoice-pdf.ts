@@ -37,7 +37,7 @@ export class GetEcommerceOrderInvoicePdf {
       document.moveDown().fontSize(11).text("Destinatario");
       document.fontSize(10).text(customer.billingName || customer.displayName);
       if (customer.billingTaxId || customer.taxId) document.text(`NIF/CIF: ${customer.billingTaxId || customer.taxId}`);
-      const address = [customer.billingAddress, customer.billingPostalCode, customer.billingCity, customer.billingProvince].filter(Boolean).join(", ");
+      const address = [customer.billingAddressStreet, customer.billingAddressPostalCode, customer.billingAddressCity, customer.billingAddressProvince, customer.billingAddressCountry].filter(Boolean).join(", ");
       if (address) document.text(`Domicilio fiscal: ${address}`);
       if (customer.email) document.text(`Email: ${customer.email}`);
       document.moveDown().fontSize(11).text("Productos");

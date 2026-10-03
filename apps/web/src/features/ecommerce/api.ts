@@ -49,6 +49,39 @@ export interface ShippingAddress {
   country: string;
 }
 
+export interface CustomerBillingProfile {
+  displayName: string;
+  email: string | null;
+  taxId: string | null;
+  customerType: "individual" | "business" | null;
+  addressStreet: string | null;
+  addressPostalCode: string | null;
+  addressCity: string | null;
+  addressProvince: string | null;
+  addressCountry: string | null;
+  billingName: string | null;
+  billingTaxId: string | null;
+  billingAddressStreet: string | null;
+  billingAddressPostalCode: string | null;
+  billingAddressCity: string | null;
+  billingAddressProvince: string | null;
+  billingAddressCountry: string | null;
+}
+
+export interface ShopCheckoutInput {
+  lines: { productId: string; quantity: number }[];
+  shippingAddress: ShippingAddress;
+  customerType?: "individual" | "business";
+  billingName?: string;
+  billingTaxId?: string;
+  billingAddressStreet?: string;
+  billingAddressPostalCode?: string;
+  billingAddressCity?: string;
+  billingAddressProvince?: string;
+  billingAddressCountry?: string;
+  useContactAddressForBilling?: boolean;
+}
+
 export interface ShopOrder {
   id: string;
   status: "pending_payment" | "paid" | "preparing" | "shipped" | "delivered" | "cancelled" | "refunded";
@@ -141,7 +174,7 @@ export function listShopProducts(options: ShopProductListOptions = {}): Promise<
 export const getShopProduct = (id: string) => request<ShopProduct>(`/api/shop/products/${id}`);
 export const getShopProductAttachments = (id: string) => request<ShopAttachment[]>(`/api/shop/products/${id}/attachments`);
 export const shopProductAttachmentUrl = (productId: string, attachmentId: string) => `/api/shop/products/${encodeURIComponent(productId)}/attachments/${encodeURIComponent(attachmentId)}`;
-export async function placeShopOrder(accessToken: string, input: { lines: { productId: string; quantity: number }[]; shippingAddress: ShippingAddress }): Promise<ShopOrder> {
+export async function placeShopOrder(accessToken: string, input: ShopCheckoutInput): Promise<ShopOrder> {
   const response = await fetch("/api/customer/orders", { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${accessToken}` }, body: JSON.stringify(input) });
   if (!response.ok) throw new Error((await response.json().catch(() => ({ message: "No se pudo registrar el pedido." }))).message);
   return response.json() as Promise<ShopOrder>;
@@ -153,6 +186,7 @@ async function customerRequest<T>(accessToken: string, url: string, init?: Reque
   return response.json() as Promise<T>;
 }
 
+export const getCustomerBillingProfile = (accessToken: string) => customerRequest<CustomerBillingProfile>(accessToken, "/api/customers/me");
 export const listCustomerShopOrders = (accessToken: string) => customerRequest<ShopOrder[]>(accessToken, "/api/customer/orders");
 export const getCustomerShopOrder = (accessToken: string, id: string) => customerRequest<ShopOrder>(accessToken, `/api/customer/orders/${encodeURIComponent(id)}`);
 export async function downloadCustomerShopInvoice(accessToken: string, id: string): Promise<Blob> {

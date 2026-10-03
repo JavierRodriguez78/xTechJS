@@ -38,11 +38,10 @@ haya creado antes.
   nuevo campo `acquisitionChannel: "staff" | "self_service"` para poder
   distinguir en informes de dónde viene cada cliente, sin que esto afecte al
   resto de la ficha de cliente ni al flujo de reparaciones.
-- Verificación de email: recomendado enviar un email de confirmación (enlace de
-  un solo uso) antes de activar la cuenta para compra, igual que ya se hace
-  para el flujo de invitación, reutilizando `@xtaskjs/mailer` y MailHog en
-  desarrollo. Puede marcarse como mejora de la fase 2 si se prefiere lanzar
-  primero sin verificación de email.
+- Verificación de email: **obligatoria antes de crear la cuenta**, mediante un
+  flujo de tres pasos que sustituye al alta en un solo paso descrita más
+  abajo. Especificación completa en `18-gestion-clientes/gestion-clientes.md`
+  sección 3 (reutiliza `@xtaskjs/mailer` y MailHog en desarrollo).
 - Los datos de facturación (NIF/CIF, dirección fiscal) pueden rellenarse en el
   propio registro o diferirse al primer checkout — ver sección 3.4. Recomendado
   diferirlos al checkout para no añadir fricción al alta.
@@ -51,13 +50,18 @@ haya creado antes.
   `/customer`; si más adelante ese mismo email pasa por una reparación, es el
   mismo registro, no uno duplicado (buscar por email antes de crear).
 
-**Estado de implementación:** el alta pública está disponible en `/shop/register`
-y envía `POST /api/shop/register` con email, contraseña, nombre, teléfono
-opcional y aceptación expresa del texto de protección de datos usado por el
-registro por invitación. El backend crea el cliente como `completed` con canal
-`self_service`, guarda la evidencia del consentimiento y rechaza emails ya
-registrados. Tras el alta, el cliente accede al login común. La verificación de
-email no está implementada; el texto legal debe validarse antes de publicarse.
+**Estado de implementación:** el alta pública usa tres pasos: `/shop/register`
+solicita el email con respuesta genérica; el enlace llega a
+`/shop/register/verify?token=...`, que valida el token sin consumirlo; y
+`/shop/register/complete?token=...` crea el `Customer` y `User` solo al finalizar
+contraseña y consentimiento. La API expone `POST /api/shop/register/request`,
+`GET /api/shop/register/verify/:token` y `POST /api/shop/register/verify/:token`.
+Los tokens se guardan con SHA-256, caducan a los 30 minutos, se invalidan al
+pedir otro enlace y se consumen en la misma transacción que crea la cuenta. Los
+emails existentes reciben la misma respuesta genérica y no generan un intento.
+El alta permite guardar direcciones estructuradas y datos fiscales opcionales;
+los campos faltantes se pueden completar en checkout. El texto legal debe
+validarse antes de publicarse.
 El portal `/customer` comparte una navegación lateral plegable y presenta
 reparaciones, pedidos y solicitudes de compraventa en tablas con acceso a sus
 detalles por ruta.
@@ -319,10 +323,12 @@ como extensible:
    integración con transportistas ni cálculo automático de gastos de envío.
    Para la v1 se asume recogida/entrega en tienda o acuerdo manual por email,
    dejando el campo `shippingAddress` ya preparado para una integración futura.
-4. **Verificación de email en el autorregistro público**: activar la cuenta al
-   instante (fricción mínima) vs. exigir confirmación por email antes de
-   poder comprar (más seguro frente a cuentas falsas). Este documento
-   recomienda diferir la verificación a la fase 2.
+4. **Verificación de email en el autorregistro público** — ~~Resuelta~~: se
+   exige verificación de email antes de crear el `Customer`/`User`, mediante
+   un flujo de tres pasos (solicitud del email → verificación del token →
+   resto de datos). Especificación completa en
+   `18-gestion-clientes/gestion-clientes.md` sección 3, que sustituye al
+   actual endpoint de un solo paso `POST /api/shop/register`.
 
 ## 6. Petición para ChatGPT
 

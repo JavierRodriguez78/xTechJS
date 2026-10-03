@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
+import AddressFields, { type AddressFieldsValue } from "../admin/views/AddressFields.vue";
 
 const params = new URLSearchParams(window.location.search);
 const token = params.get("token") ?? "";
@@ -8,20 +9,32 @@ const loading = ref(false);
 const checkingToken = ref(true);
 const errorMessage = ref("");
 const successMessage = ref("");
+const registration = ref<Record<string, string | null> | null>(null);
+const editing = ref<Record<string, boolean>>({});
 const form = ref({
+  displayName: "",
+  phone: "",
+  taxId: "",
+  customerType: "" as "" | "individual" | "business",
   password: "",
   passwordConfirm: "",
   billingName: "",
   billingTaxId: "",
-  billingAddress: "",
-  billingPostalCode: "",
-  billingCity: "",
-  billingProvince: "",
+  useContactAddressForBilling: false,
   consentAccepted: false
 });
+const contactAddress = ref<AddressFieldsValue>({ addressStreet: "", addressPostalCode: "", addressCity: "", addressProvince: "", addressCountry: "" });
+const billingAddress = ref<AddressFieldsValue>({ addressStreet: "", addressPostalCode: "", addressCity: "", addressProvince: "", addressCountry: "" });
 const customerEmail = ref("");
 
 const passwordMismatch = computed(() => form.value.password !== "" && form.value.passwordConfirm !== "" && form.value.password !== form.value.passwordConfirm);
+const contactAddressPrefilled = computed(() => Boolean(registration.value && ["addressStreet", "addressPostalCode", "addressCity", "addressProvince", "addressCountry"].some((field) => registration.value?.[field])));
+const billingAddressPrefilled = computed(() => Boolean(registration.value && ["billingAddressStreet", "billingAddressPostalCode", "billingAddressCity", "billingAddressProvince", "billingAddressCountry"].some((field) => registration.value?.[field])));
+const contactAddressReadonly = computed(() => Object.fromEntries((Object.keys(contactAddress.value) as (keyof AddressFieldsValue)[]).map((field) => [field, Boolean(registration.value?.[field] && !editing.value.contactAddress)])) as Partial<Record<keyof AddressFieldsValue, boolean>>);
+const billingAddressReadonly = computed(() => Object.fromEntries((Object.keys(billingAddress.value) as (keyof AddressFieldsValue)[]).map((field) => [field, Boolean(registration.value?.[`billing${field[0].toUpperCase()}${field.slice(1)}`] && !editing.value.billingAddress)])) as Partial<Record<keyof AddressFieldsValue, boolean>>);
+const consentText = "Autorizo el tratamiento de mis datos para la gestion de la reparacion, facturacion y comunicacion del estado del servicio.";
+function readOnly(field: string, value: string | null | undefined): boolean { return Boolean(value && !editing.value[field]); }
+function beginEdit(field: string): void { editing.value[field] = true; }
 
 async function validateToken(): Promise<void> {
   if (!token) {
@@ -35,8 +48,21 @@ async function validateToken(): Promise<void> {
     if (!response.ok) {
       throw new Error("El enlace de registro no es valido o ha caducado.");
     }
-    const payload = await response.json() as { email: string };
+    const payload = await response.json() as Record<string, string | null> & { email: string };
+    registration.value = payload;
     customerEmail.value = payload.email ?? "";
+    form.value.displayName = payload.displayName ?? "";
+    form.value.phone = payload.phone ?? "";
+    form.value.taxId = payload.taxId ?? "";
+    form.value.customerType = (payload.customerType as "individual" | "business" | null) ?? "";
+    form.value.billingName = payload.billingName ?? "";
+    form.value.billingTaxId = payload.billingTaxId ?? payload.taxId ?? "";
+    contactAddress.value = { addressStreet: payload.addressStreet ?? "", addressPostalCode: payload.addressPostalCode ?? "", addressCity: payload.addressCity ?? "", addressProvince: payload.addressProvince ?? "", addressCountry: payload.addressCountry ?? "" };
+    billingAddress.value = { addressStreet: payload.billingAddressStreet ?? "", addressPostalCode: payload.billingAddressPostalCode ?? "", addressCity: payload.billingAddressCity ?? "", addressProvince: payload.billingAddressProvince ?? "", addressCountry: payload.billingAddressCountry ?? "" };
+    const contactHasAddress = [contactAddress.value.addressStreet, contactAddress.value.addressPostalCode, contactAddress.value.addressCity, contactAddress.value.addressProvince].some(Boolean);
+    const billingHasAddress = Object.values(billingAddress.value).some(Boolean);
+    const addressesMatch = (Object.keys(contactAddress.value) as (keyof AddressFieldsValue)[]).every((field) => contactAddress.value[field] === billingAddress.value[field]);
+    form.value.useContactAddressForBilling = contactHasAddress && (!billingHasAddress || addressesMatch);
     errorMessage.value = "";
   } catch (error) {
     errorMessage.value = (error as Error).message;
@@ -73,14 +99,23 @@ async function submit(): Promise<void> {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         password: form.value.password,
+        displayName: form.value.displayName || undefined,
+        phone: form.value.phone || undefined,
+        taxId: form.value.taxId || undefined,
+        customerType: form.value.customerType || undefined,
+        ...contactAddress.value,
         billingName: form.value.billingName,
         billingTaxId: form.value.billingTaxId,
-        billingAddress: form.value.billingAddress,
-        billingPostalCode: form.value.billingPostalCode,
-        billingCity: form.value.billingCity,
-        billingProvince: form.value.billingProvince,
+        useContactAddressForBilling: form.value.useContactAddressForBilling,
+        ...(form.value.useContactAddressForBilling ? {} : {
+          billingAddressStreet: billingAddress.value.addressStreet,
+          billingAddressPostalCode: billingAddress.value.addressPostalCode,
+          billingAddressCity: billingAddress.value.addressCity,
+          billingAddressProvince: billingAddress.value.addressProvince,
+          billingAddressCountry: billingAddress.value.addressCountry
+        }),
         consentAccepted: true,
-        consentText: "Autorizo el tratamiento de mis datos para la gestion de la reparacion, facturacion y comunicacion del estado del servicio."
+        consentText
       })
     });
 
@@ -90,7 +125,8 @@ async function submit(): Promise<void> {
     }
 
     successMessage.value = "Registro completado correctamente. Ya puedes iniciar sesion en el portal del cliente.";
-    form.value = { password: "", passwordConfirm: "", billingName: "", billingTaxId: "", billingAddress: "", billingPostalCode: "", billingCity: "", billingProvince: "", consentAccepted: false };
+    form.value.password = "";
+    form.value.passwordConfirm = "";
   } catch (error) {
     errorMessage.value = (error as Error).message;
   } finally {
@@ -114,18 +150,23 @@ onMounted(() => { void validateToken(); });
 
       <form v-if="!checkingToken && !errorMessage" @submit.prevent="submit">
         <label><span>Correo electronico</span><input :value="customerEmail" disabled /></label>
+        <div class="registration-field-with-edit"><label><span>Nombre o razon social</span><input v-model="form.displayName" :readonly="readOnly('displayName', registration?.displayName)" required maxlength="160" /></label><button v-if="readOnly('displayName', registration?.displayName)" class="secondary prefilled-edit" type="button" @click="beginEdit('displayName')">Editar</button></div>
+        <div class="registration-field-with-edit"><label><span>Telefono</span><input v-model="form.phone" :readonly="readOnly('phone', registration?.phone)" maxlength="64" /></label><button v-if="readOnly('phone', registration?.phone)" class="secondary prefilled-edit" type="button" @click="beginEdit('phone')">Editar</button></div>
+        <div class="registration-field-with-edit"><label><span>Tipo de cliente</span><select v-model="form.customerType" :disabled="readOnly('customerType', registration?.customerType)"><option value="">Sin especificar</option><option value="individual">Particular</option><option value="business">Empresa</option></select></label><button v-if="readOnly('customerType', registration?.customerType)" class="secondary prefilled-edit" type="button" @click="beginEdit('customerType')">Editar</button></div>
+        <p v-if="registration?.address" class="feedback info">Dirección antigua sin estructurar: {{ registration.address }}</p>
+        <button v-if="contactAddressPrefilled && !editing.contactAddress" class="secondary prefilled-edit" type="button" @click="beginEdit('contactAddress')">Editar dirección de contacto</button>
+        <AddressFields v-model="contactAddress" legend="Dirección de contacto" :public-catalog="true" :readonly-fields="contactAddressReadonly" />
         <label><span>Contraseña</span><input v-model="form.password" type="password" autocomplete="new-password" required minlength="12" /></label>
         <label><span>Confirmar contraseña</span><input v-model="form.passwordConfirm" type="password" autocomplete="new-password" required minlength="12" /></label>
-        <label><span>Nombre fiscal / razon social</span><input v-model="form.billingName" required maxlength="160" /></label>
-        <label><span>NIF / CIF / DNI</span><input v-model="form.billingTaxId" required maxlength="64" /></label>
-        <label><span>Direccion fiscal</span><input v-model="form.billingAddress" required maxlength="500" /></label>
-        <label><span>Codigo postal</span><input v-model="form.billingPostalCode" required maxlength="20" /></label>
-        <label><span>Poblacion</span><input v-model="form.billingCity" required maxlength="120" /></label>
-        <label><span>Provincia</span><input v-model="form.billingProvince" required maxlength="120" /></label>
+        <div class="registration-field-with-edit"><label><span>Nombre fiscal / razon social</span><input v-model="form.billingName" :readonly="readOnly('billingName', registration?.billingName)" :required="!registration?.billingName || editing.billingName" maxlength="160" /></label><button v-if="readOnly('billingName', registration?.billingName)" class="secondary prefilled-edit" type="button" @click="beginEdit('billingName')">Editar</button></div>
+        <div class="registration-field-with-edit"><label><span>NIF / CIF / DNI</span><input v-model="form.billingTaxId" :readonly="readOnly('billingTaxId', registration?.billingTaxId || registration?.taxId)" :required="!registration?.billingTaxId && !registration?.taxId || editing.billingTaxId" maxlength="64" /></label><button v-if="readOnly('billingTaxId', registration?.billingTaxId || registration?.taxId)" class="secondary prefilled-edit" type="button" @click="beginEdit('billingTaxId')">Editar</button></div>
+        <label v-if="contactAddressPrefilled || billingAddressPrefilled" class="checkbox-row"><input v-model="form.useContactAddressForBilling" type="checkbox" /><span>Usar la misma dirección de contacto para facturación</span></label>
+        <button v-if="billingAddressPrefilled && !form.useContactAddressForBilling && !editing.billingAddress" class="secondary prefilled-edit" type="button" @click="beginEdit('billingAddress')">Editar dirección fiscal</button>
+        <AddressFields v-if="!form.useContactAddressForBilling" v-model="billingAddress" legend="Dirección fiscal" :required="true" :public-catalog="true" :readonly-fields="billingAddressReadonly" />
 
         <label class="checkbox-row">
           <input v-model="form.consentAccepted" type="checkbox" required />
-          <span>Acepto la autorizacion de tratamiento de datos para gestion de reparacion, facturacion y comunicaciones del servicio.</span>
+          <span>Acepto la autorización de tratamiento de datos para la gestión de reparación, facturación y comunicaciones del servicio.</span>
         </label>
 
         <p v-if="passwordMismatch" class="feedback error">Las contraseñas no coinciden.</p>
@@ -138,3 +179,8 @@ onMounted(() => { void validateToken(); });
     </section>
   </main>
 </template>
+
+<style scoped>
+.registration-field-with-edit { align-items: end; display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr) auto; }
+.registration-field-with-edit .prefilled-edit { margin-top: 0; min-height: 40px; padding: 8px 10px; width: auto; }
+</style>

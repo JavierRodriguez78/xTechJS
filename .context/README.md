@@ -25,6 +25,7 @@ Este paquete contiene el contexto técnico y funcional completo del proyecto **x
 - `15-multitienda/multitienda.md` — Soporte de varias tiendas: clientes compartidos, reparaciones/almacén/empleados por tienda, traspasos de stock entre tiendas, facturación por tienda, y dashboard principal del panel admin con indicadores clave
 - `16-alta-tienda/alta-tienda.md` — Ficha de alta de tienda adaptada a la normativa española: dirección estructurada, identidad fiscal compartida por el negocio (NIF/razón social) salvo que una tienda sea una sociedad distinta, nota sobre VeriFactu y documentación de cumplimiento del establecimiento
 - `17-gestion-empleados/gestion-empleados.md` — Gestión de empleados separada de la gestión genérica de usuarios: alta/edición/baja, acceso a una o varias tiendas (resuelve la decisión abierta de `15-multitienda`), y tratamiento de los datos del empleado conforme a RGPD/LOPDGDD en el ámbito laboral
+- `18-gestion-clientes/gestion-clientes.md` — Unificación de direcciones de cliente (contacto y facturación) reutilizando el selector de provincia/ciudad/código postal, eliminación de la duplicación de datos entre el alta por staff y el autorregistro, nuevo flujo de verificación de email en tres pasos para el autorregistro público de la tienda (resuelve la decisión abierta nº4 de `13-ecommerce-compraventa`), y revisión del catálogo de campos del cliente frente a la legislación española
 
 ## Uso recomendado
 
@@ -40,8 +41,9 @@ Este paquete contiene el contexto técnico y funcional completo del proyecto **x
 10. **Antes de implementar multitienda**, pega `15-multitienda/multitienda.md` junto con `01-roles-permisos/roles.md` y `02-modulos-funcionales/modulos.md`. Es un cambio transversal (toca usuarios, reparaciones, almacén, facturación y el dashboard admin): resuelve primero las decisiones abiertas que sigan pendientes (catálogo de inventario compartido o no, serie de factura por tienda, reparto de productos online, tienda por defecto en la migración — la decisión sobre técnicos en varias tiendas ya está resuelta en el punto 12) antes de pedirle a ChatGPT la implementación.
 11. Para completar la ficha de alta de cada tienda (dirección estructurada, identidad fiscal, VeriFactu), pega `16-alta-tienda/alta-tienda.md` junto con `15-multitienda/multitienda.md`. Confirma antes con la gestoría la decisión abierta nº1 (si el NIF de facturación es único para todo el negocio o si alguna tienda factura con datos fiscales propios).
 12. Para la gestión de empleados separada de usuarios (alta/edición/baja, acceso a varias tiendas, datos conforme a RGPD/LOPDGDD laboral), pega `17-gestion-empleados/gestion-empleados.md` junto con `15-multitienda/multitienda.md` y `16-alta-tienda/alta-tienda.md` (reutiliza su selector de provincia/ciudad/código postal). Revisa antes sus decisiones abiertas (nómina/RRHH fuera de alcance, plazo de conservación, si se mantiene o no un listado genérico de "Usuarios").
-13. `07-entregables/entregables.md` sirve como guion de las peticiones concretas a hacer a ChatGPT.
-14. **Siempre que se pida generar, revisar o modificar cualquier pantalla, pega
+13. Para unificar las direcciones del cliente, eliminar la duplicación de datos entre el alta por staff y el autorregistro, y añadir la verificación de email obligatoria en la tienda, pega `18-gestion-clientes/gestion-clientes.md` junto con `11-alta-clientes/registro-cliente.md`, `13-ecommerce-compraventa/ecommerce.md` y `16-alta-tienda/alta-tienda.md` (reutiliza su selector de provincia/ciudad/código postal).
+14. `07-entregables/entregables.md` sirve como guion de las peticiones concretas a hacer a ChatGPT.
+15. **Siempre que se pida generar, revisar o modificar cualquier pantalla, pega
    `04-frontend/frontend.md` completo.** Su sección 2 ("Regla de oro de la UI")
    es normativa: prohíbe el patrón de listado y ficha editable en la misma
    pantalla, y obliga a rutas separadas de listado/detalle/edición con pestañas

@@ -100,6 +100,31 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   conservación y verificación legal del tratamiento continúan abiertas;
   no se agregan campos de nómina ni borrado físico.
 
+## Gestión de clientes
+
+- **(2026-10-03) Direcciones y registro verificado.** `Customer` conserva
+  `address` histórico de solo lectura y añade dirección de contacto y
+  facturación estructuradas, más `customerType`. La migración
+  `1741200000000-unify-customer-addresses-and-shop-verification.ts` renombra
+  `billing_address` a calle fiscal y las columnas postales ya estructuradas;
+  no parsea direcciones libres ni infiere países históricos. Aplicada a
+  PostgreSQL local sin recrear ni borrar volúmenes.
+- El alta y edición CRM guardan campos de contacto/facturación y permiten
+  reutilizar contacto en factura. La invitación devuelve datos precargados; el
+  formulario marca los existentes como solo lectura/editables y la API exige
+  suficiencia fiscal combinada antes de completar el registro.
+- `/shop/register` solicita email con respuesta genérica; el enlace lleva a
+  `/shop/register/verify` y después a `/shop/register/complete`. Los endpoints
+  públicos almacenan hash SHA-256, caducan a 30 minutos y crean cuenta solo al
+  completar consentimiento; token, cliente, usuario y consentimiento se
+  actualizan transaccionalmente. El catálogo postal público solo expone
+  consultas de lectura y las rutas staff mantienen permisos.
+- El perfil autenticado permite precargar datos en checkout, que guarda la
+  facturación opcional con el pedido y puede copiar la dirección de contacto.
+  Se debe validar legalmente el texto del consentimiento antes de producción.
+- Verificado: 135 pruebas API, 88 web, typechecks/builds API y web; healthcheck
+  de API correcto después de actualizar el contenedor y migrar la base local.
+
 ## Multitienda
 
 - **(2026-10-03) Horario semanal por tienda.** Casilla abierto/cerrado y

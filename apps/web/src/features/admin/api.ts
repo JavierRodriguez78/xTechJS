@@ -32,9 +32,9 @@ export const listAccessibleStores = () => request<Array<Pick<Store, "id" | "name
 export interface AddressCountry { code: string; name: string; postalCoverage: boolean }
 export interface AddressProvince { code: string; name: string }
 export interface AddressPlace { city: string; postalCode: string }
-export const listAddressCountries = () => request<AddressCountry[]>("/api/stores/address-catalog/countries");
-export const listAddressProvinces = (countryCode: string) => request<AddressProvince[]>(`/api/stores/address-catalog/provinces?countryCode=${encodeURIComponent(countryCode)}`);
-export const listAddressPlaces = (provinceCode: string) => request<AddressPlace[]>(`/api/stores/address-catalog/places?provinceCode=${encodeURIComponent(provinceCode)}`);
+export const listAddressCountries = (publicCatalog = false) => request<AddressCountry[]>(`${publicCatalog ? "/api/shop" : "/api/stores"}/address-catalog/countries`);
+export const listAddressProvinces = (countryCode: string, publicCatalog = false) => request<AddressProvince[]>(`${publicCatalog ? "/api/shop" : "/api/stores"}/address-catalog/provinces?countryCode=${encodeURIComponent(countryCode)}`);
+export const listAddressPlaces = (provinceCode: string, publicCatalog = false) => request<AddressPlace[]>(`${publicCatalog ? "/api/shop" : "/api/stores"}/address-catalog/places?provinceCode=${encodeURIComponent(provinceCode)}`);
 export const createStore = (input: SaveStoreInput & { active?: boolean }) => request<Store>("/api/stores", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
 export const updateStore = (id: string, input: Partial<SaveStoreInput & Pick<Store, "active">>) => request<Store>(`/api/stores/${id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
 export const listRepairStatuses = () => request<{ values: string[] }>("/api/admin/config/repair-statuses");

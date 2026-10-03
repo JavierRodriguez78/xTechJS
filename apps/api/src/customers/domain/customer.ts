@@ -1,13 +1,15 @@
 export type RegistrationStatus = "pending" | "completed";
 export type CustomerAcquisitionChannel = "staff" | "self_service";
+export type CustomerType = "individual" | "business";
 
 export interface CustomerBillingDetails {
   billingName?: string | null;
   billingTaxId?: string | null;
-  billingAddress?: string | null;
-  billingPostalCode?: string | null;
-  billingCity?: string | null;
-  billingProvince?: string | null;
+  billingAddressStreet?: string | null;
+  billingAddressPostalCode?: string | null;
+  billingAddressCity?: string | null;
+  billingAddressProvince?: string | null;
+  billingAddressCountry?: string | null;
 }
 
 export interface Customer {
@@ -16,17 +18,24 @@ export interface Customer {
   email: string | null;
   phone: string | null;
   address: string | null;
+  addressStreet?: string | null;
+  addressPostalCode?: string | null;
+  addressCity?: string | null;
+  addressProvince?: string | null;
+  addressCountry?: string | null;
   taxId: string | null;
+  customerType?: CustomerType | null;
   internalNotes: string | null;
   registrationStatus: RegistrationStatus;
   acquisitionChannel: CustomerAcquisitionChannel;
   originStoreId: string | null;
   billingName?: string | null;
   billingTaxId?: string | null;
-  billingAddress?: string | null;
-  billingPostalCode?: string | null;
-  billingCity?: string | null;
-  billingProvince?: string | null;
+  billingAddressStreet?: string | null;
+  billingAddressPostalCode?: string | null;
+  billingAddressCity?: string | null;
+  billingAddressProvince?: string | null;
+  billingAddressCountry?: string | null;
   tags: string[];
   createdAt: Date;
   updatedAt: Date;
@@ -37,17 +46,23 @@ export interface CreateCustomerInput {
   displayName: string;
   email: string;
   phone?: string;
-  address?: string;
+  addressStreet?: string;
+  addressPostalCode?: string;
+  addressCity?: string;
+  addressProvince?: string;
+  addressCountry?: string;
   taxId?: string;
+  customerType?: CustomerType;
   internalNotes?: string;
   registrationStatus?: RegistrationStatus;
   acquisitionChannel?: CustomerAcquisitionChannel;
   billingName?: string;
   billingTaxId?: string;
-  billingAddress?: string;
-  billingPostalCode?: string;
-  billingCity?: string;
-  billingProvince?: string;
+  billingAddressStreet?: string;
+  billingAddressPostalCode?: string;
+  billingAddressCity?: string;
+  billingAddressProvince?: string;
+  billingAddressCountry?: string;
   tags?: string[];
 }
 

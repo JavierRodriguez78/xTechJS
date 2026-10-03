@@ -4,13 +4,22 @@ import { InjectCommandBus, InjectQueryBus, type CommandBus, type QueryBus } from
 import { Authenticated } from "@xtaskjs/security";
 import { z } from "zod";
 import { GetCustomerEcommerceOrderQuery, ListCustomerEcommerceOrdersQuery, PlaceEcommerceOrderCommand } from "../../application/cqrs/ecommerce-messages.js";
-import { ProductStockUnavailableError } from "../../application/ecommerce-service.js";
+import { EcommerceCustomerNotFoundError, ProductStockUnavailableError } from "../../application/ecommerce-service.js";
 import type { AuthTokenPayload } from "../../../users/infrastructure/http/auth-routes.js";
 import { GetEcommerceOrderInvoicePdf } from "../../application/get-ecommerce-order-invoice-pdf.js";
 
 const orderSchema = z.object({
   lines: z.array(z.object({ productId: z.string().uuid(), quantity: z.number().int().min(1).max(100) })).min(1).max(50),
-  shippingAddress: z.object({ street: z.string().trim().min(1).max(240), postalCode: z.string().trim().min(1).max(20), city: z.string().trim().min(1).max(120), province: z.string().trim().min(1).max(120), country: z.string().trim().min(1).max(120) })
+  shippingAddress: z.object({ street: z.string().trim().min(1).max(240), postalCode: z.string().trim().min(1).max(20), city: z.string().trim().min(1).max(120), province: z.string().trim().min(1).max(120), country: z.string().trim().min(1).max(120) }),
+  customerType: z.enum(["individual", "business"]).optional(),
+  billingName: z.string().trim().max(160).optional(),
+  billingTaxId: z.string().trim().max(64).optional(),
+  billingAddressStreet: z.string().trim().max(500).optional(),
+  billingAddressPostalCode: z.string().trim().max(20).optional(),
+  billingAddressCity: z.string().trim().max(120).optional(),
+  billingAddressProvince: z.string().trim().max(120).optional(),
+  billingAddressCountry: z.string().trim().max(120).optional(),
+  useContactAddressForBilling: z.boolean().optional()
 });
 
 type ControllerReply = { code(statusCode: number): ControllerReply; header(name: string, value: string): ControllerReply; send(payload: unknown): unknown };
@@ -56,6 +65,7 @@ export class CustomerOrderController {
     try {
       return reply.code(201).send(await this.commandBus.execute(new PlaceEcommerceOrderCommand(user.sub, parsed.data)));
     } catch (error) {
+      if (error instanceof EcommerceCustomerNotFoundError) return reply.code(404).send({ message: error.message });
       if (error instanceof ProductStockUnavailableError) return reply.code(409).send({ message: error.message });
       throw error;
     }

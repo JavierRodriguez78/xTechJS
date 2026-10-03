@@ -21,20 +21,44 @@ const createCustomerSchema = z.object({
   displayName: z.string().trim().min(1).max(160),
   email: z.string().trim().email().max(320),
   phone: z.string().trim().max(64).optional(),
-  address: z.string().trim().max(1000).optional(),
+  addressStreet: z.string().trim().max(500).optional(),
+  addressPostalCode: z.string().trim().max(20).optional(),
+  addressCity: z.string().trim().max(120).optional(),
+  addressProvince: z.string().trim().max(120).optional(),
+  addressCountry: z.string().trim().max(120).optional(),
   taxId: z.string().trim().max(64).optional(),
+  customerType: z.enum(["individual", "business"]).optional(),
   internalNotes: z.string().trim().max(5000).optional(),
+  billingName: z.string().trim().max(160).optional(),
+  billingTaxId: z.string().trim().max(64).optional(),
+  billingAddressStreet: z.string().trim().max(500).optional(),
+  billingAddressPostalCode: z.string().trim().max(20).optional(),
+  billingAddressCity: z.string().trim().max(120).optional(),
+  billingAddressProvince: z.string().trim().max(120).optional(),
+  billingAddressCountry: z.string().trim().max(120).optional(),
+  useContactAddressForBilling: z.boolean().optional(),
   tags: z.array(z.string().trim().min(1).max(64)).max(20).optional()
 });
 
 const completeRegistrationSchema = z.object({
   password: z.string().min(12).max(256),
-  billingName: z.string().trim().min(1).max(160),
-  billingTaxId: z.string().trim().min(1).max(64),
-  billingAddress: z.string().trim().min(1).max(500),
-  billingPostalCode: z.string().trim().min(1).max(20),
-  billingCity: z.string().trim().min(1).max(120),
-  billingProvince: z.string().trim().min(1).max(120),
+  displayName: z.string().trim().min(1).max(160).optional(),
+  phone: z.string().trim().max(64).optional(),
+  taxId: z.string().trim().max(64).optional(),
+  customerType: z.enum(["individual", "business"]).optional(),
+  addressStreet: z.string().trim().max(500).optional(),
+  addressPostalCode: z.string().trim().max(20).optional(),
+  addressCity: z.string().trim().max(120).optional(),
+  addressProvince: z.string().trim().max(120).optional(),
+  addressCountry: z.string().trim().max(120).optional(),
+  billingName: z.string().trim().max(160).optional(),
+  billingTaxId: z.string().trim().max(64).optional(),
+  billingAddressStreet: z.string().trim().max(500).optional(),
+  billingAddressPostalCode: z.string().trim().max(20).optional(),
+  billingAddressCity: z.string().trim().max(120).optional(),
+  billingAddressProvince: z.string().trim().max(120).optional(),
+  billingAddressCountry: z.string().trim().max(120).optional(),
+  useContactAddressForBilling: z.boolean().optional(),
   consentAccepted: z.boolean().refine((value) => value === true, "Consent is required"),
   consentText: z.string().trim().min(1).max(5000)
 });
@@ -67,7 +91,27 @@ export class CustomerController {
     if (!customer) {
       return reply.code(400).send({ message: "Invalid or expired registration token" });
     }
-    return { customerId: customer.id, email: customer.email };
+    return {
+      customerId: customer.id,
+      email: customer.email,
+      displayName: customer.displayName,
+      phone: customer.phone,
+      taxId: customer.taxId,
+      customerType: customer.customerType,
+      address: customer.address,
+      addressStreet: customer.addressStreet,
+      addressPostalCode: customer.addressPostalCode,
+      addressCity: customer.addressCity,
+      addressProvince: customer.addressProvince,
+      addressCountry: customer.addressCountry,
+      billingName: customer.billingName,
+      billingTaxId: customer.billingTaxId,
+      billingAddressStreet: customer.billingAddressStreet,
+      billingAddressPostalCode: customer.billingAddressPostalCode,
+      billingAddressCity: customer.billingAddressCity,
+      billingAddressProvince: customer.billingAddressProvince,
+      billingAddressCountry: customer.billingAddressCountry
+    };
   }
 
   @Post("/register/:token")
@@ -78,46 +122,71 @@ export class CustomerController {
     }
 
     const tokenRecord = await this.findValidRegistrationToken(token);
-    if (!tokenRecord) {
-      return reply.code(400).send({ message: "Invalid or expired registration token" });
-    }
-
-    const customer = await this.dataSource.getRepository(CustomerEntitySchema).findOneBy({ id: tokenRecord.customerId });
-    if (!customer || !customer.email) {
-      return reply.code(404).send({ message: "Customer not found" });
-    }
+    if (!tokenRecord) return reply.code(400).send({ message: "Invalid or expired registration token" });
 
     const passwordHash = await hash(parsed.data.password, 12);
-    await this.dataSource.getRepository(UserEntitySchema).save({
-      id: customer.id,
-      email: customer.email,
-      displayName: customer.displayName,
-      role: "customer",
-      active: true,
-      passwordHash
-    });
+    const result = await this.dataSource.transaction(async (manager) => {
+      const tokenRepository = manager.getRepository(CustomerRegistrationTokenEntitySchema);
+      const lockedToken = await tokenRepository.findOne({ where: { id: tokenRecord.id, usedAt: IsNull() }, lock: { mode: "pessimistic_write" } });
+      if (!lockedToken || lockedToken.expiresAt.getTime() <= Date.now()) return { error: "Invalid or expired registration token" };
+      const customerRepository = manager.getRepository(CustomerEntitySchema);
+      const customer = await customerRepository.findOneBy({ id: lockedToken.customerId });
+      if (!customer?.email) return { error: "Customer not found" };
 
-    await this.dataSource.getRepository(CustomerEntitySchema).update(customer.id, {
-      billingName: parsed.data.billingName,
-      billingTaxId: parsed.data.billingTaxId,
-      billingAddress: parsed.data.billingAddress,
-      billingPostalCode: parsed.data.billingPostalCode,
-      billingCity: parsed.data.billingCity,
-      billingProvince: parsed.data.billingProvince,
-      registrationStatus: "completed"
-    });
+      const contact = {
+        addressStreet: parsed.data.addressStreet ?? customer.addressStreet,
+        addressPostalCode: parsed.data.addressPostalCode ?? customer.addressPostalCode,
+        addressCity: parsed.data.addressCity ?? customer.addressCity,
+        addressProvince: parsed.data.addressProvince ?? customer.addressProvince,
+        addressCountry: parsed.data.addressCountry ?? customer.addressCountry
+      };
+      const billing = parsed.data.useContactAddressForBilling ? {
+        billingAddressStreet: contact.addressStreet,
+        billingAddressPostalCode: contact.addressPostalCode,
+        billingAddressCity: contact.addressCity,
+        billingAddressProvince: contact.addressProvince,
+        billingAddressCountry: contact.addressCountry
+      } : {
+        billingAddressStreet: parsed.data.billingAddressStreet ?? customer.billingAddressStreet,
+        billingAddressPostalCode: parsed.data.billingAddressPostalCode ?? customer.billingAddressPostalCode,
+        billingAddressCity: parsed.data.billingAddressCity ?? customer.billingAddressCity,
+        billingAddressProvince: parsed.data.billingAddressProvince ?? customer.billingAddressProvince,
+        billingAddressCountry: parsed.data.billingAddressCountry ?? customer.billingAddressCountry
+      };
+      const completedData = {
+        billingName: parsed.data.billingName ?? customer.billingName,
+        billingTaxId: parsed.data.billingTaxId ?? customer.billingTaxId ?? customer.taxId,
+        ...billing
+      };
+      const requiredBillingFields: (keyof typeof completedData)[] = ["billingName", "billingTaxId", "billingAddressStreet", "billingAddressPostalCode", "billingAddressCity", "billingAddressProvince", "billingAddressCountry"];
+      const missingBillingFields = requiredBillingFields.filter((field) => !completedData[field]?.trim());
+      if (missingBillingFields.length) return { error: "Completa los datos de facturación obligatorios antes de terminar el registro.", fields: missingBillingFields };
 
-    await this.dataSource.getRepository(DataProtectionConsentEntitySchema).save({
-      id: randomUUID(),
-      customerId: customer.id,
-      consentText: parsed.data.consentText,
-      consentVersion: createHash("sha256").update(parsed.data.consentText).digest("hex"),
-      acceptedAt: new Date(),
-      ipAddress: request.ip ?? null
+      const displayName = parsed.data.displayName ?? customer.displayName;
+      const phone = parsed.data.phone ?? customer.phone;
+      await manager.getRepository(UserEntitySchema).save({ id: customer.id, email: customer.email, displayName, role: "customer", active: true, passwordHash });
+      await customerRepository.update(customer.id, {
+        displayName,
+        phone,
+        taxId: parsed.data.taxId?.trim().toUpperCase() ?? customer.taxId,
+        customerType: parsed.data.customerType ?? customer.customerType,
+        ...contact,
+        ...completedData,
+        registrationStatus: "completed"
+      });
+      await manager.getRepository(DataProtectionConsentEntitySchema).save({
+        id: randomUUID(),
+        customerId: customer.id,
+        consentText: parsed.data.consentText,
+        consentVersion: createHash("sha256").update(parsed.data.consentText).digest("hex"),
+        acceptedAt: new Date(),
+        ipAddress: request.ip ?? null
+      });
+      await tokenRepository.update(lockedToken.id, { usedAt: new Date() });
+      return { message: "Registration completed successfully" };
     });
-
-    await this.dataSource.getRepository(CustomerRegistrationTokenEntitySchema).update(tokenRecord.id, { usedAt: new Date() });
-    return { message: "Registration completed successfully" };
+    if ("error" in result) return reply.code(result.error === "Customer not found" ? 404 : 400).send({ message: result.error, fields: "fields" in result ? result.fields : undefined });
+    return result;
   }
 
   @Get()
@@ -139,6 +208,17 @@ export class CustomerController {
       page: pagina,
       pageSize
     }));
+  }
+
+  @Get("/me")
+  @Authenticated()
+  async getOwnCustomer(@Req() request: FastifyRequest, @Res() reply: ControllerReply): Promise<unknown> {
+    const user = request.user as AuthTokenPayload;
+    if (user.role !== "customer") return reply.code(403).send({ message: "Customer access required" });
+    const customer = await this.dataSource.getRepository(CustomerEntitySchema).findOneBy({ id: user.sub });
+    if (!customer) return reply.code(404).send({ message: "Customer not found" });
+    const { id, displayName, email, phone, taxId, customerType, address, addressStreet, addressPostalCode, addressCity, addressProvince, addressCountry, billingName, billingTaxId, billingAddressStreet, billingAddressPostalCode, billingAddressCity, billingAddressProvince, billingAddressCountry } = customer;
+    return { id, displayName, email, phone, taxId, customerType, address, addressStreet, addressPostalCode, addressCity, addressProvince, addressCountry, billingName, billingTaxId, billingAddressStreet, billingAddressPostalCode, billingAddressCity, billingAddressProvince, billingAddressCountry };
   }
 
   @Get("/:id")
@@ -172,7 +252,15 @@ export class CustomerController {
       return reply.code(400).send({ message: "Invalid customer data", issues: parsed.error.flatten() });
     }
     const user = request.user as AuthTokenPayload;
-    const customer = await this.commandBus.execute(new CreateCustomerCommand({ ...parsed.data, originStoreId: user.defaultStoreId ?? user.storeId ?? null } as CreateCustomerInput));
+    const { useContactAddressForBilling, ...input } = parsed.data;
+    const billingAddress = useContactAddressForBilling ? {
+      billingAddressStreet: input.addressStreet,
+      billingAddressPostalCode: input.addressPostalCode,
+      billingAddressCity: input.addressCity,
+      billingAddressProvince: input.addressProvince,
+      billingAddressCountry: input.addressCountry
+    } : {};
+    const customer = await this.commandBus.execute(new CreateCustomerCommand({ ...input, ...billingAddress, originStoreId: user.defaultStoreId ?? user.storeId ?? null } as CreateCustomerInput));
     return reply.code(201).send(customer);
   }
 
@@ -184,7 +272,21 @@ export class CustomerController {
     if (!parsed.success) {
       return reply.code(400).send({ message: "Invalid customer data", issues: parsed.error.flatten() });
     }
-    const customer = await this.commandBus.execute(new UpdateCustomerCommand(id, parsed.data as UpdateCustomerInput));
+    const { useContactAddressForBilling, ...input } = parsed.data;
+    let updateInput: UpdateCustomerInput = input as UpdateCustomerInput;
+    if (useContactAddressForBilling) {
+      const current = await this.queryBus.execute(new GetCustomerQuery(id));
+      if (!current) return reply.code(404).send({ message: "Customer not found" });
+      updateInput = {
+        ...updateInput,
+        billingAddressStreet: input.addressStreet ?? current.addressStreet ?? undefined,
+        billingAddressPostalCode: input.addressPostalCode ?? current.addressPostalCode ?? undefined,
+        billingAddressCity: input.addressCity ?? current.addressCity ?? undefined,
+        billingAddressProvince: input.addressProvince ?? current.addressProvince ?? undefined,
+        billingAddressCountry: input.addressCountry ?? current.addressCountry ?? undefined
+      };
+    }
+    const customer = await this.commandBus.execute(new UpdateCustomerCommand(id, updateInput));
     return customer ? customer : reply.code(404).send({ message: "Customer not found" });
   }
 
