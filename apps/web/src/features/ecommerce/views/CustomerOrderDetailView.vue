@@ -36,7 +36,7 @@ async function downloadInvoice(): Promise<void> {
 </script>
 
 <template>
-  <main class="customer-orders-page"><p class="shop-back"><RouterLink :to="{ name: 'customer.orders' }">Volver a mis pedidos</RouterLink></p><p v-if="!order && !error" class="empty">Cargando pedido...</p><p v-else-if="error" class="feedback error">{{ error }}</p>
+  <section class="customer-view"><p class="shop-back"><RouterLink :to="{ name: 'customer.orders' }">Volver a mis pedidos</RouterLink></p><p v-if="!order && !error" class="empty">Cargando pedido...</p><p v-else-if="error" class="feedback error">{{ error }}</p>
     <section v-else-if="order" class="customer-order-detail"><header><div><p class="eyebrow">Pedido {{ order.id.slice(0, 8) }}</p><h1>{{ statusLabels[order.status] }}</h1><p>{{ date(order.createdAt) }}</p></div><div><strong>{{ money(order.totalCents) }}</strong><button v-if="order.status === 'paid'" class="secondary" type="button" @click="downloadInvoice">Descargar factura</button></div></header><div class="customer-order-detail-grid"><section><h2>Productos</h2><ul><li v-for="line in order.lines" :key="line.id"><span>{{ line.titleSnapshot }} <small>{{ line.quantity }} × {{ money(line.unitPriceCentsSnapshot) }}</small></span><strong>{{ money(line.quantity * line.unitPriceCentsSnapshot) }}</strong></li></ul></section><section><h2>Entrega</h2><p>{{ order.shippingAddress.street }}<br />{{ order.shippingAddress.postalCode }} {{ order.shippingAddress.city }}<br />{{ order.shippingAddress.province }}, {{ order.shippingAddress.country }}</p><p v-if="order.paymentReference"><strong>Referencia de pago:</strong> {{ order.paymentReference }}</p><p v-else class="empty">El pago se coordinará manualmente con el laboratorio.</p></section></div></section>
-  </main>
+  </section>
 </template>

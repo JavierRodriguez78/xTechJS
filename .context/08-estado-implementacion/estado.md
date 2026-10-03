@@ -931,6 +931,16 @@ existe en el repositorio a esta fecha y debe actualizarse al finalizar cada fase
   migraciones incrementales; `make up` completó el contenedor `migrate` con
   código `0` sobre el volumen local existente.
 
+- **Portal de cliente y registro público de tienda.** La tienda enlaza a
+  `/shop/register`, que reutiliza `POST /api/shop/register` para crear la cuenta
+  self-service y registrar el consentimiento expreso; después ofrece acceso al
+  login común. No hay verificación de email en esta fase. El portal de cliente
+  dispone de navegación lateral plegable, listados tabulares de reparaciones,
+  pedidos y solicitudes de compraventa, y ruta de detalle propia para cada
+  reparación, conservando chat, adjuntos, aprobación de presupuesto, facturas e
+  informe técnico. Los pedidos y solicitudes también enlazan a sus detalles
+  existentes.
+
 - **(2026-10-02) Recepción de reparación ampliada.** El alta admite técnico
   activo, fecha estimada de finalización y checklist inmutable del estado previo
   del equipo. El PIN o patrón se cifra con AES-256-GCM y se guarda exclusivamente

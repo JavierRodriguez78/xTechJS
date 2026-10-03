@@ -64,7 +64,7 @@ watch([query, category, condition, maxPrice], syncFilters);
   <main class="shop-page">
     <header class="shop-header">
       <RouterLink class="shop-brand" :to="{ name: 'shop.catalog' }">xTech<span>JS</span> tienda</RouterLink>
-      <div class="shop-actions"><RouterLink :to="{ name: 'customer.login', query: { redirect: '/customer/sell-to-us' } }">Vende tu equipo</RouterLink><RouterLink class="shop-sign-in" :to="{ name: 'customer.login' }">Acceder</RouterLink></div>
+      <div class="shop-actions"><RouterLink :to="{ name: 'customer.login', query: { redirect: '/customer/vender-equipo' } }">Vende tu equipo</RouterLink><RouterLink :to="{ name: 'shop.register' }">Crear cuenta</RouterLink><RouterLink class="shop-sign-in" :to="{ name: 'customer.login' }">Acceder</RouterLink></div>
     </header>
     <section class="shop-intro">
       <p class="eyebrow">Selección técnica</p>

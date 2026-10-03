@@ -51,6 +51,17 @@ haya creado antes.
   `/customer`; si más adelante ese mismo email pasa por una reparación, es el
   mismo registro, no uno duplicado (buscar por email antes de crear).
 
+**Estado de implementación:** el alta pública está disponible en `/shop/register`
+y envía `POST /api/shop/register` con email, contraseña, nombre, teléfono
+opcional y aceptación expresa del texto de protección de datos usado por el
+registro por invitación. El backend crea el cliente como `completed` con canal
+`self_service`, guarda la evidencia del consentimiento y rechaza emails ya
+registrados. Tras el alta, el cliente accede al login común. La verificación de
+email no está implementada; el texto legal debe validarse antes de publicarse.
+El portal `/customer` comparte una navegación lateral plegable y presenta
+reparaciones, pedidos y solicitudes de compraventa en tablas con acceso a sus
+detalles por ruta.
+
 ## 2. Catálogo y tienda (BC `ecommerce`, nuevo)
 
 ### 2.1. Producto en venta
